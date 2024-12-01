@@ -50,17 +50,18 @@ public class BaseController<T> {
         return baseService.getById(modelWrapper.getPkVal());
     }
 
-    @ApiOperation("批量更新")
-    @PostMapping("update/batch")
-    public List<T> updateBatch(@RequestBody @Validated List<UpdateModelWrapper<T>> modelWrappers) throws BindException {
-        List<T> models = new ArrayList<>(modelWrappers.size());
-        for (UpdateModelWrapper<T> modelWrapper : modelWrappers) {
-            modelWrapper.validate(validator);
-            baseService.updateById(modelWrapper);
-            models.add(baseService.getById(modelWrapper.getPkVal()));
-        }
-        return models;
-    }
+    // 反序问题
+//    @ApiOperation("批量更新")
+//    @PostMapping("update/batch")
+//    public List<T> updateBatch(@RequestBody UpdateModelWrapper<T>... modelWrappers) throws BindException {
+//        List<T> models = new ArrayList<>(modelWrappers.length);
+//        for (UpdateModelWrapper<T> modelWrapper : modelWrappers) {
+//            modelWrapper.validate(validator);
+//            baseService.updateById(modelWrapper);
+//            models.add(baseService.getById(modelWrapper.getPkVal()));
+//        }
+//        return models;
+//    }
 
     @ApiOperation("列表查询")
     @PostMapping("list")

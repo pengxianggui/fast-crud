@@ -8,8 +8,10 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import javax.validation.Valid;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Data
 @ApiModel("分页条件")
@@ -22,14 +24,6 @@ public class Cond<T> {
     @ApiModelProperty(value = "字段值，当conds为空时有效")
     private Object val;
 
-    public Object getVal() {
-        if (this.val != null && this.val instanceof Long && this.col != null) {
-            if (this.col.equals("created") || this.col.equals("updated") || this.col.endsWith("_time")) {
-                return new Date((Long) this.val);
-            }
-        }
-        return this.val;
-    }
 
     @ApiModelProperty(value = "操作符，当conds为空时有效")
     private Operation opt = Operation.EQ;
@@ -57,7 +51,8 @@ public class Cond<T> {
                     return opt;
                 }
             }
-            return null;
+            throw new IllegalArgumentException("参数异常: opt值只支持"
+                    + String.join(",", Arrays.stream(Operation.values()).map(Operation::getValue).collect(Collectors.toList())));
         }
 
         @JsonValue
@@ -83,7 +78,8 @@ public class Cond<T> {
                     return rel;
                 }
             }
-            return null;
+            throw new IllegalArgumentException("参数异常: rel值只支持"
+                    + String.join(",", Arrays.stream(Relation.values()).map(Relation::getValue).collect(Collectors.toList())));
         }
 
         @JsonValue
