@@ -12,6 +12,7 @@
     <modules>
         <module>fast-crud-spring-boot-starter</module>
         <module>demo</module>
+        <module>fast-crud-auto-generator</module>
     </modules>
 
     <properties>
@@ -21,6 +22,7 @@
         <knife4j.version>3.0.3</knife4j.version>
         <hutool-all.version>5.8.8</hutool-all.version>
         <cglib.version>3.3.0</cglib.version>
+        <freemarker.version>2.3.31</freemarker.version>
     </properties>
 
     <dependencies>
@@ -70,7 +72,7 @@
             <dependency>
                 <groupId>org.freemarker</groupId>
                 <artifactId>freemarker</artifactId>
-                <version>2.3.31</version>
+                <version>${freemarker.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

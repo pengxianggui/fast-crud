@@ -1,4 +1,4 @@
-package io.github.pengxianggui.crud.generate;
+package io.github.pengxianggui.crud.autogenerate;
 
 import com.baomidou.mybatisplus.generator.FastAutoGenerator;
 import com.baomidou.mybatisplus.generator.config.DataSourceConfig;

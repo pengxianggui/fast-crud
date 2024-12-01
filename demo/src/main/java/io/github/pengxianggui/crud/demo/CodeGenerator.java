@@ -1,7 +1,6 @@
-package io.github.pengxianggui;
+package io.github.pengxianggui.crud.demo;
 
-
-import io.github.pengxianggui.crud.generate.CodeAutoGenerator;
+import io.github.pengxianggui.crud.autogenerate.CodeAutoGenerator;
 
 public class CodeGenerator {
 
@@ -12,8 +11,9 @@ public class CodeGenerator {
                 .url("jdbc:mysql://127.0.0.1:3306/fast-crud")
 //                .schema("fast-crud")
                 .username("root")
+
                 .password("123456")
-                .parentPkg("io.github.pengxianggui")
+                .parentPkg("io.github.pengxianggui.crud.demo")
 //                .entitySuperClass(Base2.class) //实体继承父类,不需要时此行注释
                 .build()
                 .generate();
