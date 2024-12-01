@@ -1,6 +1,6 @@
 package ${package.Service};
 
-import com.zjs.omc.common.mybatisplusex.service.BaseService;
+import io.github.pengxianggui.crud.BaseService;
 import ${package.Entity}.${entity};
 
 public interface ${entity}Service extends BaseService<${entity}> {

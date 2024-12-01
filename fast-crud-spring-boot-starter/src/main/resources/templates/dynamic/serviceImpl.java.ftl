@@ -1,6 +1,6 @@
 package ${package.ServiceImpl};
 
-import com.zjs.omc.common.mybatisplusex.service.impl.BaseServiceImpl;
+import io.github.pengxianggui.crud.BaseServiceImpl;
 import ${package.Entity}.${entity};
 import ${package.Mapper}.${table.mapperName};
 import ${package.Service}.${table.serviceName};

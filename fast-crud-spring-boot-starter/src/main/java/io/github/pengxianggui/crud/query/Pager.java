@@ -24,10 +24,10 @@ public class Pager<T> extends Page<T> {
 
     public PagerView<T> toView() {
         PagerView<T> p = new PagerView<>();
-        p.setCurrent(this.current);
-        p.setSize(this.size);
-        p.setTotal(this.total);
-        p.setRecords(this.records);
+        p.setCurrent(this.getCurrent());
+        p.setSize(this.getSize());
+        p.setTotal(this.getTotal());
+        p.setRecords(this.getRecords());
         return p;
     }
 
@@ -44,10 +44,10 @@ public class Pager<T> extends Page<T> {
 
     public <P> PagerView<P> toView(Supplier<P> supplier) {
         PagerView<P> p = new PagerView<>();
-        p.setCurrent(this.current);
-        p.setSize(this.size);
-        p.setTotal(this.total);
-        p.setRecords(CglibUtil.copyList(this.records, supplier));
+        p.setCurrent(this.getCurrent());
+        p.setSize(this.getSize());
+        p.setTotal(this.getTotal());
+        p.setRecords(CglibUtil.copyList(this.getRecords(), supplier));
         return p;
     }
 
@@ -57,7 +57,7 @@ public class Pager<T> extends Page<T> {
         QueryWrapperUtil.addConditions(wrapper, this.conds);
 
         //排序
-        QueryWrapperUtil.addOrders(wrapper, this.orders);
+        QueryWrapperUtil.addOrders(wrapper, this.orders());
 
         //查询字段
         QueryWrapperUtil.addSelect(wrapper, this.cols, this.distinct);

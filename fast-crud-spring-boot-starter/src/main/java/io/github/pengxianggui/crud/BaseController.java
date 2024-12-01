@@ -5,6 +5,7 @@ import io.github.pengxianggui.crud.query.PagerQuery;
 import io.github.pengxianggui.crud.query.PagerView;
 import io.github.pengxianggui.crud.query.Query;
 import io.github.pengxianggui.crud.valid.CrudInsert;
+import io.github.pengxianggui.crud.wrapper.ModelWrapper;
 import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.validation.BindException;
@@ -13,8 +14,10 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Validator;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class BaseController<T> {
     private BaseService<T> baseService;
@@ -29,14 +32,14 @@ public class BaseController<T> {
     @PostMapping("insert")
     public T insert(@RequestBody @Validated(CrudInsert.class) T model) {
         baseService.save(model);
-        return model;
+        return baseService.getById(new ModelWrapper<T>(model).getPkVal());
     }
 
     @ApiOperation("批量插入")
     @PostMapping("insert/batch")
     public List<T> insertBatch(@RequestBody @Validated(CrudInsert.class) List<T> models) {
         baseService.saveBatch(models);
-        return models;
+        return baseService.listByIds(models.stream().map(ModelWrapper::new).map(ModelWrapper::getPkVal).collect(Collectors.toList()));
     }
 
     @ApiOperation("更新")
@@ -47,15 +50,28 @@ public class BaseController<T> {
         return baseService.getById(modelWrapper.getPkVal());
     }
 
+    @ApiOperation("批量更新")
+    @PostMapping("update/batch")
+    public List<T> updateBatch(@RequestBody @Validated List<UpdateModelWrapper<T>> modelWrappers) throws BindException {
+        List<T> models = new ArrayList<>(modelWrappers.size());
+        for (UpdateModelWrapper<T> modelWrapper : modelWrappers) {
+            modelWrapper.validate(validator);
+            baseService.updateById(modelWrapper);
+            models.add(baseService.getById(modelWrapper.getPkVal()));
+        }
+        return models;
+    }
+
     @ApiOperation("列表查询")
     @PostMapping("list")
-    public List<T> query(@RequestBody @Validated Query query) {
+    public List<T> list(@RequestBody @Validated Query query) {
         return baseService.list(query.wrapper());
     }
 
     @ApiOperation("分页查询")
     @PostMapping("page")
     public PagerView<T> page(@RequestBody @Validated PagerQuery query) {
+        // TODO 添加分页插件
         Pager<T> pager = query.toPager();
         pager = baseService.page(pager, pager.wrapper());
         return pager.toView();
@@ -78,4 +94,6 @@ public class BaseController<T> {
     public Boolean deleteBatch(@RequestBody @Validated Serializable... ids) {
         return baseService.removeByIds(Arrays.asList(ids));
     }
+
+    // TODO 2.0 【xlsx导出】、【唯一性】
 }

@@ -21,7 +21,7 @@ public class Query {
 
     @Getter
     @Setter
-    @ApiModelProperty("是否唯一")
+    @ApiModelProperty("字段去重。指定cols时有效")
     private boolean distinct;
 
     @Getter

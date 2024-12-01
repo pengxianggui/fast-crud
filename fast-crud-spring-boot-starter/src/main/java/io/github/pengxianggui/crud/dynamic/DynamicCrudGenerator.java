@@ -17,9 +17,11 @@ import javassist.bytecode.annotation.ArrayMemberValue;
 import javassist.bytecode.annotation.MemberValue;
 import javassist.bytecode.annotation.StringMemberValue;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
@@ -30,6 +32,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public class DynamicCrudGenerator {
 
     public RequestMappingHandlerMapping requestMappingHandlerMapping;
@@ -87,14 +90,9 @@ public class DynamicCrudGenerator {
         ClassPool classPool = ClassPool.getDefault();
         classPool.appendClassPath(new LoaderClassPath(Thread.currentThread().getContextClassLoader()));
 
-        ClassFile classfile = new ClassFile(false, "com.zjs.omc.common.mybatisplusex.controller.BaseController$" + num++, BaseController.class.getName());
-
+        ClassFile classfile = new ClassFile(false, BaseController.class.getName() + "$" + num++, BaseController.class.getName());
         CtClass ctClass = classPool.makeClass(classfile, false);
-
         ctClass.setModifiers(Modifier.PUBLIC);
-//        CtClass superclass = classPool.get(BaseController.class.getName());
-//        superclass.getGenericSignature();
-//        ctClass.setSuperclass(superclass);
 
         String typeName = ((ParameterizedType) baseService.getClass().getSuperclass().getGenericSuperclass()).getActualTypeArguments()[0].getTypeName();
         SignatureAttribute.ClassSignature cs = new SignatureAttribute.ClassSignature(null, new SignatureAttribute.ClassType(BaseController.class.getName(),
@@ -102,7 +100,7 @@ public class DynamicCrudGenerator {
                 null);
 
         ctClass.setGenericSignature(cs.encode());
-        CtConstructor ctConstructor = new CtConstructor(new CtClass[]{classPool.get("com.zjs.omc.common.mybatisplusex.service.BaseService"), classPool.get("javax.validation.Validator")}, ctClass);
+        CtConstructor ctConstructor = new CtConstructor(new CtClass[]{classPool.get(BaseService.class.getName()), classPool.get("javax.validation.Validator")}, ctClass);
         ctConstructor.setBody("{super($1,$2);}");
         ctClass.addConstructor(ctConstructor);
 
@@ -123,11 +121,6 @@ public class DynamicCrudGenerator {
 
         classFile.addAttribute(annotationsAttribute);
         ctClass = classPool.makeClass(classFile);
-//        SignatureAttribute.ClassSignature cs = new SignatureAttribute.ClassSignature(
-//                new SignatureAttribute.TypeParameter[]{new SignatureAttribute.TypeParameter(SysRole.class.getName())});
-//        ctClass.setGenericSignature(cs.encode());
-//        ctClass.writeFile();
-
         Class ctlClass = ctClass.toClass();
 
         Constructor constructor = ctlClass.getConstructor(BaseService.class, Validator.class);
@@ -152,10 +145,24 @@ public class DynamicCrudGenerator {
                 ApiOperation annotation = m.getAnnotation(ApiOperation.class);
                 if (annotation != null) {
                     RequestMappingInfo mapping_info = (RequestMappingInfo) getMappingForMethod.invoke(requestMappingHandlerMapping, m, ctlClass);
-                    requestMappingHandlerMapping.registerMapping(mapping_info, ctl, m);
+                    if (!isMappingRegistered(mapping_info)) {
+                        requestMappingHandlerMapping.registerMapping(mapping_info, ctl, m);
+                    } else {
+                        log.warn("{} 已经注册，不再自动注册", mapping_info);
+                    }
                 }
             }
         }
+    }
+
+    private boolean isMappingRegistered(RequestMappingInfo mappingInfo) {
+        Map<RequestMappingInfo, HandlerMethod> handlerMethods = requestMappingHandlerMapping.getHandlerMethods();
+        for (RequestMappingInfo existingMappingInfo : handlerMethods.keySet()) {
+            if (existingMappingInfo.equals(mappingInfo)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private Annotation addAnnotationArrayMemberValue(Annotation annotation, String field, String[] values, ConstPool constPool) {

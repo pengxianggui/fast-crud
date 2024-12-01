@@ -18,16 +18,15 @@ import java.util.stream.Stream;
 
 @Data
 public class UpdateModelWrapper<T> extends ModelWrapper<T> {
-
-    @ApiModelProperty(value = "是否更新空值（null、空字符串）", example = "true")
-    private boolean updateNull = true;
+    @ApiModelProperty(value = "是否更新空值(null、空字符串)。如果此值为null则表示不干预，全权由后端决定; 若此值为true, 则表示要更新null值(但优先级仍低于后端设置); 若此值为false, 则表示不更新null值(但优先级仍低于后端设置)。", example = "true")
+    private Boolean _updateNull = null;
 
     public UpdateModelWrapper() {
     }
 
-    public UpdateModelWrapper(@NotNull T model, boolean updateNull, String... validCols) {
-        super(model, validCols);
-        this.updateNull = updateNull;
+    public UpdateModelWrapper(@NotNull T model, boolean _updateNull) {
+        super(model);
+        this._updateNull = _updateNull;
     }
 
     public void validate(Validator validator) throws BindException {

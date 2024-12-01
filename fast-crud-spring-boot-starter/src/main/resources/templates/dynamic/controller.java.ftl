@@ -1,7 +1,7 @@
 package ${package.Controller};
 
-import com.zjs.omc.common.mybatisplusex.annotation.Crud;
-import com.zjs.omc.common.mybatisplusex.annotation.CrudService;
+import io.github.pengxianggui.crud.dynamic.Crud;
+import io.github.pengxianggui.crud.dynamic.CrudService;
 import ${package.Service}.${table.serviceName};
 import io.swagger.annotations.Api;
 import org.springframework.web.bind.annotation.RequestMapping;

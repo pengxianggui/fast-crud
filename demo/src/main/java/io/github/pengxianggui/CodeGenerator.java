@@ -1,24 +1,22 @@
 package io.github.pengxianggui;
 
 
+import io.github.pengxianggui.crud.generate.CodeAutoGenerator;
+
 public class CodeGenerator {
 
     public static void main(String[] args) {
-
-        CodeAutoGenerator.Config config = CodeAutoGenerator.Config.builder()
+        CodeAutoGenerator.builder()
                 .author("pengxg")
                 .module("demo")//模块名
-                .url("jdbc:mysql://127.0.0.1:3306/back-up")
-//                .schema("logmanager")
+                .url("jdbc:mysql://127.0.0.1:3306/fast-crud")
+//                .schema("fast-crud")
                 .username("root")
-                .password("134411")
+                .password("123456")
                 .parentPkg("io.github.pengxianggui")
 //                .entitySuperClass(Base2.class) //实体继承父类,不需要时此行注释
-                .build();
+                .build()
+                .generate();
 
-        CodeAutoGenerator codeAutoGenerator = new CodeAutoGenerator();
-
-        codeAutoGenerator.generate(config);
-        
     }
 }

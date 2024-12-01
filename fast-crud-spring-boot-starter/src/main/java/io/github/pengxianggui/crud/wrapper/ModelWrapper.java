@@ -1,34 +1,21 @@
 package io.github.pengxianggui.crud.wrapper;
 
+import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.metadata.TableInfo;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
-import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Objects;
 
 @Data
 public class ModelWrapper<T> {
-
-    // TODO 确定必要性
-    @ApiModelProperty("有效字段")
-    @JsonIgnore
-    private Set<String> validCols = new HashSet<>();
-
-    @JsonAnySetter
-    private void setValue(String key, Object value) {
-        validCols.add(key);
-    }
 
     @JsonUnwrapped
     @Valid
@@ -42,15 +29,12 @@ public class ModelWrapper<T> {
     public ModelWrapper() {
     }
 
-    public ModelWrapper(@NotNull T model, String... validCols) {
-        if (validCols != null) {
-            this.validCols.addAll(Arrays.asList(validCols));
-        }
+    public ModelWrapper(@NotNull T model) {
         this.model = model;
     }
 
     /**
-     * 获取主键名称
+     * 获取类主键字段名称
      *
      * @return
      */
@@ -76,5 +60,25 @@ public class ModelWrapper<T> {
      */
     public Serializable getPkVal() {
         return (Serializable) ReflectUtil.getFieldValue(model, getPkName());
+    }
+
+    /**
+     * 获取数据库字段名称
+     *
+     * @param fieldName model类字段名
+     * @return
+     */
+    public String getDbFieldName(String fieldName) {
+        Assert.notNull(model, "model值为null, 无法获取属性(%s)映射的数据库字段名", fieldName);
+        TableInfo tableInfo = TableInfoHelper.getTableInfo(model.getClass());
+        if (tableInfo == null) {
+            throw new IllegalStateException("无法获取实体类的TableInfo");
+        }
+        // 通过字段名获取映射的数据库字段名
+        return tableInfo.getFieldList().stream()
+                .filter(meta -> Objects.equals(meta.getProperty(), fieldName))
+                .map(meta -> meta.getColumn())
+                .findFirst()
+                .orElse(null);
     }
 }
