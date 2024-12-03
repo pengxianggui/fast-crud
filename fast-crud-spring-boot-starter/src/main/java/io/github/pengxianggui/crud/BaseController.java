@@ -1,13 +1,13 @@
 package io.github.pengxianggui.crud;
 
-import io.github.pengxianggui.crud.query.Pager;
-import io.github.pengxianggui.crud.query.PagerQuery;
-import io.github.pengxianggui.crud.query.PagerView;
-import io.github.pengxianggui.crud.query.Query;
+import io.github.pengxianggui.crud.meta.EntityUtil;
+import io.github.pengxianggui.crud.query.*;
 import io.github.pengxianggui.crud.valid.CrudInsert;
-import io.github.pengxianggui.crud.wrapper.ModelWrapper;
+import io.github.pengxianggui.crud.valid.CrudUpdate;
+import io.github.pengxianggui.crud.valid.ValidUtil;
 import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 import io.swagger.annotations.ApiOperation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindException;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -32,36 +32,38 @@ public class BaseController<T> {
     @PostMapping("insert")
     public T insert(@RequestBody @Validated(CrudInsert.class) T model) {
         baseService.save(model);
-        return baseService.getById(new ModelWrapper<T>(model).getPkVal());
+        return baseService.getById(EntityUtil.getPkVal(model));
     }
 
     @ApiOperation("批量插入")
     @PostMapping("insert/batch")
     public List<T> insertBatch(@RequestBody @Validated(CrudInsert.class) List<T> models) {
         baseService.saveBatch(models);
-        return baseService.listByIds(models.stream().map(ModelWrapper::new).map(ModelWrapper::getPkVal).collect(Collectors.toList()));
+        return baseService.listByIds(models.stream().map(EntityUtil::getPkVal).collect(Collectors.toList()));
     }
 
     @ApiOperation("更新")
     @PostMapping("update")
     public T update(@RequestBody UpdateModelWrapper<T> modelWrapper) throws BindException {
-        modelWrapper.validate(validator);
+        ValidUtil.valid(validator, modelWrapper, CrudUpdate.class);
         baseService.updateById(modelWrapper);
-        return baseService.getById(modelWrapper.getPkVal());
+        return baseService.getById(EntityUtil.getPkVal(modelWrapper.getModel()));
     }
 
-    // 反序问题
-//    @ApiOperation("批量更新")
-//    @PostMapping("update/batch")
-//    public List<T> updateBatch(@RequestBody UpdateModelWrapper<T>... modelWrappers) throws BindException {
-//        List<T> models = new ArrayList<>(modelWrappers.length);
-//        for (UpdateModelWrapper<T> modelWrapper : modelWrappers) {
-//            modelWrapper.validate(validator);
-//            baseService.updateById(modelWrapper);
-//            models.add(baseService.getById(modelWrapper.getPkVal()));
-//        }
-//        return models;
-//    }
+    @ApiOperation(value = "批量更新", notes = "不支持个性化选择_updateNull")
+    @PostMapping("update/batch")
+    @Transactional(rollbackFor = Exception.class)
+    public List<T> updateBatch(@RequestBody List<T> models) throws BindException {
+        for (T model : models) {
+            ValidUtil.valid(validator, model, CrudUpdate.class);
+        }
+        List<T> result = new ArrayList<>(models.size());
+        for (T model : models) {
+            baseService.updateById(model);
+            result.add(baseService.getById(EntityUtil.getPkVal(model)));
+        }
+        return result;
+    }
 
     @ApiOperation("列表查询")
     @PostMapping("list")
@@ -72,7 +74,6 @@ public class BaseController<T> {
     @ApiOperation("分页查询")
     @PostMapping("page")
     public PagerView<T> page(@RequestBody @Validated PagerQuery query) {
-        // TODO 添加分页插件
         Pager<T> pager = query.toPager();
         pager = baseService.page(pager, pager.wrapper());
         return pager.toView();
@@ -86,15 +87,19 @@ public class BaseController<T> {
 
     @ApiOperation("删除")
     @DeleteMapping("delete/{id}")
-    public Boolean delete(@PathVariable Serializable id) {
+    public boolean delete(@PathVariable Serializable id) {
         return baseService.removeById(id);
     }
 
     @ApiOperation("批量删除")
     @PostMapping("delete/batch")
-    public Boolean deleteBatch(@RequestBody @Validated Serializable... ids) {
+    public boolean deleteBatch(@RequestBody @Validated Serializable... ids) {
         return baseService.removeByIds(Arrays.asList(ids));
     }
 
-    // TODO 2.0 【xlsx导出】、【唯一性】
+    @ApiOperation(value = "存在性查询", notes = "指定条件存在数据")
+    @PostMapping("exists")
+    public Boolean exists(@RequestBody List<Cond> conditions) {
+        return baseService.exists(conditions);
+    }
 }

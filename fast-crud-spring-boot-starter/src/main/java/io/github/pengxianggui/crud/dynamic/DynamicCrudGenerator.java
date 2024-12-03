@@ -142,13 +142,15 @@ public class DynamicCrudGenerator {
             }
 
             if (doRegister) {
+                // TODO 1.0 不根据ApiOperation来识别是否是接口方法，而是通过GetMapper、PostMapper、DeleteMapper、PutMapper、RequestMapper等来识别
                 ApiOperation annotation = m.getAnnotation(ApiOperation.class);
                 if (annotation != null) {
                     RequestMappingInfo mapping_info = (RequestMappingInfo) getMappingForMethod.invoke(requestMappingHandlerMapping, m, ctlClass);
                     if (!isMappingRegistered(mapping_info)) {
                         requestMappingHandlerMapping.registerMapping(mapping_info, ctl, m);
+                        log.debug("{} 已经完成动态注册!", mapping_info.getPatternsCondition());
                     } else {
-                        log.warn("{} 已经注册，不再自动注册", mapping_info);
+                        log.debug("{} 已经注册，不再自动注册", mapping_info);
                     }
                 }
             }

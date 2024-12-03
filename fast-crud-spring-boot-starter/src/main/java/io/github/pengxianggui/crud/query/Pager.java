@@ -1,14 +1,11 @@
 package io.github.pengxianggui.crud.query;
 
-import cn.hutool.extra.cglib.CglibUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
-import lombok.SneakyThrows;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 @Data
 public class Pager<T> extends Page<T> {
@@ -28,26 +25,6 @@ public class Pager<T> extends Page<T> {
         p.setSize(this.getSize());
         p.setTotal(this.getTotal());
         p.setRecords(this.getRecords());
-        return p;
-    }
-
-    public <P> PagerView<P> toView(Class<P> clazz) {
-        PagerView<P> view = toView(new Supplier<P>() {
-            @SneakyThrows
-            @Override
-            public P get() {
-                return clazz.newInstance();
-            }
-        });
-        return view;
-    }
-
-    public <P> PagerView<P> toView(Supplier<P> supplier) {
-        PagerView<P> p = new PagerView<>();
-        p.setCurrent(this.getCurrent());
-        p.setSize(this.getSize());
-        p.setTotal(this.getTotal());
-        p.setRecords(CglibUtil.copyList(this.getRecords(), supplier));
         return p;
     }
 

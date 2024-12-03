@@ -11,7 +11,6 @@ public class CodeGenerator {
                 .url("jdbc:mysql://127.0.0.1:3306/fast-crud")
 //                .schema("fast-crud")
                 .username("root")
-
                 .password("123456")
                 .parentPkg("io.github.pengxianggui.crud.demo")
 //                .entitySuperClass(Base2.class) //实体继承父类,不需要时此行注释

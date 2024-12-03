@@ -10,7 +10,7 @@
     <artifactId>fast-crud-spring-boot-starter</artifactId>
     <packaging>jar</packaging>
 
-    <name>fast-crud</name>
+    <name>fast-crud-spring-boot-starter</name>
     <url>http://maven.apache.org</url>
 
     <properties>
@@ -51,12 +51,7 @@
         </dependency>
         <dependency>
             <groupId>cn.hutool</groupId>
-            <artifactId>hutool-all</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>cglib</groupId>
-            <artifactId>cglib</artifactId>
-            <scope>compile</scope>
+            <artifactId>hutool-core</artifactId>
         </dependency>
     </dependencies>
 

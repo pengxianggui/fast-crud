@@ -18,9 +18,9 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring-boot.version>2.6.8</spring-boot.version>
-        <mybatis-plus.version>3.5.6</mybatis-plus.version>
+        <mybatis-plus.version>3.5.7</mybatis-plus.version>
         <knife4j.version>3.0.3</knife4j.version>
-        <hutool-all.version>5.8.8</hutool-all.version>
+        <hutool.version>5.8.8</hutool.version>
         <cglib.version>3.3.0</cglib.version>
         <freemarker.version>2.3.31</freemarker.version>
     </properties>
@@ -55,14 +55,8 @@
             </dependency>
             <dependency>
                 <groupId>cn.hutool</groupId>
-                <artifactId>hutool-all</artifactId>
-                <version>${hutool-all.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cglib</groupId>
-                <artifactId>cglib</artifactId>
-                <version>${cglib.version}</version>
-                <scope>compile</scope>
+                <artifactId>hutool-core</artifactId>
+                <version>${hutool.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.baomidou</groupId>

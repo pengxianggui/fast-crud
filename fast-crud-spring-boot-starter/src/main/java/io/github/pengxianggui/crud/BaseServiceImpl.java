@@ -4,13 +4,18 @@ import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.annotation.FieldStrategy;
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import io.github.pengxianggui.crud.meta.EntityUtil;
+import io.github.pengxianggui.crud.query.Cond;
+import io.github.pengxianggui.crud.query.QueryWrapperUtil;
 import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 
 import javax.annotation.PostConstruct;
 import java.lang.reflect.Field;
+import java.util.List;
 
 public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends ServiceImpl<M, T> implements BaseService<T> {
     protected Class<T> clazz;
@@ -24,27 +29,35 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
             return updateById(modelWrapper.getModel());
         }
 
-        Assert.isTrue(modelWrapper.getPkVal() != null, "[%s]主键不能为空", modelWrapper.getPkName());
+        Assert.isTrue(EntityUtil.getPkVal(modelWrapper.getModel()) != null,
+                "[%s]主键不能为空", EntityUtil.getPkName(modelWrapper.getModel()));
         UpdateWrapper<T> updateWrapper = new UpdateWrapper<>();
-        updateWrapper.eq(modelWrapper.getPkName(), modelWrapper.getPkVal());
+        updateWrapper.eq(EntityUtil.getPkName(modelWrapper.getModel()), EntityUtil.getPkVal(modelWrapper.getModel()));
         T model = modelWrapper.getModel();
         Field[] fields = model.getClass().getDeclaredFields();
         for (Field field : fields) {
             field.setAccessible(true);
             String fieldName = field.getName();
-            if (fieldName.equals(modelWrapper.getPkName())) {
+            if (fieldName.equals(EntityUtil.getPkName(modelWrapper.getModel()))) {
                 continue;
             }
             try {
                 Object fieldValue = field.get(model);
                 if (fieldNeedUpdate(field, fieldValue, modelWrapper.get_updateNull())) {
-                    updateWrapper.set(modelWrapper.getDbFieldName(fieldName), fieldValue);
+                    updateWrapper.set(EntityUtil.getDbFieldName(modelWrapper.getModel(), fieldName), fieldValue);
                 }
             } catch (IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
         }
         return this.update(updateWrapper);
+    }
+
+    public boolean exists(List<Cond> conditions) {
+        QueryWrapper<T> wrapper = new QueryWrapper<T>();
+        QueryWrapperUtil.addConditions(wrapper, conditions);
+        wrapper.last(" limit 1");
+        return this.count(wrapper) > 0;
     }
 
     /**

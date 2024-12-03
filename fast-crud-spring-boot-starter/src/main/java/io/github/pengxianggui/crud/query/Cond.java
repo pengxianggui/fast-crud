@@ -9,14 +9,13 @@ import lombok.Data;
 
 import javax.validation.Valid;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Data
 @ApiModel("分页条件")
 @ValidCond
-public class Cond<T> {
+public class Cond {
 
     @ApiModelProperty(value = "条件字段，当conds为空时有效")
     private String col;

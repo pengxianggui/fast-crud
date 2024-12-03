@@ -4,13 +4,13 @@ public enum CrudMethod {
     INSERT("insert"),
     INSERT_BATCH("insertBatch"),
     UPDATE("update"),
-    //    UPDATE_BATCH("updateBatch"),
+    UPDATE_BATCH("updateBatch"),
     LIST("list"),
     PAGE("page"),
     DETAIL("detail"),
     DELETE("delete"),
     DELETE_BATCH("deleteBatch"),
-    UNIQUE("unique");
+    EXISTS("exists");
 
     private String name;
 

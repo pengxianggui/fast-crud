@@ -27,6 +27,7 @@ public class FastCrudAutoConfiguration {
     /**
      * 添加分页插件
      */
+    @ConditionalOnMissingBean(MybatisPlusInterceptor.class)
     @Bean
     public MybatisPlusInterceptor mybatisPlusInterceptor() {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
