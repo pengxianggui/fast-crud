@@ -8,7 +8,7 @@
     <packaging>pom</packaging>
 
     <name>fast-crud</name>
-    <url>http://maven.apache.org</url>
+    <url>https://github.com/pengxianggui/fast-crud</url>
     <modules>
         <module>fast-crud-spring-boot-starter</module>
         <module>demo</module>
@@ -23,6 +23,7 @@
         <hutool.version>5.8.8</hutool.version>
         <cglib.version>3.3.0</cglib.version>
         <freemarker.version>2.3.31</freemarker.version>
+        <javassist.version>3.25.0-GA</javassist.version>
     </properties>
 
     <dependencies>
@@ -67,6 +68,11 @@
                 <groupId>org.freemarker</groupId>
                 <artifactId>freemarker</artifactId>
                 <version>${freemarker.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.javassist</groupId>
+                <artifactId>javassist</artifactId>
+                <version>${javassist.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -25,7 +25,8 @@
 - [x] 支持基于注解动态生成CRUD涉及的相关接口(新增(批量新增)、删除(批量删除)、修改(批量修改)、查询(分页、列表、详情)
   、唯一性验证)
 - [x] 支持controller、service、serviceImpl、mapper、entity自动生成
-- [ ] 调整CRUD动态注册策略: 不根据ApiOperation来识别是否是接口方法，而是通过GetMapper、PostMapper、DeleteMapper、PutMapper、RequestMapper等来识别
+- [x] 调整CRUD动态注册策略: 不根据ApiOperation来识别是否是接口方法，而是通过GetMapper、PostMapper、DeleteMapper、PutMapper、RequestMapper等来识别
+- [x] 移除对knife4j-spring-boot-starter的强依赖
 
 ### 2.0 提供配套的前端CRUD表格组件库
 

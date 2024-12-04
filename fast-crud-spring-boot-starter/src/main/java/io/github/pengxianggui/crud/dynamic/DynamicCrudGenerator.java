@@ -3,7 +3,6 @@ package io.github.pengxianggui.crud.dynamic;
 import io.github.pengxianggui.crud.BaseController;
 import io.github.pengxianggui.crud.BaseService;
 import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtConstructor;
@@ -18,9 +17,9 @@ import javassist.bytecode.annotation.MemberValue;
 import javassist.bytecode.annotation.StringMemberValue;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
@@ -39,6 +38,8 @@ public class DynamicCrudGenerator {
 
     private Validator validator;
 
+    private volatile int num;
+
     public DynamicCrudGenerator(RequestMappingHandlerMapping requestMappingHandlerMapping, Validator validator) {
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
         this.validator = validator;
@@ -48,7 +49,12 @@ public class DynamicCrudGenerator {
     public void init() {
         Map<String, Object> beansWithAnnotation = requestMappingHandlerMapping.getApplicationContext().getBeansWithAnnotation(Crud.class);
         for (Map.Entry<String, Object> entry : beansWithAnnotation.entrySet()) {
-            Crud annotation = entry.getValue().getClass().getAnnotation(Crud.class);
+            Object ctrlBean = entry.getValue();
+            RequestMapping requestMappingAnnotation = ctrlBean.getClass().getAnnotation(RequestMapping.class);
+            if (requestMappingAnnotation == null) {
+                throw new RuntimeException("无效的模块类:" + ctrlBean.getClass().getName() + ",必须声明@RequestMapping注解");
+            }
+            Crud annotation = ctrlBean.getClass().getAnnotation(Crud.class);
             List<CrudMethod> crudMethods = new ArrayList<>();
             if (annotation.value().length > 0) {
                 crudMethods.addAll(Arrays.asList(annotation.value().clone()));
@@ -58,35 +64,23 @@ public class DynamicCrudGenerator {
             if (annotation.exclude().length > 0) {
                 crudMethods.removeAll(Arrays.asList(annotation.exclude().clone()));
             }
-            for (Field field : entry.getValue().getClass().getDeclaredFields()) {
+            for (Field field : ctrlBean.getClass().getDeclaredFields()) {
                 field.setAccessible(true);
                 CrudService crudServiceAnnotation = field.getAnnotation(CrudService.class);
-                if (crudServiceAnnotation != null) {
-                    Object service = ReflectionUtils.getField(field, entry.getValue());
-                    if (service instanceof BaseService) {
-                        register(entry.getValue().getClass(), (BaseService) service, crudMethods.toArray(new CrudMethod[]{}));
-                    } else {
-                        throw new RuntimeException("无效的BaseService");
-                    }
-                    break;
+                if (crudServiceAnnotation == null) {
+                    continue;
                 }
+                Object service = ReflectionUtils.getField(field, entry.getValue());
+                if (!(service instanceof BaseService)) {
+                    throw new RuntimeException("无效的Service类:" + service.getClass().getName() + ", @CrudService修饰的service bean必须implement BaseService");
+                }
+                register(ctrlBean.getClass(), (BaseService) service, crudMethods.toArray(new CrudMethod[]{}));
             }
         }
     }
 
-    public <T> void register(Class modClass, BaseService<T> baseService, CrudMethod... crudMethods) {
-        RequestMapping requestMappingAnnotation = (RequestMapping) modClass.getAnnotation(RequestMapping.class);
-        if (requestMappingAnnotation == null) {
-            throw new RuntimeException("无效的模块类");
-        }
-        Api apiAnnotation = (Api) modClass.getAnnotation(Api.class);
-        register(requestMappingAnnotation.value(), apiAnnotation.tags(), baseService, crudMethods);
-    }
-
-    private volatile int num;
-
     @SneakyThrows
-    public <T> void register(String[] basePaths, String[] tags, BaseService<T> baseService, CrudMethod... crudMethods) {
+    public <T> void register(Class ctrlClass, BaseService<T> baseService, CrudMethod... crudMethods) {
         ClassPool classPool = ClassPool.getDefault();
         classPool.appendClassPath(new LoaderClassPath(Thread.currentThread().getContextClassLoader()));
 
@@ -108,16 +102,25 @@ public class DynamicCrudGenerator {
         ConstPool constPool = classFile.getConstPool();
 
         //添加注解
-        Annotation apiAnnotation = new Annotation(Api.class.getCanonicalName(), constPool);
-        this.addAnnotationArrayMemberValue(apiAnnotation, "tags", tags, constPool);
-        Annotation requestMappingAnnotation = new Annotation(RequestMapping.class.getCanonicalName(), constPool);
-        this.addAnnotationArrayMemberValue(requestMappingAnnotation, "value", basePaths, constPool);
-        Annotation restControllerAnnotation = new Annotation(RestController.class.getCanonicalName(), constPool);
-
         AnnotationsAttribute annotationsAttribute = new AnnotationsAttribute(constPool, AnnotationsAttribute.visibleTag);
-        annotationsAttribute.addAnnotation(apiAnnotation);
+        Annotation requestMappingAnnotation = new Annotation(RequestMapping.class.getCanonicalName(), constPool);
+        String[] basePaths = ((RequestMapping) ctrlClass.getAnnotation(RequestMapping.class)).value();
+        this.addAnnotationArrayMemberValue(requestMappingAnnotation, "value", basePaths, constPool);
         annotationsAttribute.addAnnotation(requestMappingAnnotation);
+
+        Annotation restControllerAnnotation = new Annotation(RestController.class.getCanonicalName(), constPool);
         annotationsAttribute.addAnnotation(restControllerAnnotation);
+
+        if (ClassUtils.isPresent("io.swagger.annotations.Api", Thread.currentThread().getContextClassLoader())) {
+            Annotation apiAnnotation = new Annotation(Api.class.getCanonicalName(), constPool);
+            String[] tags = new String[]{ctrlClass.getSimpleName()};
+            Api ctrlApiAnnotation = (Api) ctrlClass.getAnnotation(Api.class);
+            if (ctrlApiAnnotation != null) {
+                tags = ctrlApiAnnotation.tags();
+            }
+            this.addAnnotationArrayMemberValue(apiAnnotation, "tags", tags, constPool);
+            annotationsAttribute.addAnnotation(apiAnnotation);
+        }
 
         classFile.addAttribute(annotationsAttribute);
         ctClass = classPool.makeClass(classFile);
@@ -133,18 +136,11 @@ public class DynamicCrudGenerator {
         getMappingForMethod.setAccessible(true);
 
         for (Method m : methods) {
-            boolean doRegister = false;
+            if (!isApiMethod(m)) {
+                continue;
+            }
             for (CrudMethod crudMethod : crudMethods) {
                 if (crudMethod.getName().equals(m.getName())) {
-                    doRegister = true;
-                    break;
-                }
-            }
-
-            if (doRegister) {
-                // TODO 1.0 不根据ApiOperation来识别是否是接口方法，而是通过GetMapper、PostMapper、DeleteMapper、PutMapper、RequestMapper等来识别
-                ApiOperation annotation = m.getAnnotation(ApiOperation.class);
-                if (annotation != null) {
                     RequestMappingInfo mapping_info = (RequestMappingInfo) getMappingForMethod.invoke(requestMappingHandlerMapping, m, ctlClass);
                     if (!isMappingRegistered(mapping_info)) {
                         requestMappingHandlerMapping.registerMapping(mapping_info, ctl, m);
@@ -152,9 +148,24 @@ public class DynamicCrudGenerator {
                     } else {
                         log.debug("{} 已经注册，不再自动注册", mapping_info);
                     }
+                    break;
                 }
             }
         }
+    }
+
+    /**
+     * 判断method是否是一个api method。存在注解: @GetMapping、@PutMapper、@PostMapper、@DeleteMapping、@RequestMapping等
+     *
+     * @param method
+     * @return
+     */
+    private boolean isApiMethod(Method method) {
+        List<Class> apiAnnotationClasses = Arrays.asList(
+                GetMapping.class, PutMapping.class, PostMapping.class,
+                DeleteMapping.class, PatchMapping.class, RequestMapping.class);
+        return Arrays.stream(method.getAnnotations())
+                .anyMatch(annotation -> apiAnnotationClasses.contains(annotation.annotationType()));
     }
 
     private boolean isMappingRegistered(RequestMappingInfo mappingInfo) {
