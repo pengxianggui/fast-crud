@@ -28,6 +28,16 @@ export class Cond {
         this.opt = opt;
         this.val = val;
     }
+
+    setOpt(opt: Opt) {
+        this.opt = opt;
+        return this;
+    }
+
+    setVal(val: any) {
+        this.val = val;
+        return this;
+    }
 }
 
 export class Order {
@@ -37,6 +47,11 @@ export class Order {
     constructor(col: String, asc: boolean) {
         this.col = col;
         this.asc = asc;
+    }
+
+    setAsc(asc: boolean) {
+        this.asc = asc;
+        return this;
     }
 }
 
@@ -59,14 +74,32 @@ export class Query {
         return this;
     }
 
+    removeCond(col: String) {
+        this.conds = this.conds.filter(cond => cond.col != col);
+        return this;
+    }
+
     setConds(conds: Cond[]): Query {
         this.conds = conds;
         return this;
     }
 
+    getCond(col: String) {
+        return this.conds.find(cond => cond.col == col);
+    }
+
     addOrder(col: String, asc: boolean) {
         this.orders.push(new Order(col, asc));
         return this;
+    }
+
+    removeOrder(col: String) {
+        this.orders = this.orders.filter(order => order.col != col);
+        return this;
+    }
+
+    getOrder(col: String) {
+        return this.orders.find(order => order.col == col);
     }
 
     setOrders(orders: Order[]): Query {
@@ -85,6 +118,10 @@ export class PageQuery extends Query {
         this.size = size;
     }
 
+    /**
+     * 设置每页大小
+     * @param size
+     */
     setSize(size: number): PageQuery {
         this.size = size;
         return this;
