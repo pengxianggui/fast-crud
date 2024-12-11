@@ -27,14 +27,13 @@
   </div>
 </template>
 
-<script lang="ts">
-import {PageQuery, type Pager} from '../../../model';
-import {defineComponent} from 'vue'
+<script>
+import {PageQuery} from '../../../model';
 import FastTableOption, {FilterComponentConfig} from "../../../model";
-import {ifBlank, isObject, isFunction, merge} from "../../../util/util";
+import {ifBlank, merge} from "../../../util/util";
 import {getConfigFn} from "../../mapping";
 
-export default defineComponent({
+export default {
   name: "FastTable",
   props: {
     option: {
@@ -46,12 +45,12 @@ export default defineComponent({
     const size = this.option.pagination.size;
     const pageQuery = new PageQuery(1, size);
     if (!ifBlank(this.option.sortField)) {
-      pageQuery.addOrder(this.option.sortField as string, !this.option.sortDesc)
+      pageQuery.addOrder(this.option.sortField, !this.option.sortDesc)
     }
 
     return {
       pageQuery: pageQuery,
-      quickFilters: new Array<FilterComponentConfig>(), // 快捷筛选条件
+      quickFilters: [], // 快捷筛选条件
       list: [],
       total: 0
     }
@@ -66,11 +65,11 @@ export default defineComponent({
       for (const vnode of children) {
         const {
           data: {
-            attrs: {'quick-filter': quickFilter, label, prop: col, ...props}
+            attrs: {'quick-filter': quickFilter = false, label = '', prop: col = '', ...props} = {}
           } = {},
-          componentOptions: {tag: tableColumnComponentName}
+          componentOptions: {tag: tableColumnComponentName} = {}
         } = vnode
-        if (quickFilter !== true) {
+        if (!quickFilter) {
           continue;
         }
         // 排除props中后缀为__e的属性, 因为这些配置项仅用于编辑控件, 并将__q后缀的属性名移除此后缀
@@ -91,13 +90,13 @@ export default defineComponent({
     },
     onSearch() {
       const quickConds = []
-      this.quickFilters.filter((filter: FilterComponentConfig) => filter.hasVal()).forEach((filter: FilterComponentConfig) => {
+      this.quickFilters.filter((filter) => filter.hasVal()).forEach((filter) => {
         quickConds.push(...filter.getConds())
       })
       this.pageQuery.setConds(quickConds)
       // TODO 兑现 this.option.beforeLoad
       this.$http.post(this.option.pageUrl, this.pageQuery.toJson()).then(res => {
-        this.option.loadSuccess({query: this.pageQuery, data: res.data, res}).then((data: Pager) => {
+        this.option.loadSuccess({query: this.pageQuery, data: res.data, res}).then((data) => {
           this.list = data.records
           this.total = data.total
         })
@@ -106,11 +105,11 @@ export default defineComponent({
       })
     },
     onReset() {
-      this.quickFilters.forEach((filter: FilterComponentConfig) => filter.reset());
+      this.quickFilters.forEach((filter) => filter.reset());
       this.onSearch();
     }
   }
-})
+}
 </script>
 
 <style scoped lang="scss">

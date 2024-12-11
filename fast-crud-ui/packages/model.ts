@@ -139,6 +139,8 @@ export class PageQuery extends Query {
     }
 }
 
+// type CondConvert<T = Cond> = (arg: T) => Array<T>;
+
 export interface ComponentConfig {
     component: string;
     col: string;
@@ -163,7 +165,7 @@ export class FilterComponentConfig {
     defaultVal: any;
     quick: boolean;
     disabled: boolean;
-    condMapFn: (cond: Cond) => [cond];
+    condMapFn: Function;
 
     /**
      * 构造函数
@@ -176,7 +178,16 @@ export class FilterComponentConfig {
      * @param props 组件对应的props
      * @param condMapFn 条件获取过滤函数
      */
-    constructor({component, col, opt = Opt.LIKE, val, label, quick, props, condMapFn}: ComponentConfig) {
+    constructor({
+                    component,
+                    col,
+                    opt = Opt.LIKE,
+                    val,
+                    label,
+                    quick,
+                    props,
+                    condMapFn = (cond: Cond) => [cond]
+                }: ComponentConfig) {
         this.component = component;
         this.col = col;
         this.opt = opt;
@@ -241,16 +252,14 @@ interface FastTableOptionParams {
     enableColumnFilter?: boolean;
     // 编辑类型: inline-行内编辑, form弹窗表单编辑
     editType?: 'inline' | 'form';
-    // 表格行高
-    bodyRowHeight?: number;
     // 默认排序字段
     sortField?: string;
     // 默认排序字段是否降序
     sortDesc?: boolean;
-    // 表单标签宽度: 生效于搜索表单和编辑表单(editType='form')
-    formLabelWidth?: number;
     // 分页配置
     pagination?: PaginationOption;
+    // 样式相关配置
+    style: Style
 
     // 分页数据加载前钩子: 可以拦截并修改请求参数
     beforeLoad?: (scope: { query: PageQuery }) => Promise<PageQuery>;
@@ -297,7 +306,8 @@ interface FastTableOptionParams {
 
 interface Style {
     bodyRowHeight: number; // 表格行高
-    formLabelWidth: number; // 表单标签宽度
+    // 表单标签宽度: 生效于搜索表单和编辑表单(editType='form')
+    formLabelWidth: string;
     size: string; // 按钮、表单组件等控件的大小
 }
 

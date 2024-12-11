@@ -4,16 +4,13 @@
   </el-table-column>
 </template>
 
-<script lang="ts">
-import {defineComponent} from 'vue'
-
-export default defineComponent({
+<script>
+export default {
   name: "FastTableColumnNumber",
   data() {
-    return {
-    }
+    return {}
   }
-})
+}
 </script>
 
 <style scoped>
