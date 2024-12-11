@@ -5,6 +5,7 @@ import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.metadata.TableInfo;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
+import io.github.pengxianggui.crud.query.ColumnMapperUtil;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -54,11 +55,15 @@ public class EntityUtil {
      */
     public static <T> String getDbFieldName(T entity, String fieldName) {
         Assert.notNull(entity, "entity值为null, 无法获取属性(%s)映射的数据库字段名", fieldName);
-        TableInfo tableInfo = TableInfoHelper.getTableInfo(entity.getClass());
-        Assert.notNull(tableInfo, "无法获取entity的tableInfo,请确保entity是一个映射有数据库表的类: " + entity.getClass().getName());
+        return getDbFieldName(entity.getClass(), fieldName);
+    }
+
+    public static String getDbFieldName(Class clazz, String fieldName) {
+        TableInfo tableInfo = TableInfoHelper.getTableInfo(clazz);
+        Assert.notNull(tableInfo, "无法获取entity的tableInfo,请确保entity是一个映射有数据库表的类: " + clazz.getName());
         // 通过字段名获取映射的数据库字段名
         return tableInfo.getFieldList().stream()
-                .filter(meta -> Objects.equals(meta.getProperty(), fieldName))
+                .filter(meta -> Objects.equals(ColumnMapperUtil.wrapper(meta.getProperty()), ColumnMapperUtil.wrapper(fieldName))) // 防止后者被`处理
                 .map(meta -> meta.getColumn())
                 .findFirst()
                 .orElse(null);

@@ -9,8 +9,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import io.github.pengxianggui.crud.meta.EntityUtil;
-import io.github.pengxianggui.crud.query.Cond;
-import io.github.pengxianggui.crud.query.QueryWrapperUtil;
+import io.github.pengxianggui.crud.query.*;
 import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 
 import javax.annotation.PostConstruct;
@@ -22,6 +21,18 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
 
     @PostConstruct
     public abstract void init();
+
+    @Override
+    public List<T> queryList(Query query) {
+        return list(query.wrapper(clazz));
+    }
+
+    @Override
+    public Pager<T> queryPage(PagerQuery query) {
+        Pager<T> pager = query.toPager();
+        QueryWrapper<T> queryWrapper = pager.wrapper(clazz);
+        return page(pager, queryWrapper);
+    }
 
     @Override
     public boolean updateById(UpdateModelWrapper<T> modelWrapper) {
@@ -55,7 +66,7 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
 
     public boolean exists(List<Cond> conditions) {
         QueryWrapper<T> wrapper = new QueryWrapper<T>();
-        QueryWrapperUtil.addConditions(wrapper, conditions);
+        QueryWrapperUtil.addConditions(wrapper, conditions, clazz);
         wrapper.last(" limit 1");
         return this.count(wrapper) > 0;
     }

@@ -36,16 +36,16 @@ public class Query {
     @ApiModelProperty(value = "排序")
     List<Order> orders;
 
-    public <T> QueryWrapper<T> wrapper() {
+    public <T> QueryWrapper<T> wrapper(Class<T> entityClass) {
         QueryWrapper<T> wrapper = new QueryWrapper<T>();
         //条件
-        QueryWrapperUtil.addConditions(wrapper, this.conds);
+        QueryWrapperUtil.addConditions(wrapper, this.conds, entityClass);
 
         //排序
-        QueryWrapperUtil.addQueryOrders(wrapper, this.orders);
+        QueryWrapperUtil.addQueryOrders(wrapper, this.orders, entityClass);
 
         //查询字段
-        QueryWrapperUtil.addSelect(wrapper, this.cols, this.distinct);
+        QueryWrapperUtil.addSelect(wrapper, this.cols, this.distinct, entityClass);
         return wrapper;
     }
 }

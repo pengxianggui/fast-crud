@@ -29,9 +29,9 @@ public class PagerQuery extends Query {
             this.orders.forEach((order) -> {
                 if (order != null) {
                     if (order.isAsc()) {
-                        p.orders().add(OrderItem.asc(ColumnMapperUtil.map(order.getCol())));
+                        p.orders().add(OrderItem.asc(order.getCol()));
                     } else {
-                        p.orders().add(OrderItem.desc(ColumnMapperUtil.map(order.getCol())));
+                        p.orders().add(OrderItem.desc(order.getCol()));
                     }
                 }
             });

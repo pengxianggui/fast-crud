@@ -68,14 +68,13 @@ public class BaseController<T> {
     @ApiOperation("列表查询")
     @PostMapping("list")
     public List<T> list(@RequestBody @Validated Query query) {
-        return baseService.list(query.wrapper());
+        return baseService.queryList(query);
     }
 
     @ApiOperation("分页查询")
     @PostMapping("page")
     public PagerView<T> page(@RequestBody @Validated PagerQuery query) {
-        Pager<T> pager = query.toPager();
-        pager = baseService.page(pager, pager.wrapper());
+        Pager<T> pager = baseService.queryPage(query);
         return pager.toView();
     }
 
