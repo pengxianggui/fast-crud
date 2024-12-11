@@ -9,6 +9,17 @@ import {ElementUiResolver} from 'unplugin-vue-components/resolvers';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+    server: {
+        host: 'localhost',
+        port: 5173,
+        proxy: {
+            '/api': {
+                target: 'http://localhost:8888',
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/api/, '')
+            }
+        }
+    },
     plugins: [
         vue2(), // vite为vue3而生, 配置此项支持vue2
         vue2Jsx(), // 支持vue2中使用jsx语法

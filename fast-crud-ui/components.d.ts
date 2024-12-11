@@ -7,6 +7,13 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    ElButton: typeof import('element-ui/lib/button')['default']
+    ElCard: typeof import('element-ui/lib/card')['default']
+    ElForm: typeof import('element-ui/lib/form')['default']
+    ElFormItem: typeof import('element-ui/lib/form-item')['default']
     ElInput: typeof import('element-ui/lib/input')['default']
+    ElPagination: typeof import('element-ui/lib/pagination')['default']
+    ElTable: typeof import('element-ui/lib/table')['default']
+    ElTableColumn: typeof import('element-ui/lib/table-column')['default']
   }
 }
