@@ -30,7 +30,7 @@
 <script>
 import {PageQuery} from '../../../model';
 import FastTableOption, {FilterComponentConfig} from "../../../model";
-import {ifBlank, merge} from "../../../util/util";
+import {coverMerge, ifBlank, merge} from "../../../util/util";
 import {getConfigFn} from "../../mapping";
 
 export default {
@@ -64,11 +64,17 @@ export default {
       const children = this.$slots.default ? this.$slots.default : [];
       for (const vnode of children) {
         const {
-          data: {
-            attrs: {'quick-filter': quickFilter = false, label = '', prop: col = '', ...props} = {}
-          } = {},
-          componentOptions: {tag: tableColumnComponentName} = {}
+          // data: {
+          //   attrs: {'quick-filter': quickFilter = false, label = '', prop: col = '', ...attrs} = {}
+          // } = {},
+          componentInstance: {
+            $attrs: {'quick-filter': quickFilter = false, label = '', prop: col = '', ...attrs} = {},
+            _props = {} // 默认属性
+          },
+          componentOptions: {tag: tableColumnComponentName, propsData ={}} = {} // 传入属性
         } = vnode
+        // debugger
+        const props = {...attrs, ..._props, ...propsData}
         if (!quickFilter) {
           continue;
         }

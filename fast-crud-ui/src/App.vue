@@ -1,8 +1,15 @@
 <template>
   <div>
     <fast-table :option="tableOption">
+      <fast-table-column-img label="头像" prop="avatar"/>
       <fast-table-column label="姓名" prop="name" :quick-filter="true"/>
       <fast-table-column-number label="年龄" prop="age" :quick-filter="true"/>
+      <fast-table-column-select label="性别" prop="sex" :quick-filter="true" :options="sexOptions" label-key="label"
+                                val-key="value"/>
+      <fast-table-column-select label="爱好" prop="hobby" :options="hobbyOptions" label-key="label" val-key="value"/>
+      <fast-table-column-textarea label="地址" prop="address" :quick-filter="true"/>
+      <fast-table-column-switch label="已毕业" prop="graduated" :quick-filter="true"/>
+      <fast-table-column-time-picker label="闹钟" prop="clockTime" :quick-filter="true"/>
       <fast-table-column-date-picker label="生日" prop="birthday" :picker-options="pickerOptionsE"/>
       <fast-table-column-number label="身高" prop="height" :quick-filter="false"/>
       <fast-table-column-number label="体重" prop="weight"/>
@@ -89,7 +96,47 @@ export default {
             picker.$emit('pick', date);
           }
         }]
-      }
+      },
+      sexOptions: [
+        {
+          label: '男',
+          value: '1'
+        },
+        {
+          label: '女',
+          value: '0'
+        }
+      ],
+      hobbyOptions: [
+        {
+          label: '篮球',
+          value: '1'
+        },
+        {
+          label: '足球',
+          value: '2'
+        },
+        {
+          label: '排球',
+          value: '3'
+        },
+        {
+          label: '乒乓球',
+          value: '4'
+        },
+        {
+          label: '羽毛球',
+          value: '5'
+        },
+        {
+          label: '台球',
+          value: '6'
+        },
+        {
+          label: '游泳',
+          value: '7'
+        }
+      ]
     }
   }
 }

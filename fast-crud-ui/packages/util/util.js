@@ -1,10 +1,8 @@
-import {type Cond, Opt} from "../model";
-
-export function defaultIfBlank(str: string, defaultStr: string): string {
+export function defaultIfBlank(str, defaultStr) {
     return ifBlank(str) ? defaultStr : str;
 }
 
-export function ifBlank(str: string) {
+export function ifBlank(str) {
     return str === undefined || str === null || str.trim().length === 0;
 }
 
@@ -14,7 +12,7 @@ export function ifBlank(str: string) {
  * @param separator
  * @returns {*}
  */
-export function camelCaseTo(str: string, separator: string = '_') {
+export function camelCaseTo(str, separator = '_') {
     let temp = str.replace(/[A-Z]/g, function (match) {
         return separator + match.toLowerCase();
     });
@@ -29,7 +27,7 @@ export function camelCaseTo(str: string, separator: string = '_') {
  * @param str
  * @param separator
  */
-export function caseToCamel(str: string, separator: string = '_') {
+export function caseToCamel(str, separator = '_') {
     return str.split(separator).map((word, index) => {
         if (index === 0) {
             return word.toLowerCase();
@@ -42,42 +40,42 @@ export function caseToCamel(str: string, separator: string = '_') {
  * 判断值是否为对象. 数组、null等都将返回false, 只有严格的{}才会返回true
  * @param val
  */
-export function isObject(val: any) {
+export function isObject(val) {
     let toStr = Object.prototype.toString.call(val);
     return toStr === '[object Object]'
 }
 
-export function isArray(val: any) {
+export function isArray(val) {
     let toStr = Object.prototype.toString.call(val);
     return toStr === '[object Array]'
 }
 
-export function isBoolean(val: any) {
+export function isBoolean(val) {
     let toStr = Object.prototype.toString.call(val);
     return toStr === '[object Boolean]'
 }
 
-export function isString(val: any) {
+export function isString(val) {
     let toStr = Object.prototype.toString.call(val);
     return toStr === '[object String]'
 }
 
-export function isNumber(val: any) {
+export function isNumber(val) {
     let toStr = Object.prototype.toString.call(val);
     return toStr === '[object Number]'
 }
 
-export function isFunction(val: any) {
+export function isFunction(val) {
     let toStr = Object.prototype.toString.call(val);
     return toStr === '[object Function]'
 }
 
-export function isNull(val: any) {
+export function isNull(val) {
     let toStr = Object.prototype.toString.call(val);
     return toStr === '[object Null]'
 }
 
-export function isUndefined(val: any) {
+export function isUndefined(val) {
     let toStr = Object.prototype.toString.call(val);
     return toStr === '[object Undefined]'
 }
@@ -89,7 +87,7 @@ export function isUndefined(val: any) {
  * @param value
  * @returns {string}
  */
-export function typeOf(value: any) {
+export function typeOf(value) {
     return Object.prototype.toString.call(value);
 }
 
@@ -103,7 +101,7 @@ export function typeOf(value: any) {
  * 5. undefined, true
  * 6. 其他情况均返回false
  */
-export function isEmpty(value: any) {
+export function isEmpty(value) {
     switch (typeOf(value)) {
         case '[object String]':
             return value.trim() === '';
@@ -122,7 +120,7 @@ export function isEmpty(value: any) {
  * 清空对象所有的键值
  * @param obj
  */
-export function clear(obj: any) {
+export function clear(obj) {
     if (isObject(obj)) {
         for (let key in obj) {
             delete obj[key]
@@ -135,7 +133,7 @@ export function clear(obj: any) {
  * @param str
  * @returns {{}|any}
  */
-export function parse(str: string) {
+export function parse(str) {
     if (isEmpty(str)) {
         return {}
     }
@@ -143,7 +141,7 @@ export function parse(str: string) {
     return JSON.parse(str)
 }
 
-export function deepClone(obj: any) {
+export function deepClone(obj) {
     if (isObject(obj)) {
         return Object.assign({}, obj)
     }
@@ -162,14 +160,12 @@ export function deepClone(obj: any) {
  * @param ignoreNullAndUndefined 若为true, 则当opt2中的键值如果是null或undefined, 则不会覆盖到opt1中。默认是false
  * @returns {} 返回merge后的opt1的深拷贝对象
  */
-export function merge(opt1: object, opt2: object, deep: boolean = true, ignoreNullAndUndefined: boolean = false): object {
+export function merge(opt1, opt2, deep = true, ignoreNullAndUndefined = false) {
     if (opt2 === null || !isObject(opt2)) {
-        console.warn("typeof opt2: %s , must be 'object' and should not be a null value.", opt2);
         return opt1;
     }
 
     if (opt1 === null || !isObject(opt1)) {
-        console.warn("typeof opt1: %s , must be 'object' and should not be a null value.", opt1);
         return opt1;
     }
 
@@ -206,14 +202,12 @@ export function merge(opt1: object, opt2: object, deep: boolean = true, ignoreNu
  * @param ignoreNullAndUndefined 若为true, 则当opt2中的键值如果是null或undefined, 则不会覆盖到opt1中。默认是false
  * @returns {} 返回merge后的opt1的深拷贝对象
  */
-export function coverMerge(opt1: object, opt2: object, deep: boolean = true, ignoreNullAndUndefined: boolean = false) {
+export function coverMerge(opt1, opt2, deep = true, ignoreNullAndUndefined = false) {
     if (opt2 === null || !isObject(opt2)) {
-        console.warn("typeof opt2: %s , must be 'object' and should not be a null value.", opt2);
         return opt1;
     }
 
     if (opt1 === null || !isObject(opt1)) {
-        console.warn("typeof opt1: %s , must be 'object' and should not be a null value.", opt1);
         return opt1;
     }
 
@@ -243,7 +237,7 @@ export function coverMerge(opt1: object, opt2: object, deep: boolean = true, ign
     return opt1;
 }
 
-export function easyOptParse(cond: Cond, optMapping: { [key: string]: Opt }) {
+export function easyOptParse(cond, optMapping = {}) {
     for (const [op, opt] of Object.entries(optMapping)) {
         const regex = new RegExp(`^${op}`);
         if (regex.test(cond.val)) {

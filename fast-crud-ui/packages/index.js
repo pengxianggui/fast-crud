@@ -1,19 +1,37 @@
-import FastTable from './components/table/index'
-import FastTableColumn from './components/table-column/index'
-import FastTableColumnInput from './components/table-column-input/index'
-import FastTableColumnNumber from './components/table-column-number/index'
-import FastTableColumnDatePicker from './components/table-column-date-picker/index'
-import {Input, DatePicker} from 'element-ui'
+import FastSelect from "./components/select";
+import FastTable from './components/table'
+import FastTableColumn from './components/table-column'
+import FastTableColumnDatePicker from './components/table-column-date-picker'
+import FastTableColumnImg from './components/table-column-img'
+import FastTableColumnInput from './components/table-column-input'
+import FastTableColumnNumber from './components/table-column-number'
+
+import FastTableColumnSelect from './components/table-column-select'
+import FastTableColumnSwitch from './components/table-column-switch'
+import FastTableColumnTextarea from './components/table-column-textarea'
+import FastTableColumnTimePicker from './components/table-column-time-picker'
+
+import {Input, InputNumber, DatePicker, Switch, TimePicker} from 'element-ui'
 import "element-ui/lib/theme-chalk/index.css";
 
 const components = [
     Input,
+    InputNumber,
     DatePicker,
+    Switch,
+    TimePicker,
+    FastSelect,
     FastTable,
     FastTableColumn,
+    FastTableColumnDatePicker,
+    FastTableColumnImg,
     FastTableColumnInput,
     FastTableColumnNumber,
-    FastTableColumnDatePicker
+
+    FastTableColumnSelect,
+    FastTableColumnSwitch,
+    FastTableColumnTextarea,
+    FastTableColumnTimePicker
 ]
 
 const install = function (Vue, opts = {}) {
