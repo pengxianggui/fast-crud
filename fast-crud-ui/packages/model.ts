@@ -165,7 +165,7 @@ export class FilterComponentConfig {
     defaultVal: any;
     quick: boolean;
     disabled: boolean;
-    condMapFn: Function;
+    condMapFn: Function = (cond: Cond) => [cond];
 
     /**
      * 构造函数
