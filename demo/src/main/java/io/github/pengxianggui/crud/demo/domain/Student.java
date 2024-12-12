@@ -4,8 +4,10 @@ import com.baomidou.mybatisplus.annotation.FieldStrategy;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+
 import io.swagger.annotations.ApiModel;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,15 +20,29 @@ public class Student {
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
 
+    private String avatar;
+
     private String name;
 
     private Integer age;
 
-    private LocalDate birthday;
+    // 单选
+    private String sex;
+
+    // 多选
+    private String hobby;
+
+    private String address;
+
+    private Boolean graduated;
+
+    private String clockTime;
 
     private Double height;
 
     private Double weight;
+
+    private LocalDate birthday;
 
     @TableField(insertStrategy = FieldStrategy.NEVER, updateStrategy = FieldStrategy.NEVER)
     private LocalDateTime createTime;
