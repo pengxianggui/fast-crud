@@ -158,7 +158,7 @@ export class FilterComponentConfig {
      * @param opt 操作符
      * @param val 值
      * @param label 中文名
-     * @param quick 是否是快速筛选项
+     * @param quick 是否支持快筛
      * @param props 组件对应的props
      * @param condMapFn 条件获取过滤函数
      */
@@ -203,6 +203,7 @@ class FastTableOption {
     enableDblClickEdit = true;
     enableMulti = true;
     enableColumnFilter = true;
+    lazyLoad = false; // 不立即加载数据
     editType = 'inline';
     sortField;
     sortDesc = true;
@@ -245,6 +246,7 @@ class FastTableOption {
                     enableDblClickEdit = true,
                     enableMulti = true,
                     enableColumnFilter = true,
+                    lazyLoad = false,
                     editType = 'inline',
                     sortField = '',
                     sortDesc = true,
@@ -285,6 +287,7 @@ class FastTableOption {
         this.enableDblClickEdit = enableDblClickEdit;
         this.enableMulti = enableMulti;
         this.enableColumnFilter = enableColumnFilter;
+        this.lazyLoad = lazyLoad;
         this.editType = editType;
         this.sortField = sortField;
         this.sortDesc = sortDesc;

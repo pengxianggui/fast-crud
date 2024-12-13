@@ -1,6 +1,6 @@
 <template>
-  <el-select v-model="modelValue" v-bind="$attrs" @input="handleInput" @change="handleChange">
-    <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value"></el-option>
+  <el-select v-model="modelValue" v-bind="$attrs" :multiple="multiple" @input="handleInput" @change="handleChange">
+    <el-option v-for="item in options" :key="item.value" :label="item[labelKey]" :value="item[valKey]"></el-option>
   </el-select>
 </template>
 
@@ -9,7 +9,7 @@ export default {
   name: "fast-select",
   props: {
     value: {
-      type: String | Number,
+      type: [String, Number, Boolean, Array],
       required: true
     },
     options: {
@@ -24,7 +24,7 @@ export default {
       type: String,
       default: () => "value"
     },
-    multiple: { // TODO 兑现，存值采用逗号分隔 OR 数组？
+    multiple: { // 多值时, value为数组
       type: Boolean,
       default: () => false
     }

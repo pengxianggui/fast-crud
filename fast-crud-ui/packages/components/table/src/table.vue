@@ -1,23 +1,33 @@
 <template>
-  <div class="fc_fast_table">
-    <div class="fc_quick_filter_form_wrapper" v-if="quickFilters.length > 0">
-      <el-form :inline="true" :label-width="option.style.formLabelWidth" class="fc_quick_filter_form">
-        <el-form-item v-for="filter in quickFilters"
-                      :key="filter.col"
-                      :label="filter.label"
-                      class="fc_quick_filter_form_item">
-          <component :is="filter.component" v-model="filter.val" v-bind="filter.props"/>
-        </el-form-item>
-        <el-button type="primary" :size="option.style.size" @click="onSearch">搜索</el-button>
-        <el-button :size="option.style.size" @click="onReset">重置</el-button>
-      </el-form>
+  <div class="fc-fast-table">
+    <div class="fc-quick-filter-wrapper" v-if="quickFilters.length > 0">
+      <!-- 快筛 -->
+      <quick-filter-form :filters="quickFilters"
+                         :form-label-width="option.style.formLabelWidth"
+                         :size="option.style.size"
+                         @search="onSearch"/>
     </div>
-    <div class="fc_fast_table_wrapper">
+    <div class="fc-operation-bar">
+      <div class="fc-operation-filter">
+        <!-- 简筛区 -->
+        <easy-filter :filters="easyFilters" :size="option.style.size" @search="onSearch"
+                     v-if="easyFilters.length > 0"></easy-filter>
+        <!-- TODO 存筛区 -->
+      </div>
+      <!-- TODO 按钮功能区 -->
+      <div class="fc-operation-btn">
+        <el-button :size="option.style.size" @click="addRow">新增</el-button>
+      </div>
+    </div>
+    <div class="fc-dynamic-filter-wrapper">
+      <!-- TODO 动筛区 -->
+    </div>
+    <div class="fc-fast-table-wrapper">
       <el-table border :data="list">
         <slot></slot>
       </el-table>
     </div>
-    <div class="fc_pagination_wrapper">
+    <div class="fc-pagination-wrapper">
       <el-pagination :page-size="pageQuery.size"
                      :current-page="pageQuery.current"
                      :page-sizes="option.pagination['page-sizes']"
@@ -28,13 +38,17 @@
 </template>
 
 <script>
+import QuickFilterForm from "./quick-filter-form.vue";
+import EasyFilter from "./easy-filter.vue";
 import {PageQuery} from '../../../model';
-import FastTableOption, {FilterComponentConfig} from "../../../model";
-import {coverMerge, ifBlank, merge} from "../../../util/util";
-import {getConfigFn} from "../../mapping";
+import FastTableOption from "../../../model";
+import {ifBlank} from "../../../util/util";
+import {buildFinalFilterComponentConfig} from "../../mapping";
+import {iterBuildFilterConfig} from "./util";
 
 export default {
   name: "FastTable",
+  components: {QuickFilterForm, EasyFilter},
   props: {
     option: {
       type: FastTableOption,
@@ -50,56 +64,45 @@ export default {
 
     return {
       pageQuery: pageQuery,
-      quickFilters: [], // 快捷筛选条件
+      filters: [], // 完整的筛选配置
+      quickFilters: [], // 快筛配置
+      easyFilters: [], // 简筛配置
+      dynamicFilters: [], // 动筛配置
       list: [],
       total: 0
     }
   },
   mounted() {
-    this.buildQuickFilters()
-    this.onSearch()
+    this.buildFilters()
+    if (!this.option.lazyLoad) {
+      this.onSearch()
+    }
   },
   methods: {
-    buildQuickFilters() {
+    buildFilters() {
       const children = this.$slots.default ? this.$slots.default : [];
-      for (const vnode of children) {
-        const {
-          // data: {
-          //   attrs: {'quick-filter': quickFilter = false, label = '', prop: col = '', ...attrs} = {}
-          // } = {},
-          componentInstance: {
-            $attrs: {'quick-filter': quickFilter = false, label = '', prop: col = '', ...attrs} = {},
-            _props = {} // 默认属性
-          },
-          componentOptions: {tag: tableColumnComponentName, propsData ={}} = {} // 传入属性
-        } = vnode
-        // debugger
-        const props = {...attrs, ..._props, ...propsData}
-        if (!quickFilter) {
-          continue;
-        }
-        // 排除props中后缀为__e的属性, 因为这些配置项仅用于编辑控件, 并将__q后缀的属性名移除此后缀
-        const filteredProps = Object.keys(props).filter(key => !key.endsWith('__e'))
-            .reduce((obj, key) => {
-              obj[key.replace(/__q$/, '')] = props[key];
-              return obj;
-            }, {});
-        const filterConfig = {label: label, col: col, props: {...filteredProps, size: this.option.style.size}}
-        try {
-          const queryConfig = getConfigFn(tableColumnComponentName, 'query')
-          merge(filterConfig, queryConfig(filterConfig));
-          this.quickFilters.push(new FilterComponentConfig(filterConfig)); // 创建Filter对象 TODO 去重
-        } catch (err) {
-          console.error(err)
-        }
+      const props = { // 通过option传入配置项, 需要作用到filterConfig内
+        size: this.option.style.size
       }
+      iterBuildFilterConfig(children, props, (quickFilter, easyFilter) => {
+        if (quickFilter) {
+          this.quickFilters.push(quickFilter) // TODO 去重?
+        }
+        if (easyFilter) {
+          this.easyFilters.push(easyFilter) // TODO 去重?
+        }
+      })
     },
     onSearch() {
-      const quickConds = []
-      this.quickFilters.filter((filter) => filter.hasVal()).forEach((filter) => {
-        quickConds.push(...filter.getConds())
-      })
-      this.pageQuery.setConds(quickConds)
+      const conds = []
+      // 添加快筛条件
+      const quickConds = this.quickFilters.filter(filter => !filter.disabled && filter.hasVal()).map(filter => filter.getConds()).flat();
+      conds.push(...quickConds)
+      // 添加简筛条件
+      const easyConds = this.easyFilters.filter(filter => !filter.disabled && filter.hasVal()).map(filter => filter.getConds()).flat();
+      conds.push(...easyConds)
+
+      this.pageQuery.setConds(conds)
       // TODO 兑现 this.option.beforeLoad
       this.$http.post(this.option.pageUrl, this.pageQuery.toJson()).then(res => {
         this.option.loadSuccess({query: this.pageQuery, data: res.data, res}).then((data) => {
@@ -110,35 +113,41 @@ export default {
         // TODO 兑现 this.option.loadFail
       })
     },
-    onReset() {
-      this.quickFilters.forEach((filter) => filter.reset());
-      this.onSearch();
+    addRow() {
+      // TODO 根据option.editType决定是弹出新增表单 OR 增加一个编辑状态的空行
     }
   }
 }
 </script>
 
 <style scoped lang="scss">
-.fc_quick_filter_form_wrapper {
-  padding: 20px;
+.fc-fast-table {
+  padding: 10px;
 
-  .fc_quick_filter_form {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: start;
-    align-items: center;
-    align-content: flex-start;
+  .fc-quick-filter-wrapper {
+    padding: 10px;
 
-    .fc_quick_filter_form_item {
-      margin-bottom: 0 !important;
+    .fc-quick-filter-form {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: start;
+      align-items: center;
+      align-content: flex-start;
+
     }
   }
-}
 
-.fc_pagination_wrapper {
-  display: flex;
-  flex-direction: row-reverse;
-  margin-top: 3px;
+  .fc-operation-bar {
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .fc-pagination-wrapper {
+    display: flex;
+    flex-direction: row-reverse;
+    margin-top: 3px;
+  }
 }
 </style>

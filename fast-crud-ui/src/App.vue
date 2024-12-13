@@ -1,15 +1,15 @@
 <template>
   <div>
     <fast-table :option="tableOption">
-      <fast-table-column-img label="头像" prop="avatar"/>
+      <fast-table-column-img label="头像" prop="avatar" :filter="false"/>
       <fast-table-column label="姓名" prop="name" :quick-filter="true"/>
       <fast-table-column-number label="年龄" prop="age" :quick-filter="true"/>
       <fast-table-column-select label="性别" prop="sex" :quick-filter="true" :options="sexOptions" label-key="label"
                                 val-key="value"/>
       <fast-table-column-select label="爱好" prop="hobby" :options="hobbyOptions" label-key="label" val-key="value"/>
-      <fast-table-column-textarea label="地址" prop="address" :quick-filter="true"/>
+      <fast-table-column-textarea label="地址" prop="address"/>
       <fast-table-column-switch label="已毕业" prop="graduated" :quick-filter="true"/>
-      <fast-table-column-time-picker label="闹钟" prop="clockTime" :quick-filter="true"/>
+      <fast-table-column-time-picker label="闹钟" prop="clockTime"/>
       <fast-table-column-date-picker label="生日" prop="birthday" :picker-options="pickerOptionsE"/>
       <fast-table-column-number label="身高" prop="height" :quick-filter="false"/>
       <fast-table-column-number label="体重" prop="weight"/>
@@ -35,6 +35,7 @@ export default {
         enableDblClickEdit: true,
         enableMulti: true,
         enableColumnFilter: true,
+        lazyLoad: false,
         editType: 'inline',
         sortField: 'createTime',
         sortDesc: true,

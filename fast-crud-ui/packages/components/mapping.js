@@ -1,9 +1,13 @@
-import {Cond, Opt} from "../model";
-import {easyOptParse} from "../util/util.js";
+import {Cond, FilterComponentConfig, Opt} from "../model";
+import {easyOptParse, isArray, isFunction, merge} from "../util/util.js";
 
+// TODO 支持:
+//  1. query的默认值支持在table-column上定义
+//  2. query组件是否独占一行, 支持在table-column上定义
+//  3. query选项型组件(如select、checkbox-group)支持在table-column上定义禁用选项
 const MAPPING = {
     'fast-table-column': {
-        query: (config) => {
+        query: (config, type) => {
             const {props} = config
             // TODO props过滤: 限定查询时只支持的props属性, 以及必要的属性名转换
             return {
@@ -27,7 +31,7 @@ const MAPPING = {
         }
     },
     'fast-table-column-date-picker': {
-        query: (config) => {
+        query: (config, type) => {
             return {
                 component: 'el-date-picker',
                 opt: Opt.BTW,
@@ -64,10 +68,28 @@ const MAPPING = {
         }
     },
     'fast-table-column-img': {
-        // TODO
+        query: (config, type) => {
+            return {
+                component: 'el-input',
+                opt: Opt.LIKE,
+                val: '', // 默认值
+                props: {
+                    clearable: true
+                },
+                condMapFn: (cond) => {
+                    const operators = {
+                        '!=': Opt.NE,
+                        '=': Opt.GE,
+                        '~': Opt.NLIKE
+                    }
+                    easyOptParse(cond, operators)
+                    return [cond]
+                }
+            }
+        }
     },
     'fast-table-column-input': {
-        query: (config) => {
+        query: (config, type) => {
             return {
                 component: 'el-input',
                 opt: Opt.LIKE,
@@ -98,7 +120,7 @@ const MAPPING = {
         }
     },
     'fast-table-column-number': {
-        query: (config) => {
+        query: (config, type) => {
             return {
                 component: 'el-input',
                 opt: Opt.LIKE,
@@ -132,27 +154,30 @@ const MAPPING = {
         }
     },
     'fast-table-column-select': {
-        query: (filter) => {
+        query: (filter, type) => {
+            const props = {};
+            let component = 'fast-checkbox-group';
+            if (type === 'easy') {
+                component = 'fast-select';
+                props.multiple = true;
+                props.clearable = true;
+            }
             return {
-                component: 'fast-select', // TODO 由于必须对内封装el-option, 所以 这里不能使用el-select， 必须封装一个组件
-                opt: Opt.EQ,
-                val: null, // 默认值
-                props: {
-                    clearable: true,
-                    placeholder: `请选择${filter.label}`
-                },
+                component: component,
+                opt: Opt.IN,
+                val: [], // 默认值
+                props: props,
                 condMapFn: (cond) => {
-                    const {props: {multiple}} = filter
-                    if (multiple) { // 多选
-                        return new Cond(cond.col, Opt.IN, cond.val)
+                    if (isArray(cond.val) && cond.val.length > 0) {
+                        return [cond]
                     }
-                    return [cond]
+                    return []
                 }
             }
         }
     },
     'fast-table-column-switch': {
-        query: (config) => {
+        query: (config, type) => {
             const {props: {activeValue, inactiveValue, activeText, inactiveText}} = config
             const options = [
                 {label: inactiveText, value: inactiveValue},
@@ -161,7 +186,7 @@ const MAPPING = {
             return {
                 component: 'fast-select',
                 opt: Opt.EQ,
-                val: null, // 默认值
+                val: '', // 默认值
                 props: {
                     clearable: true,
                     options: options,
@@ -186,7 +211,7 @@ const MAPPING = {
         }
     },
     'fast-table-column-textarea': {
-        query: (config) => {
+        query: (config, type) => {
             return {
                 component: 'el-input',
                 opt: Opt.LIKE,
@@ -217,7 +242,7 @@ const MAPPING = {
         }
     },
     'fast-table-column-time-picker': {
-        query: (config) => {
+        query: (config, type) => {
             return {
                 component: 'el-time-picker',
                 opt: Opt.BTW,
@@ -254,10 +279,26 @@ const MAPPING = {
     // TODO more
 }
 
-export const getConfigFn = function (tableColumnComponentName, type) {
+export const getDefaultConfigFn = function (tableColumnComponentName, type) {
     if (!MAPPING.hasOwnProperty(tableColumnComponentName) || !MAPPING[tableColumnComponentName].hasOwnProperty(type)) {
-        throw new Error(`未定义针对${tableColumnComponentName}的快速搜索控件`)
+        // console.error(`未定义针对${tableColumnComponentName}的快速搜索控件`)
+        return null;
     }
 
     return MAPPING[tableColumnComponentName][type]
+}
+
+/**
+ * 构建最终的过滤组件的配置
+ * @param customConfig 用户自定义配置。方法内不会改变此值
+ * @param tableColumnComponentName table-column组件名
+ * @param filterType 类型, 可选: quick, easy, dynamic
+ */
+export const buildFinalFilterComponentConfig = function (customConfig, tableColumnComponentName, filterType) {
+    const defaultConfigFn = getDefaultConfigFn(tableColumnComponentName, 'query');
+    if (!isFunction(defaultConfigFn)) {
+        throw new Error(`未定义针对${tableColumnComponentName}的搜索控件`)
+    }
+    const quickFilterConfig = merge({...customConfig}, defaultConfigFn(customConfig, filterType));
+    return new FilterComponentConfig(quickFilterConfig); // 创建Filter对象
 }

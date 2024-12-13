@@ -1,3 +1,4 @@
+import FastCheckboxGroup from "./components/checkbox-group";
 import FastSelect from "./components/select";
 import FastTable from './components/table'
 import FastTableColumn from './components/table-column'
@@ -20,6 +21,7 @@ const components = [
     DatePicker,
     Switch,
     TimePicker,
+    FastCheckboxGroup,
     FastSelect,
     FastTable,
     FastTableColumn,
