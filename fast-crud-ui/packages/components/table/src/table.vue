@@ -34,6 +34,10 @@
                      :total="total"
                      :layout="option.pagination.layout"></el-pagination>
     </div>
+
+    <!-- TODO 动筛创建dialog -->
+
+    <!-- TODO form编辑dialog -->
   </div>
 </template>
 
@@ -43,7 +47,6 @@ import EasyFilter from "./easy-filter.vue";
 import {PageQuery} from '../../../model';
 import FastTableOption from "../../../model";
 import {ifBlank} from "../../../util/util";
-import {buildFinalFilterComponentConfig} from "../../mapping";
 import {iterBuildFilterConfig} from "./util";
 
 export default {
@@ -64,12 +67,17 @@ export default {
 
     return {
       pageQuery: pageQuery,
-      filters: [], // 完整的筛选配置
+      columnMap: {}, // key: column prop, value为'fast-table-column*'
       quickFilters: [], // 快筛配置
       easyFilters: [], // 简筛配置
       dynamicFilters: [], // 动筛配置
       list: [],
       total: 0
+    }
+  },
+  provide() {
+    return {
+      openDynamicFilterForm: this.openDynamicFilterForm // 提供给fast-table-column触发创建动筛的能力
     }
   },
   mounted() {
@@ -84,13 +92,14 @@ export default {
       const props = { // 通过option传入配置项, 需要作用到filterConfig内
         size: this.option.style.size
       }
-      iterBuildFilterConfig(children, props, (quickFilter, easyFilter) => {
+      iterBuildFilterConfig(children, props, ({quickFilter, easyFilter, label, prop, tableColumnComponentName}) => {
         if (quickFilter) {
           this.quickFilters.push(quickFilter) // TODO 去重?
         }
         if (easyFilter) {
           this.easyFilters.push(easyFilter) // TODO 去重?
         }
+        this.columnMap[prop] = tableColumnComponentName
       })
     },
     onSearch() {
@@ -115,6 +124,10 @@ export default {
     },
     addRow() {
       // TODO 根据option.editType决定是弹出新增表单 OR 增加一个编辑状态的空行
+    },
+    openDynamicFilterForm(column) {
+      // TODO 打开 动筛创建面板
+      console.log(column)
     }
   }
 }
@@ -142,6 +155,18 @@ export default {
     margin-bottom: 10px;
     display: flex;
     justify-content: space-between;
+  }
+
+  .fc-fast-table-wrapper {
+    ::v-deep {
+      th {
+        padding: 0;
+
+        & > .cell {
+          padding: 0 !important;
+        }
+      }
+    }
   }
 
   .fc-pagination-wrapper {

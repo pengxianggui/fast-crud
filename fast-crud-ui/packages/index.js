@@ -14,6 +14,7 @@ import FastTableColumnTimePicker from './components/table-column-time-picker'
 
 import {Input, InputNumber, DatePicker, Switch, TimePicker} from 'element-ui'
 import "element-ui/lib/theme-chalk/index.css";
+import "./style.scss"
 
 const components = [
     Input,

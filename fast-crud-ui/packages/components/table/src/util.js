@@ -10,13 +10,17 @@ export function iterBuildFilterConfig(vnodes, defaultProp = {}, callback) {
     for (const vnode of vnodes) {
         const {
             componentInstance: {
-                $attrs: {filter = true, 'quick-filter': quickFilter = false, label = '', prop: col = '', ...attrs} = {},
+                $attrs = {},
                 _props = {} // 默认属性
             },
-            componentOptions: {tag: tableColumnComponentName, propsData = {}} = {} // 传入属性
+            componentOptions: {
+                tag: tableColumnComponentName,
+                propsData = {}
+            } = {} // 传入属性
         } = vnode
-        // debugger
-        const props = {...attrs, ..._props, ...propsData}
+
+        const {filter = true, 'quick-filter': quickFilter = false, label, prop} = {...$attrs, _props, ...propsData}
+        const props = {...$attrs, ..._props, ...propsData}
         if (!filter) {
             continue;
         }
@@ -28,24 +32,23 @@ export function iterBuildFilterConfig(vnodes, defaultProp = {}, callback) {
             }, {});
         const filterConfig = {
             label: label,
-            col: col,
+            col: prop,
             quick: quickFilter,
             props: {...filteredProps, ...defaultProp}
         }
 
-        let quickFilterComponentConfig = null;
-        let easyFilterComponentConfig = null;
+        const param = {}
         try {
             // build quick filters
             if (quickFilter) {
-                quickFilterComponentConfig = buildFinalFilterComponentConfig(filterConfig, tableColumnComponentName, 'quick')
+                param.quickFilter = buildFinalFilterComponentConfig(filterConfig, tableColumnComponentName, 'quick')
             }
             // build easy filters
-            easyFilterComponentConfig = buildFinalFilterComponentConfig(filterConfig, tableColumnComponentName, 'easy')
+            param.easyFilter = buildFinalFilterComponentConfig(filterConfig, tableColumnComponentName, 'easy')
         } catch (err) {
             console.error(err)
         } finally {
-            callback(quickFilterComponentConfig, easyFilterComponentConfig)
+            callback({...param, tableColumnComponentName, prop, label})
         }
     }
 

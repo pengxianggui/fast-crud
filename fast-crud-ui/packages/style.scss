@@ -1,0 +1,14 @@
+.fc-table-column-head-cell {
+  display: inline-block;
+  width: 100%;
+  text-align: center;
+  height: 38px;
+  line-height: 38px;
+}
+
+.fc-table-column-head-cell.filter {
+  cursor: pointer;
+  &:hover {
+    background-color: #f5f5f5;
+  }
+}
