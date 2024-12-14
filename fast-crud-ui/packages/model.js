@@ -179,7 +179,7 @@ export class FilterComponentConfig {
     }
 
     hasVal() {
-        return this.val !== null && this.val !== undefined && this.val !== '';
+        return this.val !== null && this.val !== undefined && this.val !== '' && this.val.length !== 0;
     }
 
     reset() {

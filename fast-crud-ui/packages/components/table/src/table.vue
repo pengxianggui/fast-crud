@@ -20,7 +20,8 @@
       </div>
     </div>
     <div class="fc-dynamic-filter-wrapper">
-      <!-- TODO 动筛区 -->
+      <!-- TODO 动筛区 UI完成 -->
+      {{ dynamicFilters }}
     </div>
     <div class="fc-fast-table-wrapper">
       <el-table border :data="list">
@@ -44,10 +45,13 @@
 <script>
 import QuickFilterForm from "./quick-filter-form.vue";
 import EasyFilter from "./easy-filter.vue";
+import DynamicFilterForm from "./dynamic-filter-form.vue";
 import {PageQuery} from '../../../model';
 import FastTableOption from "../../../model";
-import {ifBlank} from "../../../util/util";
+import {ifBlank, isObject} from "../../../util/util";
 import {iterBuildFilterConfig} from "./util";
+import {openDialog} from "../../../util/dialog";
+import {buildFinalFilterComponentConfig} from "../../mapping";
 
 export default {
   name: "FastTable",
@@ -67,7 +71,7 @@ export default {
 
     return {
       pageQuery: pageQuery,
-      columnMap: {}, // key: column prop, value为'fast-table-column*'
+      columnMap: {}, // key: column prop, value为自定义filterConfig
       quickFilters: [], // 快筛配置
       easyFilters: [], // 简筛配置
       dynamicFilters: [], // 动筛配置
@@ -92,24 +96,34 @@ export default {
       const props = { // 通过option传入配置项, 需要作用到filterConfig内
         size: this.option.style.size
       }
-      iterBuildFilterConfig(children, props, ({quickFilter, easyFilter, label, prop, tableColumnComponentName}) => {
+      iterBuildFilterConfig(children, props, ({
+                                                tableColumnComponentName,
+                                                label,
+                                                prop,
+                                                customConfig,
+                                                quickFilter,
+                                                easyFilter
+                                              }) => {
         if (quickFilter) {
           this.quickFilters.push(quickFilter) // TODO 去重?
         }
         if (easyFilter) {
           this.easyFilters.push(easyFilter) // TODO 去重?
         }
-        this.columnMap[prop] = tableColumnComponentName
+        this.columnMap[prop] = {tableColumnComponentName, ...customConfig}
       })
     },
     onSearch() {
       const conds = []
       // 添加快筛条件
-      const quickConds = this.quickFilters.filter(filter => !filter.disabled && filter.hasVal()).map(filter => filter.getConds()).flat();
+      const quickConds = this.quickFilters.filter(f => !f.disabled && f.hasVal()).map(f => f.getConds()).flat();
       conds.push(...quickConds)
       // 添加简筛条件
-      const easyConds = this.easyFilters.filter(filter => !filter.disabled && filter.hasVal()).map(filter => filter.getConds()).flat();
+      const easyConds = this.easyFilters.filter(f => !f.disabled && f.hasVal()).map(f => f.getConds()).flat();
       conds.push(...easyConds)
+      // 添加动筛条件
+      const dynamicConds = this.dynamicFilters.filter(f => !f.disabled && f.hasVal()).map(f => f.getConds()).flat();
+      conds.push(...dynamicConds)
 
       this.pageQuery.setConds(conds)
       // TODO 兑现 this.option.beforeLoad
@@ -126,8 +140,38 @@ export default {
       // TODO 根据option.editType决定是弹出新增表单 OR 增加一个编辑状态的空行
     },
     openDynamicFilterForm(column) {
-      // TODO 打开 动筛创建面板
       console.log(column)
+      // 打开动筛创建面板
+      const {property, label} = column
+      const {tableColumnComponentName, ...customConfig} = this.columnMap[property]
+      const dynamicFilter = buildFinalFilterComponentConfig(customConfig, tableColumnComponentName, 'dynamic')
+      openDialog({
+        component: DynamicFilterForm,
+        props: {
+          filter: dynamicFilter,
+          order: column.order
+        },
+        dialogProps: {
+          width: '480px',
+          title: `数据筛选及排序: ${label}`,
+        }
+      }).then(({filter: dynamicFilter, order}) => {
+        if (dynamicFilter.hasVal()) {
+          this.dynamicFilters.push(dynamicFilter); // TODO 去重
+        }
+
+        if (order.asc !== '') {
+          this.pageQuery.setOrders([order])
+          column.order = order.asc ? 'asc' : 'desc'
+        } else {
+          this.pageQuery.removeOrder(property)
+          column.order = '';
+        }
+        this.onSearch();
+      }).catch(msg => {
+        console.log(msg)
+      })
+      // console.log(column)
     }
   }
 }
@@ -147,7 +191,6 @@ export default {
       justify-content: start;
       align-items: center;
       align-content: flex-start;
-
     }
   }
 

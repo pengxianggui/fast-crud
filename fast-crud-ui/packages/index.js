@@ -1,3 +1,4 @@
+import {Input, InputNumber, DatePicker, Switch, TimePicker} from 'element-ui'
 import FastCheckboxGroup from "./components/checkbox-group";
 import FastSelect from "./components/select";
 import FastTable from './components/table'
@@ -5,14 +6,13 @@ import FastTableColumn from './components/table-column'
 import FastTableColumnDatePicker from './components/table-column-date-picker'
 import FastTableColumnImg from './components/table-column-img'
 import FastTableColumnInput from './components/table-column-input'
-import FastTableColumnNumber from './components/table-column-number'
 
+import FastTableColumnNumber from './components/table-column-number'
 import FastTableColumnSelect from './components/table-column-select'
 import FastTableColumnSwitch from './components/table-column-switch'
 import FastTableColumnTextarea from './components/table-column-textarea'
 import FastTableColumnTimePicker from './components/table-column-time-picker'
-
-import {Input, InputNumber, DatePicker, Switch, TimePicker} from 'element-ui'
+import {openDialog} from "./util/dialog";
 import "element-ui/lib/theme-chalk/index.css";
 import "./style.scss"
 
@@ -41,6 +41,7 @@ const install = function (Vue, opts = {}) {
     if (opts.hasOwnProperty('$http')) {
         Vue.prototype.$http = opts.$http
     }
+
     components.forEach(component => {
         Vue.component(component.name, component);
     });
@@ -51,5 +52,6 @@ if (typeof window !== 'undefined' && window.Vue) {
 }
 
 export default {
-    install
+    install,
+    openDialog
 };

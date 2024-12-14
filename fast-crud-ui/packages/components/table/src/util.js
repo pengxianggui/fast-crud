@@ -30,7 +30,7 @@ export function iterBuildFilterConfig(vnodes, defaultProp = {}, callback) {
                 obj[key.replace(/__q$/, '')] = props[key];
                 return obj;
             }, {});
-        const filterConfig = {
+        const customConfig = {
             label: label,
             col: prop,
             quick: quickFilter,
@@ -41,14 +41,14 @@ export function iterBuildFilterConfig(vnodes, defaultProp = {}, callback) {
         try {
             // build quick filters
             if (quickFilter) {
-                param.quickFilter = buildFinalFilterComponentConfig(filterConfig, tableColumnComponentName, 'quick')
+                param.quickFilter = buildFinalFilterComponentConfig(customConfig, tableColumnComponentName, 'quick')
             }
             // build easy filters
-            param.easyFilter = buildFinalFilterComponentConfig(filterConfig, tableColumnComponentName, 'easy')
+            param.easyFilter = buildFinalFilterComponentConfig(customConfig, tableColumnComponentName, 'easy')
         } catch (err) {
             console.error(err)
         } finally {
-            callback({...param, tableColumnComponentName, prop, label})
+            callback({...param, tableColumnComponentName, prop, label, customConfig})
         }
     }
 
