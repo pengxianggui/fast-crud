@@ -21,7 +21,7 @@
     </div>
     <div class="fc-dynamic-filter-wrapper">
       <!-- TODO 动筛区 UI完成 -->
-      {{ dynamicFilters }}
+      <dynamic-filter-list :filters="dynamicFilters" :size="option.style.size" @search="onSearch"></dynamic-filter-list>
     </div>
     <div class="fc-fast-table-wrapper">
       <el-table border :data="list">
@@ -46,16 +46,17 @@
 import QuickFilterForm from "./quick-filter-form.vue";
 import EasyFilter from "./easy-filter.vue";
 import DynamicFilterForm from "./dynamic-filter-form.vue";
+import DynamicFilterList from "./dynamic-filter-list.vue";
 import {PageQuery} from '../../../model';
 import FastTableOption from "../../../model";
-import {ifBlank, isObject} from "../../../util/util";
+import {ifBlank} from "../../../util/util";
 import {iterBuildFilterConfig} from "./util";
 import {openDialog} from "../../../util/dialog";
 import {buildFinalFilterComponentConfig} from "../../mapping";
 
 export default {
   name: "FastTable",
-  components: {QuickFilterForm, EasyFilter},
+  components: {QuickFilterForm, EasyFilter, DynamicFilterList},
   props: {
     option: {
       type: FastTableOption,
@@ -171,7 +172,6 @@ export default {
       }).catch(msg => {
         console.log(msg)
       })
-      // console.log(column)
     }
   }
 }
