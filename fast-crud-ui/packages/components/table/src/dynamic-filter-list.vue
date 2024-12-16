@@ -26,7 +26,9 @@
 
 <script>
 import {Opt} from "../../../model";
+import {isArray} from "../../../util/util";
 
+const components = ['fast-checkbox-group', 'fast-select']
 export default {
   name: "dynamic-filter-list",
   props: {
@@ -41,7 +43,7 @@ export default {
   },
   filters: {
     label(filter) {
-      const {label, opt, val} = filter
+      const {label, opt, val, component} = filter
       if (!filter.hasVal()) {
         filter.disabled = true;
         return `[${label}]无有效值`
@@ -49,9 +51,26 @@ export default {
       const conds = filter.getConds()
       let tip = ''
       debugger
+      const {props: {options = [], labelKey, valKey}} = filter
       for (let i = 0; i < conds.length; i++) {
-        const {col, opt, val} = conds[i];
-        // TODO 判断val是字典值，并转换为显示值。
+        let {col, opt, val} = conds[i];
+        if (components.indexOf(component) > -1) { // 需要转义
+          const escape = function (val) {
+            return val.map(v => {
+              const option = options.find(o => o[valKey] === v)
+              if (option) {
+                return option[labelKey]
+              }
+              return v
+            })
+          }
+          try {
+            val = isArray(val) ? escape(val) : escape([val])
+          } catch (err) {
+            console.log(err)
+          }
+        }
+
         switch (opt) {
           case Opt.EQ:
           case Opt.GT:
