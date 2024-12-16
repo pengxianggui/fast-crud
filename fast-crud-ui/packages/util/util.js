@@ -152,15 +152,16 @@ export function deepClone(obj) {
 }
 
 /**
- * @description merge 策略: 将opt2 merge到opt1, 对于opt1已有的key-value, 保持不变, 对于opt2中新的key-value, 追加到opt1中。传入
+ * @description merge 策略: 将opt2 merge到opt1, 对于opt1已有的key-value, 默认不覆盖(可由predicate决定), 对于opt2中新的key-value, 追加到opt1中。传入
  * deep值表示是否深度执行merge逻辑(不传入则为true). 函数将更改opt1的值, 同时返回opt1
  * @param opt1 opt1中的k-v将保留。如果不是object类型或者是null类型，则直接返回op1
  * @param opt2 不会改变opt2。如果不是object类型或者是null类型，则直接返回op1
  * @param deep 是否深拷贝模式, 默认true
  * @param ignoreNullAndUndefined 若为true, 则当opt2中的键值如果是null或undefined, 则不会覆盖到opt1中。默认是false
+ * @param coverFn 具体k-v合并时的断言。当opt1, opt2有相同key时, 有时我们也希望能合并, 这时可以通过此参数来决定， 提供一个函数，参数: opt1, opt2, key, 返回true/false， 为true则表示也合并, 否则不合并
  * @returns {} 返回merge后的opt1的深拷贝对象
  */
-export function merge(opt1, opt2, deep = true, ignoreNullAndUndefined = false) {
+export function merge(opt1, opt2, deep = true, ignoreNullAndUndefined = false, coverFn = (obj1, obj2, key, valueOfObj2) => {}) {
     if (opt2 === null || !isObject(opt2)) {
         return opt1;
     }
@@ -176,14 +177,18 @@ export function merge(opt1, opt2, deep = true, ignoreNullAndUndefined = false) {
             let valueOfObj2 = obj2[key]
 
             if (ignoreNullAndUndefined && (isUndefined(valueOfObj2) || isNull(valueOfObj2))) {
-                continue
+                continue;
             }
 
             if (!(key in obj1)) {
                 obj1[key] = deepClone(valueOfObj2);
             } else {
-                if (!deep) return;
-                deepMerge(valueOfObj1, valueOfObj2)
+                if (isObject(valueOfObj1) && isObject(valueOfObj2) && deep) {
+                    deepMerge(valueOfObj1, valueOfObj2);
+                } else {
+                    coverFn(obj1, obj2, key, valueOfObj2)
+                    // obj1[key] = deepClone(valueOfObj2);
+                }
             }
         }
     };

@@ -15,6 +15,7 @@
       <fast-table-column-number label="体重" prop="weight"/>
       <fast-table-column-date-picker label="创建时间" prop="createTime" :quick-filter="true"
                                      :picker-options="pickerOptionsQ"
+                                     type="datetime"
                                      value-format="yyyy-MM-dd HH:mm:ss"
                                      :default-time="['00:00:00', '23:59:59']"/>
     </fast-table>

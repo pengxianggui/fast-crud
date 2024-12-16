@@ -1,7 +1,7 @@
 <template>
-  <el-table-column v-bind="$attrs">
+  <el-table-column :prop="prop" :label="label" v-bind="$attrs">
     <template v-slot:header="{column, $index}">
-      <fast-table-head-cell class="fc-table-column-head-cell" :class="{'filter': filter}" :column="column"
+      <fast-table-head-cell class="fc-table-column-head-cell" :class="{'filter': filter}" :column="columnProp"
                             @click.native="headCellClick(column)">
         <slot v-bind:header="{column, $index}">
           <span>{{ column.label }}</span>

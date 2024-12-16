@@ -47,9 +47,9 @@ import QuickFilterForm from "./quick-filter-form.vue";
 import EasyFilter from "./easy-filter.vue";
 import DynamicFilterForm from "./dynamic-filter-form.vue";
 import DynamicFilterList from "./dynamic-filter-list.vue";
-import {PageQuery} from '../../../model';
+import {Order, PageQuery} from '../../../model';
 import FastTableOption from "../../../model";
-import {ifBlank, isBoolean} from "../../../util/util";
+import {ifBlank, isBoolean, isEmpty} from "../../../util/util";
 import {iterBuildFilterConfig} from "./util";
 import {openDialog} from "../../../util/dialog";
 import {buildFinalFilterComponentConfig} from "../../mapping";
@@ -67,7 +67,7 @@ export default {
     const size = this.option.pagination.size;
     const pageQuery = new PageQuery(1, size);
     if (!ifBlank(this.option.sortField)) {
-      pageQuery.addOrder(this.option.sortField, !this.option.sortDesc)
+      pageQuery.setOrders([new Order(this.option.sortField, !this.option.sortDesc)])
     }
 
     return {
@@ -114,6 +114,26 @@ export default {
         this.columnMap[prop] = {tableColumnComponentName, ...customConfig}
       })
     },
+    /**
+     * 暂只支持单列排序, 原因: 1.通过option指定的默认排序不好回显在表头; 2.多字段排序会导致操作比较繁琐
+     * @param col
+     * @param asc
+     */
+    buildOrder(col, asc) {
+      if (isBoolean(asc)) {
+        // 用户指定排序前, 当只有默认排序时, 移除默认排序
+        if (!isEmpty(this.option.sortField) && this.pageQuery.orders.length === 1 && this.pageQuery.orders[0].col === this.option.sortField) {
+          this.pageQuery.removeOrder(this.option.sortField);
+        }
+        this.pageQuery.addOrder(col, asc);
+        return;
+      }
+
+      this.pageQuery.removeOrder(col);
+      if (this.pageQuery.orders.length === 0) {
+        this.pageQuery.addOrder(this.option.sortField, !this.option.sortDesc)
+      }
+    },
     onSearch() {
       const conds = []
       // 添加快筛条件
@@ -141,16 +161,15 @@ export default {
       // TODO 根据option.editType决定是弹出新增表单 OR 增加一个编辑状态的空行
     },
     openDynamicFilterForm(column) {
-      console.log(column)
       // 打开动筛创建面板
-      const {property, label} = column
-      const {tableColumnComponentName, ...customConfig} = this.columnMap[property]
+      const {prop, label, order} = column
+      const {tableColumnComponentName, ...customConfig} = this.columnMap[prop]
       const dynamicFilter = buildFinalFilterComponentConfig(customConfig, tableColumnComponentName, 'dynamic')
       openDialog({
         component: DynamicFilterForm,
         props: {
           filter: dynamicFilter,
-          order: column.order
+          order: order
         },
         dialogProps: {
           width: '480px',
@@ -158,14 +177,14 @@ export default {
         }
       }).then(({filter: dynamicFilter, order}) => {
         if (dynamicFilter.hasVal()) {
-          this.dynamicFilters.push(dynamicFilter); // TODO 去重
+          this.dynamicFilters.push(dynamicFilter);
         }
 
         if (isBoolean(order.asc)) {
-          this.pageQuery.setOrders([order])
+          this.buildOrder(prop, order.asc)
           column.order = order.asc ? 'asc' : 'desc'
         } else {
-          this.pageQuery.removeOrder(property)
+          this.buildOrder(prop, order.asc)
           column.order = '';
         }
         this.onSearch();

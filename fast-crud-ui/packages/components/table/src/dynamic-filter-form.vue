@@ -29,7 +29,7 @@ export default {
     const localFilter = new FilterComponentConfig({...this.filter})
     return {
       localFilter: localFilter,
-      asc: this.order === 'asc' ? true : (this.order === 'desc' ? false : null)
+      asc: this.order === 'asc' ? true : (this.order === 'desc' ? false : '')
     }
   },
   methods: {

@@ -91,12 +91,16 @@ export class Query {
     }
 
     addOrder(col, asc) {
+        this.removeOrder(col)
         this.orders.push(new Order(col, asc));
         return this;
     }
 
     removeOrder(col) {
-        this.orders = this.orders.filter(order => order.col !== col);
+        const idx = this.orders.findIndex(o => o.col === col);
+        if (idx > -1) {
+            this.orders.splice(idx, 1)
+        }
         return this;
     }
 

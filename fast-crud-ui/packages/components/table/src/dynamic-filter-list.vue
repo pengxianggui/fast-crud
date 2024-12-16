@@ -6,16 +6,21 @@
           <el-button type="text" class="fc-dynamic-filter-open-btn" :class="{'strikethrough': f.disabled}">
             {{ f | label }}
           </el-button>
-          <el-button type="text" class="fc-dynamic-filter-del-btn" icon="el-icon-close" @click.stop="delConfig(index)"></el-button>
+          <el-button type="text" class="fc-dynamic-filter-del-btn" icon="el-icon-close"
+                     @click.stop="delConfig(index)"></el-button>
         </div>
       </template>
       <component class="component" :is="f.component" v-model="f.val" v-bind="f.props"/>
       <div class="fc-dynamic-filter-footer">
         <el-button type="primary" size="mini" icon="el-icon-search" @click="confirm">查询</el-button>
-        <el-button :type="f.disabled ? 'primary' : 'info'" plain size="mini" @click="toggleFilter(f)">{{ f.disabled ? '启用' : '禁用' }}</el-button>
+        <el-button :type="f.disabled ? 'primary' : 'info'" plain size="mini" @click="toggleFilter(f)">
+          {{ f.disabled ? '启用' : '禁用' }}
+        </el-button>
       </div>
     </el-popover>
-    <el-button class="fc-dynamic-filter-clear-btn" type="text" style="padding: 0; color: #d37c84" @click="clearFilters" v-if="filters.length > 1">清空筛选</el-button>
+    <el-button class="fc-dynamic-filter-clear-btn" type="text" style="padding: 0; color: #d37c84" @click="clearFilters"
+               v-if="filters.length > 1">清空筛选
+    </el-button>
   </div>
 </template>
 
@@ -36,34 +41,55 @@ export default {
   },
   filters: {
     label(filter) {
-      const {label, val, opt} = filter
-      // TODO 判断val是字典值，并转换为显示值。
-      switch (opt) {
-        case Opt.LIKE:
-          return `[${label}] 包含 ${val}`;
-        case Opt.EQ:
-          return `[${label}] 等于 ${val}`;
-        case Opt.GT:
-          return `[${label}] 大于 ${val}`;
-        case Opt.GE:
-          return `[${label}] 大于等于 ${val}`;
-        case Opt.LT:
-          return `[${label}] 小于 ${val}`;
-        case Opt.LE:
-          return `[${label}] 小于等于 ${val}`;
-        case Opt.IN:
-          return `[${label}] 包含 ${val}`;
-        case Opt.NIN:
-          return `[${label}] 不包含 ${val}`;
-        case Opt.NULL:
-          return `[${label}] 为 null`;
-        case Opt.NNULL:
-          return `[${label}] 不为 null`;
-        case Opt.BTW:
-          return `[${label}] 在 ${val[0]} 和 ${val[1]} 之间`;
-        default:
-          return `[${label}] 检索条件`;
+      const {label, opt, val} = filter
+      if (!filter.hasVal()) {
+        filter.disabled = true;
+        return `[${label}]无有效值`
       }
+      const conds = filter.getConds()
+      let tip = ''
+      debugger
+      for (let i = 0; i < conds.length; i++) {
+        const {col, opt, val} = conds[i];
+        // TODO 判断val是字典值，并转换为显示值。
+        switch (opt) {
+          case Opt.EQ:
+          case Opt.GT:
+          case Opt.GE:
+          case Opt.LT:
+          case Opt.LE:
+            tip += `${label} ${opt} ${val}`;
+            break;
+          case Opt.LIKE:
+            tip += `${label} 模糊匹配 ${val}`;
+            break;
+          case Opt.NLIKE:
+            tip += `${label} 非模糊匹配 ${val}`;
+            break;
+          case Opt.IN:
+            tip += `${label} 包含 ${val}`;
+            break;
+          case Opt.NIN:
+            tip += `${label} 不包含 ${val}`;
+            break;
+          case Opt.NULL:
+            tip += `${label} 为null`;
+            break;
+          case Opt.NNULL:
+            tip += `${label} 不为null`;
+            break;
+          case Opt.BTW:
+            tip += `${label} 在${val}之间`;
+            break;
+          default:
+            tip += `${label}未知的比较符`
+            break
+        }
+        if (i !== conds.length - 1) {
+          tip += " 且 "
+        }
+      }
+      return tip;
     }
   },
   methods: {
@@ -76,7 +102,7 @@ export default {
     },
     toggleFilter(filter) {
       filter.disabled = !filter.disabled
-      this.confirm(filter)
+      this.confirm()
     },
     clearFilters() {
       this.filters.splice(0, this.filters.length);
@@ -97,6 +123,7 @@ export default {
       .fc-dynamic-filter-open-btn {
         text-decoration: underline;
       }
+
       .fc-dynamic-filter-del-btn {
         //display: inline-block;
         visibility: visible;
@@ -132,6 +159,7 @@ export default {
 
 .component {
   margin: 10px 0;
+  max-width: 420px;
 }
 
 .fc-dynamic-filter-footer {

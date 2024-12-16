@@ -31,13 +31,18 @@ const MAPPING = {
         }
     },
     'fast-table-column-date-picker': {
+        // 保证当前静态props中优先级更高的配置, 不被自定义覆盖
+        highOptimizeProp: (type) => {
+            return ['type']
+        },
         query: (config, type) => {
+            const {props: {type: propType = 'date'}} = config
             return {
                 component: 'el-date-picker',
                 opt: Opt.BTW,
                 val: [], // 默认值
                 props: {
-                    type: "daterange",
+                    type: `${propType}range`,
                     clearable: true,
                     'value-format': 'yyyy-MM-dd'
                 },
@@ -279,7 +284,7 @@ const MAPPING = {
     // TODO more
 }
 
-export const getDefaultConfigFn = function (tableColumnComponentName, type) {
+export const getConfigFn = function (tableColumnComponentName, type) {
     if (!MAPPING.hasOwnProperty(tableColumnComponentName) || !MAPPING[tableColumnComponentName].hasOwnProperty(type)) {
         // console.error(`未定义针对${tableColumnComponentName}的快速搜索控件`)
         return null;
@@ -295,10 +300,24 @@ export const getDefaultConfigFn = function (tableColumnComponentName, type) {
  * @param filterType 类型, 可选: quick, easy, dynamic
  */
 export const buildFinalFilterComponentConfig = function (customConfig, tableColumnComponentName, filterType) {
-    const defaultConfigFn = getDefaultConfigFn(tableColumnComponentName, 'query');
+    const defaultConfigFn = getConfigFn(tableColumnComponentName, 'query');
     if (!isFunction(defaultConfigFn)) {
         throw new Error(`未定义针对${tableColumnComponentName}的搜索控件`)
     }
-    const quickFilterConfig = merge({...customConfig}, defaultConfigFn(customConfig, filterType));
-    return new FilterComponentConfig(quickFilterConfig); // 创建Filter对象
+    const {props: customProps, ...customConfigWithoutProps} = customConfig;
+    const {props: defaultProps, ...defaultConfigWithoutProps} = defaultConfigFn(customConfig, filterType);
+
+    const highOptimizePropFn = getConfigFn(tableColumnComponentName, 'highOptimizeProp');
+    const finalProps = merge({...customProps}, defaultProps, false, false, (obj1, obj2, key, valueOfObj2) => {
+        if (isFunction(highOptimizePropFn)) {
+            const highOptimizeProps = highOptimizePropFn(filterType)
+            if (highOptimizeProps.indexOf(key) > -1) {
+                obj1[key] = valueOfObj2
+            }
+        }
+    });
+
+    const finalConfig = merge({...customConfigWithoutProps}, defaultConfigWithoutProps);
+    finalConfig.props = finalProps;
+    return new FilterComponentConfig(finalConfig); // 创建Filter对象
 }
