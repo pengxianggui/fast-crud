@@ -64,6 +64,10 @@ export default {
     }
   }
 
+  .component {
+    margin: 20px 0;
+  }
+
   .fc-dynamic-filter-form-btn {
     display: flex;
     justify-content: right;

@@ -49,7 +49,7 @@ import DynamicFilterForm from "./dynamic-filter-form.vue";
 import DynamicFilterList from "./dynamic-filter-list.vue";
 import {PageQuery} from '../../../model';
 import FastTableOption from "../../../model";
-import {ifBlank} from "../../../util/util";
+import {ifBlank, isBoolean} from "../../../util/util";
 import {iterBuildFilterConfig} from "./util";
 import {openDialog} from "../../../util/dialog";
 import {buildFinalFilterComponentConfig} from "../../mapping";
@@ -161,7 +161,7 @@ export default {
           this.dynamicFilters.push(dynamicFilter); // TODO 去重
         }
 
-        if (order.asc !== '') {
+        if (isBoolean(order.asc)) {
           this.pageQuery.setOrders([order])
           column.order = order.asc ? 'asc' : 'desc'
         } else {
