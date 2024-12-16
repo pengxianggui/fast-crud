@@ -215,7 +215,7 @@ class FastTableOption {
         layout: 'total, sizes, prev, pager, next, jumper', 'page-sizes': [10, 20, 50, 100, 200], size: 20
     };
     style = {
-        bodyRowHeight: 50, size: 'default', formLabelWidth: 'auto'
+        bodyRowHeight: '50px', size: 'default', formLabelWidth: 'auto'
     };
     beforeLoad;
     loadSuccess;
@@ -260,7 +260,7 @@ class FastTableOption {
                         size: 20
                     },
                     style = {
-                        bodyRowHeight: 50, size: 'default', formLabelWidth: 'auto'
+                        bodyRowHeight: '50px', size: 'default', formLabelWidth: 'auto'
                     },
                     beforeLoad = (scope) => Promise.resolve(scope.query),
                     loadSuccess = (scope) => Promise.resolve(scope.data),

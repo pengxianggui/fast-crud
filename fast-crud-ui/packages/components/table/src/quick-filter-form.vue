@@ -7,8 +7,8 @@
                   class="fc-quick-filter-form-item">
       <component :is="filter.component" v-model="filter.val" v-bind="filter.props"/>
     </el-form-item>
-    <el-button type="primary" :size="size" @click="search">搜索</el-button>
-    <el-button :size="size" @click="reset">重置</el-button>
+    <el-button type="primary" :size="size" icon="el-icon-search" @click="search"></el-button>
+    <el-button type="info" plain :size="size" icon="el-icon-refresh-left" @click="reset"></el-button>
     <el-button type="text" :size="size" @click="expColl">
       <span>{{ expand ? '收起' : '展开' }}</span>
       <i :class="expand ? 'el-icon-arrow-up': 'el-icon-arrow-down'"/>

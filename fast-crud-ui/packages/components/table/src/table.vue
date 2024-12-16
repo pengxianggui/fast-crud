@@ -24,7 +24,7 @@
       <dynamic-filter-list :filters="dynamicFilters" :size="option.style.size" @search="onSearch"></dynamic-filter-list>
     </div>
     <div class="fc-fast-table-wrapper">
-      <el-table border :data="list">
+      <el-table border :data="list" :row-style="rowStyle">
         <slot></slot>
       </el-table>
     </div>
@@ -61,6 +61,13 @@ export default {
     option: {
       type: FastTableOption,
       required: true
+    }
+  },
+  computed: {
+    rowStyle() {
+      return {
+        height: this.option.style.bodyRowHeight
+      }
     }
   },
   data() {

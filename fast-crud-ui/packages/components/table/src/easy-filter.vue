@@ -8,7 +8,7 @@
                v-bind="activeFilter.props"
                :size="size"
                @clear="handleClear" @keydown.enter.native="handleEnter"/>
-    <el-button type="primary" class="fc-easy-filter-btn" :size="size" @click="search">查询</el-button>
+    <el-button type="primary" class="fc-easy-filter-btn" :size="size" icon="el-icon-search" @click="search"></el-button>
   </div>
 </template>
 

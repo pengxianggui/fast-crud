@@ -1,19 +1,20 @@
 <template>
   <div>
     <fast-table :option="tableOption">
-      <fast-table-column-img label="头像" prop="avatar" :filter="false"/>
-      <fast-table-column label="姓名" prop="name" :quick-filter="true"/>
-      <fast-table-column-number label="年龄" prop="age" :quick-filter="true"/>
-      <fast-table-column-select label="性别" prop="sex" :quick-filter="true" :options="sexOptions" label-key="label"
+      <fast-table-column-img label="头像" prop="avatar"/>
+      <fast-table-column label="姓名" prop="name"/>
+      <fast-table-column-number label="年龄" prop="age"/>
+      <fast-table-column-select label="性别" prop="sex" :options="sexOptions" label-key="label"
                                 val-key="value"/>
-      <fast-table-column-select label="爱好" prop="hobby" :options="hobbyOptions" label-key="label" val-key="value"/>
+      <fast-table-column-select label="爱好" prop="hobby" :options="hobbyOptions" :quick-filter="true"
+                                label-key="label" val-key="value"/>
       <fast-table-column-textarea label="地址" prop="address"/>
-      <fast-table-column-switch label="已毕业" prop="graduated" :quick-filter="true"/>
+      <fast-table-column-switch label="已毕业" prop="graduated"/>
       <fast-table-column-time-picker label="闹钟" prop="clockTime"/>
       <fast-table-column-date-picker label="生日" prop="birthday" :picker-options="pickerOptionsE"/>
-      <fast-table-column-number label="身高" prop="height" :quick-filter="false"/>
+      <fast-table-column-number label="身高" prop="height"/>
       <fast-table-column-number label="体重" prop="weight"/>
-      <fast-table-column-date-picker label="创建时间" prop="createTime" :quick-filter="true"
+      <fast-table-column-date-picker label="创建时间" prop="createTime"
                                      :picker-options="pickerOptionsQ"
                                      type="datetime"
                                      value-format="yyyy-MM-dd HH:mm:ss"
@@ -41,7 +42,8 @@ export default {
         sortField: 'createTime',
         sortDesc: true,
         style: {
-          size: 'small'
+          size: 'small',
+          bodyRowHeight: '40px'
         }
       }),
       pickerOptionsQ: {

@@ -6,6 +6,10 @@ export default {
         filter: {
             type: Boolean,
             default: () => true
+        },
+        showOverflowToolTip: {
+            type: Boolean,
+            default: () => true
         }
     },
     data() {

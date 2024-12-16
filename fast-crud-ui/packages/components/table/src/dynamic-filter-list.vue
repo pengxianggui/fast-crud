@@ -50,7 +50,6 @@ export default {
       }
       const conds = filter.getConds()
       let tip = ''
-      debugger
       const {props: {options = [], labelKey, valKey}} = filter
       for (let i = 0; i < conds.length; i++) {
         let {col, opt, val} = conds[i];
