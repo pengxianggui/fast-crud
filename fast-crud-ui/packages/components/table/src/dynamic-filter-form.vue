@@ -123,7 +123,7 @@ export default {
             options: this.distinctOptions,
             labelKey: 'label',
             valKey: 'value',
-            showChoseAll: false
+            showChoseAll: true
           }
         }
       } else {

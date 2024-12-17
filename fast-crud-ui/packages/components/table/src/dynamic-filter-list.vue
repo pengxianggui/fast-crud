@@ -165,6 +165,7 @@ export default {
 
   ::v-deep {
     .fc-checkbox-group {
+      display: block;
       .el-checkbox {
         display: block;
       }
