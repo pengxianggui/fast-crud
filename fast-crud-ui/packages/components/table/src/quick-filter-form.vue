@@ -7,12 +7,14 @@
                   class="fc-quick-filter-form-item">
       <component :is="filter.component" v-model="filter.val" v-bind="filter.props"/>
     </el-form-item>
-    <el-button type="primary" :size="size" icon="el-icon-search" @click="search"></el-button>
-    <el-button type="info" plain :size="size" icon="el-icon-refresh-left" @click="reset"></el-button>
-    <el-button type="text" :size="size" @click="expColl">
-      <span>{{ expand ? '收起' : '展开' }}</span>
-      <i :class="expand ? 'el-icon-arrow-up': 'el-icon-arrow-down'"/>
-    </el-button>
+    <div class="fc-quick-filter-form-btns">
+      <el-button type="primary" :size="size" icon="el-icon-search" @click="search"></el-button>
+      <el-button type="info" plain :size="size" icon="el-icon-refresh-left" @click="reset"></el-button>
+      <el-button type="text" :size="size" @click="expColl" v-if="filters.length > 3">
+        <span>{{ expand ? '收起' : '展开' }}</span>
+        <i :class="expand ? 'el-icon-arrow-up': 'el-icon-arrow-down'"/>
+      </el-button>
+    </div>
   </el-form>
 </template>
 
@@ -62,5 +64,8 @@ export default {
 <style scoped lang="scss">
 .fc-quick-filter-form-item {
   margin-bottom: 0 !important;
+}
+.fc-quick-filter-form-btns {
+  margin-left: 10px;
 }
 </style>

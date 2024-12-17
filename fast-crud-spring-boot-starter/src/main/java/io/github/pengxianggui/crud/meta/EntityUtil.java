@@ -61,9 +61,14 @@ public class EntityUtil {
     public static String getDbFieldName(Class clazz, String fieldName) {
         TableInfo tableInfo = TableInfoHelper.getTableInfo(clazz);
         Assert.notNull(tableInfo, "无法获取entity的tableInfo,请确保entity是一个映射有数据库表的类: " + clazz.getName());
+        String wrappedFieldName = ColumnMapperUtil.wrapper(fieldName);
+        if (wrappedFieldName.equals(ColumnMapperUtil.wrapper(tableInfo.getKeyProperty()))) {
+            return tableInfo.getKeyColumn();
+        }
+
         // 通过字段名获取映射的数据库字段名
         return tableInfo.getFieldList().stream()
-                .filter(meta -> Objects.equals(ColumnMapperUtil.wrapper(meta.getProperty()), ColumnMapperUtil.wrapper(fieldName))) // 防止后者被`处理
+                .filter(meta -> Objects.equals(ColumnMapperUtil.wrapper(meta.getProperty()), wrappedFieldName)) // 防止后者被`处理
                 .map(meta -> meta.getColumn())
                 .findFirst()
                 .orElse(null);

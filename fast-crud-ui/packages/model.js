@@ -90,6 +90,11 @@ export class Query {
         return this.conds.find(cond => cond.col === col);
     }
 
+    setDistinct() {
+        this.distinct = true;
+        return this;
+    }
+
     addOrder(col, asc) {
         this.removeOrder(col)
         this.orders.push(new Order(col, asc));
@@ -112,6 +117,12 @@ export class Query {
         this.orders = orders;
         return this;
     }
+
+    toJson() {
+        // TODO [低优先级] 防止后端序列化策略为下划线, 这里将col、conds、orders中涉及的字段全部转换为驼峰, 因为这些值接口传输给后端时不受反序影响
+        //  为了保证后端能正常对应到entity中的字段, 因此转为驼峰(这里是坚信entity中属性是驼峰命名).
+        return this;
+    }
 }
 
 export class PageQuery extends Query {
@@ -130,12 +141,6 @@ export class PageQuery extends Query {
      */
     setSize(size) {
         this.size = size;
-        return this;
-    }
-
-    toJson() {
-        // TODO [低优先级] 防止后端序列化策略为下划线, 这里将col、conds、orders中涉及的字段全部转换为驼峰, 因为这些值接口传输给后端时不受反序影响
-        //  为了保证后端能正常对应到entity中的字段, 因此转为驼峰(这里是坚信entity中属性是驼峰命名).
         return this;
     }
 }
@@ -201,6 +206,7 @@ class FastTableOption {
     title = '';
     module = '';
     pageUrl = '';
+    listUrl = '';
     insertUrl = '';
     updateUrl = '';
     deleteUrl = '';
@@ -212,7 +218,7 @@ class FastTableOption {
     sortField;
     sortDesc = true;
     pagination = {
-        layout: 'total, sizes, prev, pager, next, jumper', 'page-sizes': [10, 20, 50, 100, 200], size: 20
+        layout: 'total, sizes, prev, pager, next, jumper', 'page-sizes': [10, 20, 50, 100, 200], size: 10
     };
     style = {
         bodyRowHeight: '50px', size: 'default', formLabelWidth: 'auto'
@@ -244,6 +250,7 @@ class FastTableOption {
                     title = '',
                     module = '',
                     pageUrl = '',
+                    listUrl = '',
                     insertUrl = '',
                     updateUrl = '',
                     deleteUrl = '',
@@ -257,7 +264,7 @@ class FastTableOption {
                     pagination = {
                         layout: 'total, sizes, prev, pager, next, jumper',
                         'page-sizes': [10, 20, 50, 100, 200],
-                        size: 20
+                        size: 10
                     },
                     style = {
                         bodyRowHeight: '50px', size: 'default', formLabelWidth: 'auto'
@@ -285,6 +292,7 @@ class FastTableOption {
         this.context = context;
         this.title = title;
         this.pageUrl = defaultIfBlank(pageUrl, module + '/page');
+        this.listUrl = defaultIfBlank(listUrl, module + '/list');
         this.insertUrl = defaultIfBlank(insertUrl, module + '/insert');
         this.updateUrl = defaultIfBlank(updateUrl, module + '/update');
         this.deleteUrl = defaultIfBlank(deleteUrl, module + '/delete');

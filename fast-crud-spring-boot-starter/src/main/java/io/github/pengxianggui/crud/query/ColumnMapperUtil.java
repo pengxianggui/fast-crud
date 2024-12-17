@@ -31,6 +31,7 @@ public class ColumnMapperUtil {
     }
 
     private static boolean ifWrapper(String col) {
+        Assert.notNull(col, "col is not null!");
         return col.startsWith(QUOTE) && col.endsWith(QUOTE);
     }
 

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-checkbox :indeterminate="isIndeterminate" v-model="checkAll" @change="handleCheckAllChange">全选</el-checkbox>
+    <el-checkbox :indeterminate="isIndeterminate" v-model="checkAll" @change="handleCheckAllChange" v-if="showChoseAll">全选</el-checkbox>
     <el-checkbox-group class="fc-checkbox-group" v-model="modelValue" @change="handleChange">
       <el-checkbox v-for="item in options" :label="item.value" :key="item.value">{{ item.label }}</el-checkbox>
     </el-checkbox-group>
@@ -26,6 +26,10 @@ export default {
     valKey: {
       type: String,
       default: () => "value"
+    },
+    showChoseAll: {
+      type: Boolean,
+      default: () => true
     }
   },
   computed: {

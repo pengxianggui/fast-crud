@@ -1,6 +1,7 @@
 <template>
   <div>
     <fast-table :option="tableOption">
+      <fast-table-column label="ID" prop="id"/>
       <fast-table-column-img label="头像" prop="avatar"/>
       <fast-table-column label="姓名" prop="name"/>
       <fast-table-column-number label="年龄" prop="age"/>

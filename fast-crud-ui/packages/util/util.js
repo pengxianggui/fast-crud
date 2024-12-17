@@ -6,6 +6,10 @@ export function ifBlank(str) {
     return str === undefined || str === null || str.trim().length === 0;
 }
 
+export function toStr(val) {
+    return val + ''
+}
+
 /**
  * 驼峰转=>?(默认下划线)
  * @param str

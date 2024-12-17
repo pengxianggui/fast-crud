@@ -1,4 +1,4 @@
-import {Input, InputNumber, DatePicker, Switch, TimePicker} from 'element-ui'
+import {Input, InputNumber, DatePicker, Switch, TimePicker, Loading} from 'element-ui'
 import FastCheckboxGroup from "./components/checkbox-group";
 import FastSelect from "./components/select";
 import FastTable from './components/table'
@@ -35,6 +35,10 @@ const components = [
     FastTableColumnSwitch,
     FastTableColumnTextarea,
     FastTableColumnTimePicker
+];
+
+const directives = [
+    Loading
 ]
 
 const install = function (Vue, opts = {}) {
@@ -45,6 +49,10 @@ const install = function (Vue, opts = {}) {
     components.forEach(component => {
         Vue.component(component.name, component);
     });
+
+    directives.forEach(directive => {
+        Vue.use(directive)
+    })
 };
 
 if (typeof window !== 'undefined' && window.Vue) {

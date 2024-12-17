@@ -24,19 +24,19 @@
       <dynamic-filter-list :filters="dynamicFilters" :size="option.style.size" @search="onSearch"></dynamic-filter-list>
     </div>
     <div class="fc-fast-table-wrapper">
-      <el-table border :data="list" :row-style="rowStyle">
+      <el-table border :data="list" :row-style="rowStyle" v-loading="loading">
         <slot></slot>
       </el-table>
     </div>
     <div class="fc-pagination-wrapper">
-      <el-pagination :page-size="pageQuery.size"
-                     :current-page="pageQuery.current"
+      <el-pagination :page-size.sync="pageQuery.size"
+                     :current-page.sync="pageQuery.current"
                      :page-sizes="option.pagination['page-sizes']"
                      :total="total"
+                     @current-change="onSearch"
+                     @size-change="onSearch"
                      :layout="option.pagination.layout"></el-pagination>
     </div>
-
-    <!-- TODO 动筛创建dialog -->
 
     <!-- TODO form编辑dialog -->
   </div>
@@ -78,6 +78,7 @@ export default {
     }
 
     return {
+      loading: false,
       pageQuery: pageQuery,
       columnMap: {}, // key: column prop, value为自定义filterConfig
       quickFilters: [], // 快筛配置
@@ -89,7 +90,7 @@ export default {
   },
   provide() {
     return {
-      openDynamicFilterForm: this.openDynamicFilterForm // 提供给fast-table-column触发创建动筛的能力
+      openDynamicFilterForm: this.openDynamicFilterForm // 提供给fast-table-column* 触发创建动筛的能力
     }
   },
   mounted() {
@@ -155,6 +156,7 @@ export default {
 
       this.pageQuery.setConds(conds)
       // TODO 兑现 this.option.beforeLoad
+      this.loading = true;
       this.$http.post(this.option.pageUrl, this.pageQuery.toJson()).then(res => {
         this.option.loadSuccess({query: this.pageQuery, data: res.data, res}).then((data) => {
           this.list = data.records
@@ -162,6 +164,8 @@ export default {
         })
       }).catch(err => {
         // TODO 兑现 this.option.loadFail
+      }).finally(() => {
+        this.loading = false;
       })
     },
     addRow() {
@@ -172,11 +176,14 @@ export default {
       const {prop, label, order} = column
       const {tableColumnComponentName, ...customConfig} = this.columnMap[prop]
       const dynamicFilter = buildFinalFilterComponentConfig(customConfig, tableColumnComponentName, 'dynamic')
+      // TODO 在弹窗关闭时，通知DynamicFilterForm取消distinct request abort
       openDialog({
         component: DynamicFilterForm,
         props: {
           filter: dynamicFilter,
-          order: order
+          order: order,
+          listUrl: this.option.listUrl,
+          conds: this.pageQuery.conds
         },
         dialogProps: {
           width: '480px',

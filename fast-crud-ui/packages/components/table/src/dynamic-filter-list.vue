@@ -26,9 +26,8 @@
 
 <script>
 import {Opt} from "../../../model";
-import {isArray} from "../../../util/util";
+import {escapeValToLabel} from "./util";
 
-const components = ['fast-checkbox-group', 'fast-select']
 export default {
   name: "dynamic-filter-list",
   props: {
@@ -43,33 +42,17 @@ export default {
   },
   filters: {
     label(filter) {
-      const {label, opt, val, component} = filter
+      const {label, component} = filter;
       if (!filter.hasVal()) {
         filter.disabled = true;
         return `[${label}]无有效值`
       }
-      const conds = filter.getConds()
-      let tip = ''
-      const {props: {options = [], labelKey, valKey}} = filter
+      const conds = filter.getConds();
+      let tip = '';
+      const {props} = filter
       for (let i = 0; i < conds.length; i++) {
-        let {col, opt, val} = conds[i];
-        if (components.indexOf(component) > -1) { // 需要转义
-          const escape = function (val) {
-            return val.map(v => {
-              const option = options.find(o => o[valKey] === v)
-              if (option) {
-                return option[labelKey]
-              }
-              return v
-            })
-          }
-          try {
-            val = isArray(val) ? escape(val) : escape([val])
-          } catch (err) {
-            console.log(err)
-          }
-        }
-
+        let {opt, val} = conds[i];
+        val = escapeValToLabel(component, val, props)
         switch (opt) {
           case Opt.EQ:
           case Opt.GT:
@@ -178,6 +161,15 @@ export default {
 .component {
   margin: 10px 0;
   max-width: 420px;
+  max-height: 600px;
+
+  ::v-deep {
+    .fc-checkbox-group {
+      .el-checkbox {
+        display: block;
+      }
+    }
+  }
 }
 
 .fc-dynamic-filter-footer {
