@@ -38,7 +38,6 @@ export default {
     }
   },
   computed: {
-    // TODO 修复当给默认值时，modelValue值正确，但是UI没勾上
     modelValue: {
       get() {
         return this.value
@@ -64,13 +63,12 @@ export default {
   },
   data() {
     return {
-      // isIndeterminate: true,
-      // checkAll: false,
     }
   },
   methods: {
     handleCheckAllChange(val) {
-      this.modelValue = val ? this.options.map(item => item.value) : [];
+      this.modelValue = val ? this.options.filter(item => this.disableVal.indexOf(item[this.valKey]) === -1)
+          .map(item => item[this.valKey]) : [];
       this.isIndeterminate = false;
     },
     handleChange(val) {
