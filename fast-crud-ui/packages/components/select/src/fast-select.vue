@@ -1,6 +1,7 @@
 <template>
   <el-select v-model="modelValue" v-bind="$attrs" :multiple="multiple" @input="handleInput" @change="handleChange">
-    <el-option v-for="item in options" :key="item.value" :label="item[labelKey]" :value="item[valKey]"></el-option>
+    <el-option v-for="item in options" :key="item.value" :label="item[labelKey]" :value="item[valKey]"
+               :disabled="disableVal.indexOf(item[valKey]) > -1"></el-option>
   </el-select>
 </template>
 
@@ -27,6 +28,10 @@ export default {
     multiple: { // 多值时, value为数组
       type: Boolean,
       default: () => false
+    },
+    disableVal: {
+      type: Array,
+      default: () => []
     }
   },
   computed: {

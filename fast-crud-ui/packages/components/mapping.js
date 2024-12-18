@@ -21,7 +21,7 @@ const MAPPING = {
                 condMapFn: (cond) => {
                     const operators = {
                         '!=': Opt.NE,
-                        '=': Opt.GE,
+                        '=': Opt.EQ,
                         '~': Opt.NLIKE
                     }
                     easyOptParse(cond, operators)
@@ -160,17 +160,20 @@ const MAPPING = {
     },
     'fast-table-column-select': {
         query: (filter, type) => {
-            const props = {};
+            const {props = {}} = filter;
+            let defalutVal = []
             let component = 'fast-checkbox-group';
             if (type === 'easy') {
                 component = 'fast-select';
                 props.multiple = true;
                 props.clearable = true;
+            } else if (type === 'quick') {
+                defalutVal = props['default-val'] || []
             }
             return {
                 component: component,
                 opt: Opt.IN,
-                val: [], // 默认值
+                val: defalutVal, // 默认值
                 props: props,
                 condMapFn: (cond) => {
                     if (isArray(cond.val) && cond.val.length > 0) {

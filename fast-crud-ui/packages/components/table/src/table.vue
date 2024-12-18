@@ -114,10 +114,12 @@ export default {
                                                 easyFilter
                                               }) => {
         if (quickFilter) {
-          this.quickFilters.push(quickFilter) // TODO 去重?
+          const {props = {}} = quickFilter;
+          props.hasOwnProperty('first-filter') ? this.quickFilters.unshift(quickFilter) : this.quickFilters.push(quickFilter) // TODO 去重?
         }
         if (easyFilter) {
-          this.easyFilters.push(easyFilter) // TODO 去重?
+          const {props = {}} = easyFilter;
+          props.hasOwnProperty('first-filter') ? this.easyFilters.unshift(easyFilter) : this.easyFilters.push(easyFilter) // TODO 去重?
         }
         this.columnMap[prop] = {tableColumnComponentName, ...customConfig}
       })

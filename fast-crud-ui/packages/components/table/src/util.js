@@ -37,7 +37,7 @@ export function iterBuildFilterConfig(vnodes, defaultProp = {}, callback) {
             quick: quickFilter,
             props: {...filteredProps, ...defaultProp}
         }
-
+        // debugger
         const param = {}
         try {
             // build quick filters
