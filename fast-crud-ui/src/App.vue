@@ -15,6 +15,7 @@
       <fast-table-column-number label="身高" prop="height"/>
       <fast-table-column-number label="体重" prop="weight"/>
       <fast-table-column-date-picker label="创建时间" prop="createTime" :picker-options="pickerOptionsQ" type="datetime"
+                                     :quick-filter="true" :default-val__q="defaultQueryOfCreatedTime"
                                      value-format="yyyy-MM-dd HH:mm:ss" :default-time="['00:00:00', '23:59:59']"/>
     </fast-table>
   </div>
@@ -26,6 +27,9 @@ import FastTableOption from "../packages/model";
 export default {
   name: "App",
   data() {
+    const now = new Date();
+    const monthAgo = new Date();
+    monthAgo.setTime(monthAgo.getTime() - 3600 * 1000 * 24 * 30);
     return {
       tableOption: new FastTableOption({
         context: this,
@@ -137,7 +141,8 @@ export default {
           name: '游泳',
           code: '7'
         }
-      ]
+      ],
+      defaultQueryOfCreatedTime: [monthAgo, now]
     }
   }
 }

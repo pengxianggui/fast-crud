@@ -11,6 +11,21 @@ export function toStr(val) {
 }
 
 /**
+ * 三元元算符简化
+ * @param cond
+ * @param trueVal
+ * @param falseVal
+ * @returns {*}
+ */
+export function ternary(cond, trueVal, falseVal) {
+    return cond ? trueVal : falseVal
+}
+
+export function defaultIfEmpty(val, defaultVal) {
+    return isEmpty(val) ? defaultVal : val;
+}
+
+/**
  * 驼峰转=>?(默认下划线)
  * @param str
  * @param separator
@@ -165,7 +180,8 @@ export function deepClone(obj) {
  * @param coverFn 具体k-v合并时的断言。当opt1, opt2有相同key时, 有时我们也希望能合并, 这时可以通过此参数来决定， 提供一个函数，参数: opt1, opt2, key, 返回true/false， 为true则表示也合并, 否则不合并
  * @returns {} 返回merge后的opt1的深拷贝对象
  */
-export function merge(opt1, opt2, deep = true, ignoreNullAndUndefined = false, coverFn = (obj1, obj2, key, valueOfObj2) => {}) {
+export function merge(opt1, opt2, deep = true, ignoreNullAndUndefined = false, coverFn = (obj1, obj2, key, valueOfObj2) => {
+}) {
     if (opt2 === null || !isObject(opt2)) {
         return opt1;
     }

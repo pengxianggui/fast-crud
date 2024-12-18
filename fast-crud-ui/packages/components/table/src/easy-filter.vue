@@ -68,7 +68,7 @@ export default {
   }
 
   .fc-easy-filter-value {
-    width: 250px;
+    width: 280px;
   }
 
   .fc-easy-filter-btn {

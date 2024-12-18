@@ -242,9 +242,6 @@ class FastTableOption {
     beforeDeleteTip;
     beforeCancel;
 
-    // TODO 暂时没有用上，是采用挂载到Vue上，还是放到这里？
-    static $http;
-
     constructor({
                     context,
                     title = '',
@@ -288,7 +285,6 @@ class FastTableOption {
                     beforeDeleteTip = (scope) => Promise.resolve(),
                     beforeCancel = (scope) => Promise.resolve(),
                 }) {
-        // TODO 入参merge,
         this.context = context;
         this.title = title;
         this.pageUrl = defaultIfBlank(pageUrl, module + '/page');
@@ -303,9 +299,7 @@ class FastTableOption {
         this.editType = editType;
         this.sortField = sortField;
         this.sortDesc = sortDesc;
-        // this.pagination = pagination;
         coverMerge(this.pagination, pagination, true, true)
-        // this.style = style;
         coverMerge(this.style, style, true, true)
 
         this.beforeLoad = beforeLoad;

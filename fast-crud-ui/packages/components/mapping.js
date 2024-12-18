@@ -1,19 +1,24 @@
 import {Cond, FilterComponentConfig, Opt} from "../model";
-import {easyOptParse, isArray, isFunction, merge} from "../util/util.js";
+import {defaultIfEmpty, easyOptParse, isArray, isEmpty, isFunction, isString, merge, ternary} from "../util/util.js";
 
 // TODO 支持:
 //  1. query的默认值支持在table-column上定义
 //  2. query组件是否独占一行, 支持在table-column上定义
 //  3. query选项型组件(如select、checkbox-group)支持在table-column上定义禁用选项
+//  4. props过滤: 限定查询时只支持的props属性, 以及必要的属性名转换
 const MAPPING = {
     'fast-table-column': {
         query: (config, type) => {
+            let val = '';
             const {props} = config
-            // TODO props过滤: 限定查询时只支持的props属性, 以及必要的属性名转换
+            if (type === 'quick') {
+                const {'default-val': defaultVal} = props;
+                val = ternary(isString(defaultVal) && !isEmpty(defaultVal), defaultVal, val);
+            }
             return {
                 component: 'el-input',
                 opt: Opt.LIKE,
-                val: '', // 默认值
+                val: val, // 默认值
                 props: {
                     clearable: true,
                     // placeholder: `请输入${config.label}`
@@ -36,11 +41,17 @@ const MAPPING = {
             return ['type']
         },
         query: (config, type) => {
-            const {props: {type: propType = 'date'}} = config
+            let val = [];
+            const {props = {}} = config;
+            const {type: propType = 'date'} = props;
+            if (type === 'quick') {
+                const {'default-val': defaultVal} = props;
+                val = ternary(isArray(defaultVal) && !isEmpty(defaultVal), defaultVal, val);
+            }
             return {
                 component: 'el-date-picker',
                 opt: Opt.BTW,
-                val: [], // 默认值
+                val: val, // 默认值
                 props: {
                     type: `${propType}range`,
                     clearable: true,
@@ -74,10 +85,16 @@ const MAPPING = {
     },
     'fast-table-column-img': {
         query: (config, type) => {
+            let val = '';
+            const {props} = config;
+            if (type === 'quick') {
+                const {'default-val': defaultVal} = props;
+                val = ternary(isString(defaultVal) && !isEmpty(defaultVal), defaultVal, val);
+            }
             return {
                 component: 'el-input',
                 opt: Opt.LIKE,
-                val: '', // 默认值
+                val: val, // 默认值
                 props: {
                     clearable: true
                 },
@@ -95,10 +112,16 @@ const MAPPING = {
     },
     'fast-table-column-input': {
         query: (config, type) => {
+            let val = '';
+            const {props} = config;
+            if (type === 'quick') {
+                const {'default-val': defaultVal} = props;
+                val = ternary(isString(defaultVal) && !isEmpty(defaultVal), defaultVal, val);
+            }
             return {
                 component: 'el-input',
                 opt: Opt.LIKE,
-                val: '', // 默认值
+                val: val, // 默认值
                 props: {
                     clearable: true,
                     // placeholder: `请输入${config.label}`
@@ -126,10 +149,16 @@ const MAPPING = {
     },
     'fast-table-column-number': {
         query: (config, type) => {
+            let val = '';
+            const {props} = config;
+            if (type === 'quick') {
+                const {'default-val': defaultVal} = props;
+                val = ternary(isString(defaultVal) && !isEmpty(defaultVal), defaultVal, val);
+            }
             return {
                 component: 'el-input',
                 opt: Opt.LIKE,
-                val: '', // 默认值
+                val: val, // 默认值
                 props: {
                     clearable: true,
                     // placeholder: `请输入${config.label}`
@@ -159,21 +188,22 @@ const MAPPING = {
         }
     },
     'fast-table-column-select': {
-        query: (filter, type) => {
-            const {props = {}} = filter;
-            let defalutVal = []
-            let component = 'fast-checkbox-group';
+        query: (config, type) => {
+            const {props = {}} = config;
+            let val = []
+            let component = 'fast-checkbox-group'; // TODO quick模式一定用checkbox-group吗? 如果是动态的业务数据呢, 会导致超多选项？
             if (type === 'easy') {
                 component = 'fast-select';
                 props.multiple = true;
                 props.clearable = true;
             } else if (type === 'quick') {
-                defalutVal = props['default-val'] || []
+                const {'default-val': defaultVal} = props;
+                val = ternary(isArray(defaultVal) && !isEmpty(defaultVal), defaultVal, val);
             }
             return {
                 component: component,
                 opt: Opt.IN,
-                val: defalutVal, // 默认值
+                val: val, // 默认值
                 props: props,
                 condMapFn: (cond) => {
                     if (isArray(cond.val) && cond.val.length > 0) {
@@ -186,7 +216,13 @@ const MAPPING = {
     },
     'fast-table-column-switch': {
         query: (config, type) => {
-            const {props: {activeValue, inactiveValue, activeText, inactiveText}} = config
+            const {props} = config;
+            const {activeValue, inactiveValue, activeText, inactiveText} = props;
+            let val = null;
+            if (type === 'quick') {
+                const {'default-val': defaultVal} = props;
+                val = ternary(defaultVal === inactiveValue || defaultVal === activeValue, defaultVal, val);
+            }
             const options = [
                 {label: inactiveText, value: inactiveValue},
                 {label: activeText, value: activeValue}
@@ -194,7 +230,7 @@ const MAPPING = {
             return {
                 component: 'fast-select',
                 opt: Opt.EQ,
-                val: '', // 默认值
+                val: val, // 默认值
                 props: {
                     clearable: true,
                     options: options,
@@ -220,10 +256,16 @@ const MAPPING = {
     },
     'fast-table-column-textarea': {
         query: (config, type) => {
+            let val = '';
+            const {props} = config
+            if (type === 'quick') {
+                const {'default-val': defaultVal} = props;
+                val = ternary(isString(defaultVal) && !isEmpty(defaultVal), defaultVal, val);
+            }
             return {
                 component: 'el-input',
                 opt: Opt.LIKE,
-                val: '', // 默认值
+                val: val, // 默认值
                 props: {
                     clearable: true,
                     // placeholder: `请输入${config.label}`
@@ -251,11 +293,16 @@ const MAPPING = {
     },
     'fast-table-column-time-picker': {
         query: (config, type) => {
+            let val = [];
+            const {props = {}} = config;
+            if (type === 'quick') {
+                const {'default-val': defaultVal} = props;
+                val = ternary(isArray(defaultVal) && !isEmpty(defaultVal), defaultVal, val);
+            }
             return {
                 component: 'el-time-picker',
                 opt: Opt.BTW,
-                // 默认值
-                val: [],
+                val: val,
                 props: {
                     clearable: true,
                     'is-range': true,
