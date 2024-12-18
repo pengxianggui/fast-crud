@@ -4,6 +4,7 @@
                   :key="filter.col"
                   :prop="filter.col"
                   :label="filter.label + '：'"
+                  :class="filter.props && filter.props.hasOwnProperty('quick-filter-block') ? 'fc-quick-filter-form-item-block': ''"
                   class="fc-quick-filter-form-item">
       <component :is="filter.component" v-model="filter.val" v-bind="filter.props"/>
     </el-form-item>
@@ -43,7 +44,19 @@ export default {
   },
   computed: {
     visibleFilters() {
-      return this.expand ? this.filters : this.filters.slice(0, this.showNum)
+      const {expand, filters = []} = this;
+      // 确保独占一行的快筛项排前面
+      filters.sort((a, b) => {
+        const {props: propsA} = a;
+        const {props: propsB} = b;
+        if (propsA.hasOwnProperty('quick-filter-block') && !propsB.hasOwnProperty('quick-filter-block')) {
+          return -1
+        } else if (!propsA.hasOwnProperty('quick-filter-block') && propsB.hasOwnProperty('quick-filter-block')) {
+          return 1
+        }
+        return 0;
+      })
+      return expand ? filters : filters.slice(0, this.showNum)
     }
   },
   methods: {
@@ -65,6 +78,11 @@ export default {
 .fc-quick-filter-form-item {
   margin-bottom: 0 !important;
 }
+
+.fc-quick-filter-form-item-block {
+  width: 100%;
+}
+
 .fc-quick-filter-form-btns {
   margin-left: 10px;
 }

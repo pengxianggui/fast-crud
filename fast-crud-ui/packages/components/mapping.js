@@ -1,10 +1,7 @@
 import {Cond, FilterComponentConfig, Opt} from "../model";
-import {defaultIfEmpty, easyOptParse, isArray, isEmpty, isFunction, isString, merge, ternary} from "../util/util.js";
+import {easyOptParse, isArray, isEmpty, isFunction, isString, merge, ternary} from "../util/util.js";
 
 // TODO 支持:
-//  1. query的默认值支持在table-column上定义
-//  2. query组件是否独占一行, 支持在table-column上定义
-//  3. query选项型组件(如select、checkbox-group)支持在table-column上定义禁用选项
 //  4. props过滤: 限定查询时只支持的props属性, 以及必要的属性名转换
 const MAPPING = {
     'fast-table-column': {
@@ -218,7 +215,7 @@ const MAPPING = {
         query: (config, type) => {
             const {props} = config;
             const {activeValue, inactiveValue, activeText, inactiveText} = props;
-            let val = null;
+            let val = '';
             if (type === 'quick') {
                 const {'default-val': defaultVal} = props;
                 val = ternary(defaultVal === inactiveValue || defaultVal === activeValue, defaultVal, val);

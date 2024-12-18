@@ -3,11 +3,13 @@
     <fast-table :option="tableOption">
       <fast-table-column label="ID" prop="id"/>
       <fast-table-column-img label="头像" prop="avatar" :filter="false"/>
-      <fast-table-column label="姓名" prop="name" first-filter/>
+      <fast-table-column label="姓名" prop="name" first-filter :quick-filter="true"/>
       <fast-table-column-number label="年龄" prop="age"/>
       <fast-table-column-select label="性别" prop="sex" :options="sexOptions"/>
-      <fast-table-column-select label="爱好" prop="hobby" :options="hobbyOptions" :quick-filter="true" val-key="code"
-                                label-key="name" :default-val__q="['1','4','7']" :disable-val__q="['2','3']"/>
+      <fast-table-column-select label="爱好" prop="hobby" :options="hobbyOptions"
+                                :quick-filter="true" quick-filter-block
+                                val-key="code" label-key="name"
+                                :default-val__q="['1','4','7']" :disable-val__q="['2','3']"/>
       <fast-table-column-textarea label="地址" prop="address"/>
       <fast-table-column-switch label="已毕业" prop="graduated"/>
       <fast-table-column-time-picker label="闹钟" prop="clockTime"/>

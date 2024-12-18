@@ -20,7 +20,7 @@
       </div>
     </div>
     <div class="fc-dynamic-filter-wrapper">
-      <!-- TODO 动筛区 UI完成 -->
+      <!-- 动筛列表 -->
       <dynamic-filter-list :filters="dynamicFilters" :size="option.style.size" @search="onSearch"></dynamic-filter-list>
     </div>
     <div class="fc-fast-table-wrapper">
@@ -49,7 +49,7 @@ import DynamicFilterForm from "./dynamic-filter-form.vue";
 import DynamicFilterList from "./dynamic-filter-list.vue";
 import {Order, PageQuery} from '../../../model';
 import FastTableOption from "../../../model";
-import {ifBlank, isBoolean, isEmpty} from "../../../util/util";
+import {ifBlank, isBoolean, isEmpty, noRepeatAdd} from "../../../util/util";
 import {iterBuildFilterConfig} from "./util";
 import {openDialog} from "../../../util/dialog";
 import {buildFinalFilterComponentConfig} from "../../mapping";
@@ -84,8 +84,8 @@ export default {
       quickFilters: [], // 快筛配置
       easyFilters: [], // 简筛配置
       dynamicFilters: [], // 动筛配置
-      list: [],
-      total: 0
+      list: [], // 表格当前页的数据列表
+      total: 0 // 表格总数
     }
   },
   provide() {
@@ -115,11 +115,15 @@ export default {
                                               }) => {
         if (quickFilter) {
           const {props = {}} = quickFilter;
-          props.hasOwnProperty('first-filter') ? this.quickFilters.unshift(quickFilter) : this.quickFilters.push(quickFilter) // TODO 去重?
+          noRepeatAdd(this.quickFilters, quickFilter,
+              (ele, item) => ele.col === item.col,
+              props.hasOwnProperty('first-filter'))
         }
         if (easyFilter) {
           const {props = {}} = easyFilter;
-          props.hasOwnProperty('first-filter') ? this.easyFilters.unshift(easyFilter) : this.easyFilters.push(easyFilter) // TODO 去重?
+          noRepeatAdd(this.easyFilters, easyFilter,
+              (ele, item) => ele.col === item.col,
+              props.hasOwnProperty('first-filter'))
         }
         this.columnMap[prop] = {tableColumnComponentName, ...customConfig}
       })
@@ -178,7 +182,6 @@ export default {
       const {prop, label, order} = column
       const {tableColumnComponentName, ...customConfig} = this.columnMap[prop]
       const dynamicFilter = buildFinalFilterComponentConfig(customConfig, tableColumnComponentName, 'dynamic')
-      // TODO 在弹窗关闭时，通知DynamicFilterForm取消distinct request abort
       openDialog({
         component: DynamicFilterForm,
         props: {

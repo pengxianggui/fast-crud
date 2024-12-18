@@ -3,6 +3,7 @@
     <fast-select class="fc-easy-filter-column" :options="filters" v-model="activeFilterCol" label-key="label"
                  val-key="col"
                  :size="size"
+                 :filterable="true"
                  @change="changeField"></fast-select>
     <component class="fc-easy-filter-value" :is="activeFilter.component" v-model="activeFilter.val"
                v-bind="activeFilter.props"
