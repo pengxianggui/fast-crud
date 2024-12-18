@@ -1,5 +1,6 @@
 <template>
   <div class="fc-fast-table">
+    <div class="fc-fast-table-title" v-if="option.title">{{ option.title }}</div>
     <div class="fc-quick-filter-wrapper" v-if="quickFilters.length > 0">
       <!-- 快筛 -->
       <quick-filter-form :filters="quickFilters"
@@ -7,6 +8,7 @@
                          :size="option.style.size"
                          @search="onSearch"/>
     </div>
+    <el-divider class="fc-fast-table-divider"></el-divider>
     <div class="fc-operation-bar">
       <div class="fc-operation-filter">
         <!-- 简筛区 -->
@@ -160,18 +162,26 @@ export default {
       const dynamicConds = this.dynamicFilters.filter(f => !f.disabled && f.hasVal()).map(f => f.getConds()).flat();
       conds.push(...dynamicConds)
 
-      this.pageQuery.setConds(conds)
-      // TODO 兑现 this.option.beforeLoad
-      this.loading = true;
-      this.$http.post(this.option.pageUrl, this.pageQuery.toJson()).then(res => {
-        this.option.loadSuccess({query: this.pageQuery, data: res.data, res}).then((data) => {
-          this.list = data.records
-          this.total = data.total
-        })
-      }).catch(err => {
-        // TODO 兑现 this.option.loadFail
-      }).finally(() => {
-        this.loading = false;
+      this.pageQuery.setConds(conds);
+      const context = this.option.context;
+      const beforeLoad = this.option.beforeLoad;
+      beforeLoad.call(context, {query: this.pageQuery})
+          .then(() => {
+            this.loading = true;
+            this.$http.post(this.option.pageUrl, this.pageQuery.toJson()).then(res => {
+              const loadSuccess = this.option.loadSuccess;
+              loadSuccess.call(context, {query: this.pageQuery, data: res.data, res}).then(({records, total}) => {
+                this.list = records
+                this.total = total
+              })
+            }).catch(err => {
+              const loadFail = this.option.loadFail;
+              loadFail.call(context, {query: this.pageQuery, error: err})
+            }).finally(() => {
+              this.loading = false;
+            })
+          }).catch(err => {
+        console.warn(err)
       })
     },
     addRow() {
@@ -219,8 +229,13 @@ export default {
 .fc-fast-table {
   padding: 10px;
 
+  .fc-fast-table-title {
+    font-weight: bold;
+
+  }
+
   .fc-quick-filter-wrapper {
-    padding: 10px;
+    padding: 10px 0;
 
     .fc-quick-filter-form {
       display: flex;
@@ -230,6 +245,10 @@ export default {
       align-items: center;
       align-content: flex-start;
     }
+  }
+
+  .fc-fast-table-divider {
+    margin: 0 0 10px 0;
   }
 
   .fc-operation-bar {

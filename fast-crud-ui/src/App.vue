@@ -1,17 +1,20 @@
 <template>
-  <div>
-    <fast-table :option="tableOption">
+  <div class="demo">
+    <div class="param">
+      <el-checkbox v-model="params.loadCondition">允许加载分页</el-checkbox>
+    </div>
+    <fast-table class="el-card" :option="tableOption">
       <fast-table-column label="ID" prop="id"/>
       <fast-table-column-img label="头像" prop="avatar" :filter="false"/>
       <fast-table-column label="姓名" prop="name" first-filter :quick-filter="true"/>
       <fast-table-column-number label="年龄" prop="age"/>
-      <fast-table-column-select label="性别" prop="sex" :options="sexOptions"/>
+      <fast-table-column-select label="性别" prop="sex" :options="sexOptions" :quick-filter="true"/>
       <fast-table-column-select label="爱好" prop="hobby" :options="hobbyOptions"
-                                :quick-filter="true" quick-filter-block
+                                :quick-filter="true" quick-filter-block quick-filter-checkbox
                                 val-key="code" label-key="name"
                                 :default-val__q="['1','4','7']" :disable-val__q="['2','3']"/>
       <fast-table-column-textarea label="地址" prop="address"/>
-      <fast-table-column-switch label="已毕业" prop="graduated"/>
+      <fast-table-column-switch label="已毕业" prop="graduated" :quick-filter="true"/>
       <fast-table-column-time-picker label="闹钟" prop="clockTime"/>
       <fast-table-column-date-picker label="生日" prop="birthday" :picker-options="pickerOptionsE"/>
       <fast-table-column-number label="身高" prop="height"/>
@@ -34,9 +37,9 @@ export default {
     monthAgo.setTime(monthAgo.getTime() - 3600 * 1000 * 24 * 30);
     return {
       tableOption: new FastTableOption({
-        context: this,
+        context: this, // important! 否则钩子函数里无法获取当当前组件实例上下文
         title: '学生管理',
-        module: 'student',
+        module: 'student', // 配置了这个, 默认分页接口就是: /student/page, 新增接口就是: /student/insert, 其它同理
         enableDblClickEdit: true,
         enableMulti: true,
         enableColumnFilter: true,
@@ -44,9 +47,27 @@ export default {
         editType: 'inline',
         sortField: 'createTime',
         sortDesc: true,
+        pagination: {
+          size: 5
+        },
         style: {
           size: 'small',
           bodyRowHeight: '40px'
+        },
+        beforeLoad({query}) {
+          console.log('beforeLoad: 你可以在这里加一些逻辑, 比如在某些条件下中断分页请求(返回Promise.reject(任意值))')
+          if (this.params.loadCondition) {
+            return Promise.resolve();
+          }
+          return Promise.reject('不满足加载条件, 请勾选【加载条件】')
+        },
+        loadSuccess({query, data, res}) {
+          console.log('loadSuccess: 你可以在这里加一些逻辑, 比如加载子表之类的');
+          return Promise.resolve(data);
+        },
+        loadFail({query, error}) {
+          console.log('loadFail: 你可以在这里加一些逻辑, 错误提示之类的(返回Promise.reject(任意值)将取消默认行为)');
+          return Promise.resolve();
         }
       }),
       pickerOptionsQ: {
@@ -144,12 +165,21 @@ export default {
           code: '7'
         }
       ],
-      defaultQueryOfCreatedTime: [monthAgo, now]
+      defaultQueryOfCreatedTime: [monthAgo, now],
+      params: {
+        loadCondition: true
+      }
     }
   }
 }
 </script>
 
-<style scoped>
-
+<style scoped lang="scss">
+.demo {
+  display: flex;
+  .param {
+    width: 200px;
+    padding: 20px;
+  }
+}
 </style>

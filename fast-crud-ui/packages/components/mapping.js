@@ -188,14 +188,20 @@ const MAPPING = {
         query: (config, type) => {
             const {props = {}} = config;
             let val = []
-            let component = 'fast-checkbox-group'; // TODO quick模式一定用checkbox-group吗? 如果是动态的业务数据呢, 会导致超多选项？
+            let component = 'fast-select';
+
             if (type === 'easy') {
-                component = 'fast-select';
                 props.multiple = true;
                 props.clearable = true;
-            } else if (type === 'quick') {
+            }
+            if (type === 'quick') {
+                props.multiple = true;
+                props.clearable = true;
                 const {'default-val': defaultVal} = props;
                 val = ternary(isArray(defaultVal) && !isEmpty(defaultVal), defaultVal, val);
+                if (props.hasOwnProperty('quick-filter-checkbox')) {
+                    component = 'fast-checkbox-group';
+                }
             }
             return {
                 component: component,

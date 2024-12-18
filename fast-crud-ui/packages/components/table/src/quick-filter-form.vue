@@ -56,7 +56,7 @@ export default {
         }
         return 0;
       })
-      return expand ? filters : filters.slice(0, this.showNum)
+      return expand ? filters : filters.slice(0, this.showNum) // TODO 优化: 限制显示数量改为限制一行。如何限制一行？
     }
   },
   methods: {

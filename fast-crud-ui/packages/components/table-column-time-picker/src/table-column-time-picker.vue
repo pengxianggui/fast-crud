@@ -10,7 +10,7 @@
     </template>
 
     <slot>
-      <!-- TODO 实现行内编辑的关键编码位置 -->
+      <!-- TODO 实现图片展示&行内编辑 -->
     </slot>
   </el-table-column>
 </template>

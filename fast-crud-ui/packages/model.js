@@ -266,9 +266,9 @@ class FastTableOption {
                     style = {
                         bodyRowHeight: '50px', size: 'default', formLabelWidth: 'auto'
                     },
-                    beforeLoad = (scope) => Promise.resolve(scope.query),
-                    loadSuccess = (scope) => Promise.resolve(scope.data),
-                    loadFail = (scope) => Promise.resolve(),
+                    beforeLoad = ({query}) => Promise.resolve(),
+                    loadSuccess = ({query, data, res}) => Promise.resolve(data),
+                    loadFail = ({query, error}) => Promise.resolve(),
                     beforeInsert = (scope) => Promise.resolve(scope),
                     insertSuccess = (scope) => Promise.resolve(),
                     insertFail = (scope) => Promise.resolve(),
