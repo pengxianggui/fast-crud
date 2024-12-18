@@ -14,6 +14,10 @@ export function openDialog({component, props = {}, dialogProps = {width: '50%'}}
                     this.visible = false;
                     reject(whoClose);
                 },
+                cleanUp() {
+                    this.$destroy();
+                    document.body.removeChild(dialogInstance.$el);
+                }
             },
             render(h) {
                 return h(Dialog, {
@@ -26,8 +30,7 @@ export function openDialog({component, props = {}, dialogProps = {width: '50%'}}
                         "update:visible": (val) => {
                             this.visible = val;
                             if (!val) {
-                                this.visible = false;
-                                document.body.removeChild(dialogInstance.$el);
+                                this.cleanUp();
                             }
                         },
                         close: () => this.handleClose('dialog'),

@@ -140,6 +140,11 @@ export default {
     close() {
       this.$emit('cancel')
     }
+  },
+  beforeDestroy() {
+    if (this.distinctAbortCtrl) {
+      this.distinctAbortCtrl.abort()
+    }
   }
 }
 </script>
