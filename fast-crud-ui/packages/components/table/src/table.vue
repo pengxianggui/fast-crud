@@ -19,6 +19,11 @@
       <!-- TODO 按钮功能区 -->
       <div class="fc-operation-btn">
         <el-button :size="option.style.size" @click="addRow">新增</el-button>
+        <el-button type="danger" plain :size="option.style.size" @click="deleteRow" v-if="checkedRows.length === 0">
+          删除
+        </el-button>
+        <el-button type="danger" :size="option.style.size" @click="deleteRows" v-if="checkedRows.length > 0">删除
+        </el-button>
       </div>
     </div>
     <div class="fc-dynamic-filter-wrapper">
@@ -26,7 +31,13 @@
       <dynamic-filter-list :filters="dynamicFilters" :size="option.style.size" @search="onSearch"></dynamic-filter-list>
     </div>
     <div class="fc-fast-table-wrapper">
-      <el-table border :data="list" :row-style="rowStyle" v-loading="loading">
+      <el-table border :data="list"
+                :row-style="rowStyle"
+                highlight-current-row
+                @current-change="handleChosedChange"
+                @selection-change="handleCheckedChange"
+                v-loading="loading">
+        <el-table-column type="selection" width="55"></el-table-column>
         <slot></slot>
       </el-table>
     </div>
@@ -80,9 +91,12 @@ export default {
     }
 
     return {
-      loading: false,
-      pageQuery: pageQuery,
-      columnMap: {}, // key: column prop, value为自定义filterConfig
+      status: 'normal', // 状态: normal-常规状态; insert-新增状态; update-编辑状态
+      loading: false, // 表格数据是否正加载中
+      choseRow: null, // 当前选中的行记录
+      checkedRows: [], // 代表多选时勾选的行记录
+      pageQuery: pageQuery, // 分页查询构造参数
+      columnMap: {}, // key: column prop属性名, value为自定义filterConfig(外加tableColumnComponentName属性)
       quickFilters: [], // 快筛配置
       easyFilters: [], // 简筛配置
       dynamicFilters: [], // 动筛配置
@@ -185,7 +199,26 @@ export default {
       })
     },
     addRow() {
-      // TODO 根据option.editType决定是弹出新增表单 OR 增加一个编辑状态的空行
+      const {editType} = this.option;
+      if (editType === 'form') {
+        // TODO 表单编辑
+      } else {
+        // TODO 行内编辑: 增加一个编辑状态的空行
+      }
+    },
+    /**
+     * 删除: 删除当前选中行记录
+     */
+    deleteRow() {
+      // TODO 删除当前选中行
+      console.log(this.choseRow)
+    },
+    /**
+     * 批量删除: 删除当前勾选的行记录
+     */
+    deleteRows() {
+      // TODO 删除当前勾选的行记录
+      console.log(this.checkedRows);
     },
     openDynamicFilterForm(column) {
       // 打开动筛创建面板
@@ -220,6 +253,12 @@ export default {
       }).catch(msg => {
         console.log(msg)
       })
+    },
+    handleChosedChange(row) {
+      this.choseRow = row;
+    },
+    handleCheckedChange(rows) {
+      this.checkedRows = rows;
     }
   }
 }

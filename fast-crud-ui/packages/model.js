@@ -214,7 +214,7 @@ class FastTableOption {
     enableMulti = true;
     enableColumnFilter = true;
     lazyLoad = false; // 不立即加载数据
-    editType = 'inline';
+    editType = 'inline'; // inline/form
     sortField;
     sortDesc = true;
     pagination = {

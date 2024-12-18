@@ -19,7 +19,7 @@
       <fast-table-column-date-picker label="生日" prop="birthday" :picker-options="pickerOptionsE"/>
       <fast-table-column-number label="身高" prop="height"/>
       <fast-table-column-number label="体重" prop="weight"/>
-      <fast-table-column-date-picker label="创建时间" prop="createTime" :picker-options="pickerOptionsQ" type="datetime"
+      <fast-table-column-date-picker label="创建时间" prop="createTime" :picker-options__q="pickerOptionsQ" type="datetime"
                                      :quick-filter="true" :default-val__q="defaultQueryOfCreatedTime"
                                      value-format="yyyy-MM-dd HH:mm:ss" :default-time="['00:00:00', '23:59:59']"/>
     </fast-table>
