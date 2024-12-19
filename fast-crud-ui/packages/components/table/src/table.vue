@@ -237,11 +237,12 @@ export default {
     /**
      * 批量删除: 删除当前勾选的行记录
      */
-    deleteRows(rows) {
-      if (isEmpty(rows)) {
+    deleteRows(list) {
+      if (isEmpty(list)) {
         Message.warning('请先选中一条记录');
         return;
       }
+      const rows = list.map(r => r.row)
       const {context, beforeDeleteTip} = this.option;
       beforeDeleteTip.call(context, {rows: rows}).then(() => {
         MessageBox.confirm(`确定删除这${rows.length}条记录吗？`, '删除确认', {}).then(() => {
@@ -326,6 +327,7 @@ export default {
     },
     cancelEditStatus() {
       this.editRows.forEach(r => r.status = 'normal');
+      this.editRows.length = 0;
       this.status = 'normal';
     },
     saveEditRows() {

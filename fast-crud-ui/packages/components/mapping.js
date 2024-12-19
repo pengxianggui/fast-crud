@@ -320,6 +320,7 @@ const MAPPING = {
                 component: 'el-input',
                 props: {
                     type: 'textarea',
+                    rows: 1,
                     class: 'fc-tighten'
                     // placeholder: `请输入${config.label}`
                 }

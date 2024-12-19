@@ -1,5 +1,5 @@
 <template>
-  <el-table-column :prop="prop" :label="label" :show-overflow-tooltip="showOverflowToolTip" v-bind="$attrs">
+  <el-table-column :prop="prop" :label="label" :min-width="minWidth" :show-overflow-tooltip="showOverflowToolTip" v-bind="$attrs">
     <template v-slot:header="{column, $index}">
       <fast-table-head-cell class="fc-table-column-head-cell" :class="{'filter': filter}" :column="columnProp"
                             @click.native="headCellClick(column)">
@@ -43,6 +43,10 @@ export default {
     inactiveText: {
       type: String,
       default: () => '否'
+    },
+    minWidth: {
+      type: String,
+      default: () => '100px'
     }
   },
   data() {

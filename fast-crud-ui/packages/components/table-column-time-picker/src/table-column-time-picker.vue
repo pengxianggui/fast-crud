@@ -27,6 +27,12 @@ export default {
   name: "FastTableColumnTimePicker",
   components: {FastTableHeadCell},
   mixins: [tableColumn],
+  props: {
+    minWidth: {
+      type: String,
+      default: () => '120px'
+    }
+  },
   data() {
     return {}
   }

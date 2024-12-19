@@ -30,7 +30,7 @@ export default {
   props: {
     minWidth: {
       type: String,
-      default: () => '150px'
+      default: () => '180px'
     }
   },
   data() {

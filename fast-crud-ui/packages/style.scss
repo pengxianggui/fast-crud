@@ -24,14 +24,21 @@
 .fc-fast-table {
   .el-table__cell {
     padding: 0;
+
     .cell {
       padding: 0 5px;
-    }
-  }
-  .fc-tighten {
-    width: 100%;
-    .el-input__inner {
-      padding: 0 4px;
+
+      .fc-tighten {
+        width: 100%;
+
+        .el-input__inner {
+          padding: 0 4px;
+        }
+
+        .el-input-number__decrease, .el-input-number__increase {
+          width: 15px;
+        }
+      }
     }
   }
 }
