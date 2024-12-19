@@ -210,6 +210,7 @@ class FastTableOption {
     insertUrl = '';
     updateUrl = '';
     deleteUrl = '';
+    batchDeleteUrl = '';
     enableDblClickEdit = true;
     enableMulti = true;
     enableColumnFilter = true;
@@ -251,6 +252,7 @@ class FastTableOption {
                     insertUrl = '',
                     updateUrl = '',
                     deleteUrl = '',
+                    batchDeleteUrl = '',
                     enableDblClickEdit = true,
                     enableMulti = true,
                     enableColumnFilter = true,
@@ -275,14 +277,14 @@ class FastTableOption {
                     beforeUpdate = (scope) => Promise.resolve(),
                     updateSuccess = (scope) => Promise.resolve(),
                     updateFail = (scope) => Promise.resolve(),
-                    beforeDelete = (scope) => Promise.resolve(),
-                    deleteSuccess = (scope) => Promise.resolve(),
-                    deleteFail = (scope) => Promise.resolve(),
+                    beforeDelete = ({rows}) => Promise.resolve(),
+                    deleteSuccess = ({rows, res}) => Promise.resolve(),
+                    deleteFail = ({rows, error}) => Promise.resolve(),
                     click = (scope) => Promise.resolve(),
                     dblclick = (scope) => Promise.resolve(),
                     beforeEnableCreate = (scope) => Promise.resolve(),
                     beforeEnableUpdate = (scope) => Promise.resolve(),
-                    beforeDeleteTip = (scope) => Promise.resolve(),
+                    beforeDeleteTip = ({rows}) => Promise.resolve(),
                     beforeCancel = (scope) => Promise.resolve(),
                 }) {
         this.context = context;
@@ -292,6 +294,7 @@ class FastTableOption {
         this.insertUrl = defaultIfBlank(insertUrl, module + '/insert');
         this.updateUrl = defaultIfBlank(updateUrl, module + '/update');
         this.deleteUrl = defaultIfBlank(deleteUrl, module + '/delete');
+        this.batchDeleteUrl = defaultIfBlank(batchDeleteUrl, module + '/delete/batch');
         this.enableDblClickEdit = enableDblClickEdit;
         this.enableMulti = enableMulti;
         this.enableColumnFilter = enableColumnFilter;

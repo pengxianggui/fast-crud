@@ -6,29 +6,28 @@
       <quick-filter-form :filters="quickFilters"
                          :form-label-width="option.style.formLabelWidth"
                          :size="option.style.size"
-                         @search="onSearch"/>
+                         @search="refreshList"/>
     </div>
     <el-divider class="fc-fast-table-divider"></el-divider>
     <div class="fc-operation-bar">
       <div class="fc-operation-filter">
         <!-- 简筛区 -->
-        <easy-filter :filters="easyFilters" :size="option.style.size" @search="onSearch"
+        <easy-filter :filters="easyFilters" :size="option.style.size" @search="refreshList"
                      v-if="easyFilters.length > 0"></easy-filter>
         <!-- TODO 存筛区 -->
       </div>
       <!-- TODO 按钮功能区 -->
       <div class="fc-operation-btn">
         <el-button :size="option.style.size" @click="addRow">新增</el-button>
-        <el-button type="danger" plain :size="option.style.size" @click="deleteRow" v-if="checkedRows.length === 0">
-          删除
-        </el-button>
-        <el-button type="danger" :size="option.style.size" @click="deleteRows" v-if="checkedRows.length > 0">删除
-        </el-button>
+        <el-button type="danger" plain :size="option.style.size" @click="deleteRow" v-if="checkedRows.length === 0">删除</el-button>
+        <el-button type="danger" :size="option.style.size" @click="deleteRows(checkedRows)"
+                   v-if="checkedRows.length > 0">删除</el-button>
       </div>
     </div>
     <div class="fc-dynamic-filter-wrapper">
       <!-- 动筛列表 -->
-      <dynamic-filter-list :filters="dynamicFilters" :size="option.style.size" @search="onSearch"></dynamic-filter-list>
+      <dynamic-filter-list :filters="dynamicFilters" :size="option.style.size"
+                           @search="refreshList"></dynamic-filter-list>
     </div>
     <div class="fc-fast-table-wrapper">
       <el-table border :data="list"
@@ -46,8 +45,8 @@
                      :current-page.sync="pageQuery.current"
                      :page-sizes="option.pagination['page-sizes']"
                      :total="total"
-                     @current-change="onSearch"
-                     @size-change="onSearch"
+                     @current-change="refreshList"
+                     @size-change="refreshList"
                      :layout="option.pagination.layout"></el-pagination>
     </div>
 
@@ -56,6 +55,7 @@
 </template>
 
 <script>
+import {MessageBox, Message} from 'element-ui';
 import QuickFilterForm from "./quick-filter-form.vue";
 import EasyFilter from "./easy-filter.vue";
 import DynamicFilterForm from "./dynamic-filter-form.vue";
@@ -112,7 +112,7 @@ export default {
   mounted() {
     this.buildFilters()
     if (!this.option.lazyLoad) {
-      this.onSearch()
+      this.refreshList()
     }
   },
   methods: {
@@ -164,7 +164,7 @@ export default {
         this.pageQuery.addOrder(this.option.sortField, !this.option.sortDesc)
       }
     },
-    onSearch() {
+    refreshList() {
       const conds = []
       // 添加快筛条件
       const quickConds = this.quickFilters.filter(f => !f.disabled && f.hasVal()).map(f => f.getConds()).flat();
@@ -179,23 +179,23 @@ export default {
       this.pageQuery.setConds(conds);
       const context = this.option.context;
       const beforeLoad = this.option.beforeLoad;
-      beforeLoad.call(context, {query: this.pageQuery})
-          .then(() => {
-            this.loading = true;
-            this.$http.post(this.option.pageUrl, this.pageQuery.toJson()).then(res => {
-              const loadSuccess = this.option.loadSuccess;
-              loadSuccess.call(context, {query: this.pageQuery, data: res.data, res}).then(({records, total}) => {
-                this.list = records
-                this.total = total
-              })
-            }).catch(err => {
-              const loadFail = this.option.loadFail;
-              loadFail.call(context, {query: this.pageQuery, error: err})
-            }).finally(() => {
-              this.loading = false;
-            })
-          }).catch(err => {
-        console.warn(err)
+      beforeLoad.call(context, {query: this.pageQuery}).then(() => {
+        this.loading = true;
+        this.$http.post(this.option.pageUrl, this.pageQuery.toJson()).then(res => {
+          const loadSuccess = this.option.loadSuccess;
+          loadSuccess.call(context, {query: this.pageQuery, data: res.data, res}).then(({records, total}) => {
+            this.list = records
+            this.total = total
+          })
+        }).catch(err => {
+          const loadFail = this.option.loadFail;
+          loadFail.call(context, {query: this.pageQuery, error: err}).then(() => {
+            Message.success('加载失败:' + JSON.stringify(err));
+          })
+        }).finally(() => {
+          this.loading = false;
+        })
+      }).catch(err => {
       })
     },
     addRow() {
@@ -210,15 +210,45 @@ export default {
      * 删除: 删除当前选中行记录
      */
     deleteRow() {
-      // TODO 删除当前选中行
-      console.log(this.choseRow)
+      const {choseRow} = this;
+      const rows = [];
+      if (!isEmpty(choseRow)) {
+        rows.push(choseRow);
+      }
+      this.deleteRows(rows);
     },
     /**
      * 批量删除: 删除当前勾选的行记录
      */
-    deleteRows() {
-      // TODO 删除当前勾选的行记录
-      console.log(this.checkedRows);
+    deleteRows(rows) {
+      if (isEmpty(rows)) {
+        Message.warning('请先选中一条记录');
+        return;
+      }
+      const {context, beforeDeleteTip} = this.option;
+      beforeDeleteTip.call(context, {rows: rows}).then(() => {
+        MessageBox.confirm(`确定删除这${rows.length}条记录吗？`, '删除确认', {}).then(() => {
+          const {beforeDelete} = this.option;
+          beforeDelete.call(context, {rows: rows}).then(() => {
+            const {deleteUrl, batchDeleteUrl, deleteSuccess, deleteFail} = this.option;
+            const postPromise = (rows.length === 1 ? this.$http.post(deleteUrl, rows[0]) : this.$http.post(batchDeleteUrl, rows))
+            postPromise.then(res => {
+              this.refreshList(); // 始终刷新
+              deleteSuccess.call(context, {rows: rows, res: res}).then(() => {
+                Message.success('删除成功');
+              })
+            }).catch(err => {
+              deleteFail.call(context, {rows: rows, error: err}).then(() => {
+                Message.success('删除失败:' + JSON.stringify(err));
+              })
+            })
+          }).catch((err) => {
+            // 取消删除
+          })
+        });
+      }).catch((err) => {
+        // 取消删除提示和删除
+      })
     },
     openDynamicFilterForm(column) {
       // 打开动筛创建面板
@@ -249,7 +279,7 @@ export default {
           this.buildOrder(prop, order.asc)
           column.order = '';
         }
-        this.onSearch();
+        this.refreshList();
       }).catch(msg => {
         console.log(msg)
       })

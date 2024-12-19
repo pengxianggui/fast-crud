@@ -1,7 +1,6 @@
 package io.github.pengxianggui.crud.demo.controller;
 
 import io.github.pengxianggui.crud.dynamic.Crud;
-import io.github.pengxianggui.crud.dynamic.CrudMethod;
 import io.github.pengxianggui.crud.dynamic.CrudService;
 import io.github.pengxianggui.crud.demo.service.StudentService;
 import io.swagger.annotations.Api;
@@ -13,7 +12,7 @@ import javax.annotation.Resource;
 @Api(tags="学生")
 @RestController
 @RequestMapping("student")
-@Crud(exclude = {CrudMethod.DELETE_BATCH, CrudMethod.INSERT_BATCH})
+@Crud
 public class StudentController {
 
     @Resource

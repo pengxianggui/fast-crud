@@ -43,7 +43,7 @@ public class EntityUtil {
         Assert.notNull(entity, "entity值为null, 无法获取主键值");
         String pkName = getPkName(entity);
         Assert.notNull(pkName, "无法通过主键名获取主键值, 主键名为空");
-        return (Serializable) ReflectUtil.getFieldValue(entity, getPkName(entity));
+        return (Serializable) ReflectUtil.getFieldValue(entity, pkName);
     }
 
     /**

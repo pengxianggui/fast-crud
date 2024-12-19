@@ -1,5 +1,6 @@
 package io.github.pengxianggui.crud;
 
+import cn.hutool.core.lang.Assert;
 import io.github.pengxianggui.crud.meta.EntityUtil;
 import io.github.pengxianggui.crud.query.*;
 import io.github.pengxianggui.crud.valid.CrudInsert;
@@ -10,13 +11,14 @@ import io.swagger.annotations.ApiOperation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindException;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import javax.validation.Validator;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class BaseController<T> {
@@ -79,21 +81,32 @@ public class BaseController<T> {
     }
 
     @ApiOperation("详情查询")
-    @GetMapping("detail/{id}")
-    public T detail(@PathVariable Serializable id) {
+    @PostMapping("detail")
+    public T detail(@NotNull @RequestBody T model) {
+        Serializable id = EntityUtil.getPkVal(model);
+        Assert.notNull(id, "无法获取主键值");
         return baseService.getById(id);
     }
 
     @ApiOperation("删除")
-    @DeleteMapping("delete/{id}")
-    public boolean delete(@PathVariable Serializable id) {
+    @PostMapping("delete")
+    public boolean delete(@NotNull @RequestBody T model) {
+        Serializable id = EntityUtil.getPkVal(model);
+        Assert.notNull(id, "无法获取主键值");
         return baseService.removeById(id);
     }
 
     @ApiOperation("批量删除")
     @PostMapping("delete/batch")
-    public boolean deleteBatch(@RequestBody @Validated Serializable... ids) {
-        return baseService.removeByIds(Arrays.asList(ids));
+    public boolean deleteBatch(@NotBlank @NotNull @RequestBody List<T> models) {
+        Set<Serializable> ids = new HashSet<>(models.size());
+        for (int i = 0; i < models.size(); i++) {
+            T model = models.get(i);
+            Serializable id = EntityUtil.getPkVal(model);
+            Assert.notNull(id, "第%d条数据无法获取主键值", i + 1);
+            ids.add(id);
+        }
+        return baseService.removeByIds(ids);
     }
 
     @ApiOperation(value = "存在性查询", notes = "指定条件存在数据")

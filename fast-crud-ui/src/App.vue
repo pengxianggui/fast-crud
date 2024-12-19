@@ -1,7 +1,14 @@
 <template>
   <div class="demo">
     <div class="param">
+      <h3>开关</h3>
       <el-checkbox v-model="params.loadCondition">允许加载分页</el-checkbox>
+      <el-checkbox v-model="params.loadSuccessTip">分页加载成功提示</el-checkbox>
+      <el-checkbox v-model="params.customLoadFailTip">自定义加载失败提示</el-checkbox>
+      <el-checkbox v-model="params.notDeleteLWL">不允许删除利威尔(不弹窗)</el-checkbox>
+      <el-checkbox v-model="params.notDeleteSS">不允许删除珊莎(弹窗后)</el-checkbox>
+      <el-checkbox v-model="params.disableDefultDeleteSuccessWhenAL">删除艾伦时庆祝</el-checkbox>
+      <el-checkbox v-model="params.customDeleteFailTip">自定义删除失败提示</el-checkbox>
     </div>
     <fast-table class="el-card" :option="tableOption">
       <fast-table-column label="ID" prop="id"/>
@@ -28,6 +35,7 @@
 
 <script>
 import FastTableOption from "../packages/model";
+import {Message} from 'element-ui';
 
 export default {
   name: "App",
@@ -55,18 +63,54 @@ export default {
           bodyRowHeight: '40px'
         },
         beforeLoad({query}) {
-          console.log('beforeLoad: 你可以在这里加一些逻辑, 比如在某些条件下中断分页请求(返回Promise.reject(任意值))')
           if (this.params.loadCondition) {
             return Promise.resolve();
           }
-          return Promise.reject('不满足加载条件, 请勾选【加载条件】')
+          Message.warning('未勾选【允许加载分页】, 不会分页请求');
+          return Promise.reject()
         },
         loadSuccess({query, data, res}) {
-          console.log('loadSuccess: 你可以在这里加一些逻辑, 比如加载子表之类的');
+          if (this.params.loadSuccessTip) {
+            Message.success('分页加载成功!');
+          }
           return Promise.resolve(data);
         },
         loadFail({query, error}) {
-          console.log('loadFail: 你可以在这里加一些逻辑, 错误提示之类的(返回Promise.reject(任意值)将取消默认行为)');
+          if (this.params.customLoadFailTip) {
+            Message.error('哦豁, 分页加载失败了:' + JSON.stringify(error));
+            return Promise.reject();
+          }
+          return Promise.resolve(); // 可以通过reject覆盖默认的加载失败提示
+        },
+        beforeDeleteTip({rows}) {
+          const {notDeleteLWL} = this.params;
+          if (rows.findIndex(r => r.name === '利威尔') > -1 && notDeleteLWL) {
+            Message.warning('删除记录中包含利威尔, 你已勾选不能删除利威尔');
+            return Promise.reject();
+          }
+          return Promise.resolve();
+        },
+        beforeDelete({rows}) {
+          const {notDeleteSS} = this.params;
+          if (rows.findIndex(r => r.name === '珊莎') > -1 && notDeleteSS) {
+            Message.warning('删除记录中包含珊莎, 你已勾选不能删除珊莎');
+            return Promise.reject();
+          }
+          return Promise.resolve();
+        },
+        deleteSuccess({rows, res}) {
+          const {disableDefultDeleteSuccessWhenAL} = this.params;
+          if (disableDefultDeleteSuccessWhenAL && rows.findIndex(r => r.name === '艾伦') > -1) {
+            Message.success('恭喜恭喜! 删除对象中包含艾伦');
+            return Promise.reject(); // 通过reject覆盖默认的删除成功提示
+          }
+          return Promise.resolve();
+        },
+        deleteFail({rows, error}) {
+          if (this.params.customDeleteFailTip) {
+            Message.error('哦豁, 删除失败了! ' + JSON.stringify(error));
+            return Promise.reject(); // 通过reject覆盖默认的删除失败提示
+          }
           return Promise.resolve();
         }
       }),
@@ -167,7 +211,13 @@ export default {
       ],
       defaultQueryOfCreatedTime: [monthAgo, now],
       params: {
-        loadCondition: true
+        loadCondition: true, // 允许分页加载
+        loadSuccessTip: false, // 加载成功时提示
+        customLoadFailTip: true, // 自定义加载失败提示
+        notDeleteLWL: true, // 不允许删除利威尔
+        notDeleteSS: true, // 不允许删除珊莎
+        customDeleteFailTip: true, // 自定义删除失败提示
+        disableDefultDeleteSuccessWhenAL: true, // 当删除对象包含艾伦时, 禁用默认删除成功提示
       }
     }
   }
@@ -179,7 +229,7 @@ export default {
   display: flex;
   .param {
     width: 200px;
-    padding: 20px;
+    padding: 0 20px;
   }
 }
 </style>
