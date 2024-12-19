@@ -9,9 +9,11 @@
       </fast-table-head-cell>
     </template>
 
-    <slot>
-      <!-- TODO 实现行内编辑的关键编码位置 -->
-    </slot>
+    <template v-slot:default="{row: {row, editRow, status, config}, column, $index}">
+      <slot v-bind:default="{row, editRow, status, config, column, $index}">
+        <span>{{row[column.property]}}</span>
+      </slot>
+    </template>
   </el-table-column>
 </template>
 

@@ -6,28 +6,37 @@
       <quick-filter-form :filters="quickFilters"
                          :form-label-width="option.style.formLabelWidth"
                          :size="option.style.size"
-                         @search="refreshList"/>
+                         @search="pageLoad"/>
     </div>
     <el-divider class="fc-fast-table-divider"></el-divider>
     <div class="fc-operation-bar">
       <div class="fc-operation-filter">
         <!-- 简筛区 -->
-        <easy-filter :filters="easyFilters" :size="option.style.size" @search="refreshList"
+        <easy-filter :filters="easyFilters" :size="option.style.size" @search="pageLoad"
                      v-if="easyFilters.length > 0"></easy-filter>
         <!-- TODO 存筛区 -->
       </div>
       <!-- TODO 按钮功能区 -->
       <div class="fc-operation-btn">
-        <el-button :size="option.style.size" @click="addRow">新增</el-button>
-        <el-button type="danger" plain :size="option.style.size" @click="deleteRow" v-if="checkedRows.length === 0">删除</el-button>
-        <el-button type="danger" :size="option.style.size" @click="deleteRows(checkedRows)"
-                   v-if="checkedRows.length > 0">删除</el-button>
+        <div v-if="status === 'normal'">
+          <el-button :size="option.style.size" @click="addRow">新增</el-button>
+          <el-button type="danger" plain :size="option.style.size" @click="deleteRow"
+                     v-if="checkedRows.length === 0">删除
+          </el-button>
+          <el-button type="danger" :size="option.style.size" @click="deleteRows(checkedRows)"
+                     v-if="checkedRows.length > 0">删除
+          </el-button>
+        </div>
+        <div v-if="status === 'update' || status === 'insert'">
+          <el-button type="primary" :size="option.style.size" @click="saveEditRows">保存</el-button>
+          <el-button :size="option.style.size" @click="cancelEditStatus">取消</el-button>
+        </div>
       </div>
     </div>
     <div class="fc-dynamic-filter-wrapper">
       <!-- 动筛列表 -->
       <dynamic-filter-list :filters="dynamicFilters" :size="option.style.size"
-                           @search="refreshList"></dynamic-filter-list>
+                           @search="pageLoad"></dynamic-filter-list>
     </div>
     <div class="fc-fast-table-wrapper">
       <el-table border :data="list"
@@ -35,8 +44,9 @@
                 highlight-current-row
                 @current-change="handleChosedChange"
                 @selection-change="handleCheckedChange"
+                @row-dblclick="handleRowDblclick"
                 v-loading="loading">
-        <el-table-column type="selection" width="55"></el-table-column>
+        <el-table-column type="selection" width="55" v-if="option.enableMulti"></el-table-column>
         <slot></slot>
       </el-table>
     </div>
@@ -45,8 +55,8 @@
                      :current-page.sync="pageQuery.current"
                      :page-sizes="option.pagination['page-sizes']"
                      :total="total"
-                     @current-change="refreshList"
-                     @size-change="refreshList"
+                     @current-change="pageLoad"
+                     @size-change="pageLoad"
                      :layout="option.pagination.layout"></el-pagination>
     </div>
 
@@ -63,9 +73,9 @@ import DynamicFilterList from "./dynamic-filter-list.vue";
 import {Order, PageQuery} from '../../../model';
 import FastTableOption from "../../../model";
 import {ifBlank, isBoolean, isEmpty, noRepeatAdd} from "../../../util/util";
-import {iterBuildFilterConfig} from "./util";
+import {iterBuildComponentConfig, toTableRow} from "./util";
 import {openDialog} from "../../../util/dialog";
-import {buildFinalFilterComponentConfig} from "../../mapping";
+import {buildFinalComponentConfig} from "../../mapping";
 
 export default {
   name: "FastTable",
@@ -95,12 +105,13 @@ export default {
       loading: false, // 表格数据是否正加载中
       choseRow: null, // 当前选中的行记录
       checkedRows: [], // 代表多选时勾选的行记录
+      editRows: [], // 处于编辑状态的行
       pageQuery: pageQuery, // 分页查询构造参数
-      columnMap: {}, // key: column prop属性名, value为自定义filterConfig(外加tableColumnComponentName属性)
+      columnConfig: {}, // 列对应的配置。key: column prop属性名, value为通过fast-table-column*定义的属性(外加tableColumnComponentName属性)
       quickFilters: [], // 快筛配置
       easyFilters: [], // 简筛配置
       dynamicFilters: [], // 动筛配置
-      list: [], // 表格当前页的数据列表
+      list: [], // 表格当前页的数据, 不单纯有业务数据, 还有配置数据(用于实现行内、弹窗表单)
       total: 0 // 表格总数
     }
   },
@@ -110,25 +121,23 @@ export default {
     }
   },
   mounted() {
-    this.buildFilters()
+    this.buildComponentConfig();
     if (!this.option.lazyLoad) {
-      this.refreshList()
+      this.pageLoad();
     }
   },
   methods: {
-    buildFilters() {
+    buildComponentConfig() {
       const children = this.$slots.default ? this.$slots.default : [];
-      const props = { // 通过option传入配置项, 需要作用到filterConfig内
-        size: this.option.style.size
-      }
-      iterBuildFilterConfig(children, props, ({
-                                                tableColumnComponentName,
-                                                label,
-                                                prop,
-                                                customConfig,
-                                                quickFilter,
-                                                easyFilter
-                                              }) => {
+      iterBuildComponentConfig(children, this.option, ({
+                                                         tableColumnComponentName,
+                                                         col,
+                                                         customConfig,
+                                                         quickFilter,
+                                                         easyFilter,
+                                                         formItemConfig,
+                                                         inlineItemConfig
+                                                       }) => {
         if (quickFilter) {
           const {props = {}} = quickFilter;
           noRepeatAdd(this.quickFilters, quickFilter,
@@ -141,7 +150,12 @@ export default {
               (ele, item) => ele.col === item.col,
               props.hasOwnProperty('first-filter'))
         }
-        this.columnMap[prop] = {tableColumnComponentName, ...customConfig}
+        this.columnConfig[col] = {
+          tableColumnComponentName: tableColumnComponentName,
+          customConfig: customConfig,
+          formItemConfig: formItemConfig,
+          inlineItemConfig: inlineItemConfig
+        };
       })
     },
     /**
@@ -164,7 +178,10 @@ export default {
         this.pageQuery.addOrder(this.option.sortField, !this.option.sortDesc)
       }
     },
-    refreshList() {
+    /**
+     * 分页加载请求
+     */
+    pageLoad() {
       const conds = []
       // 添加快筛条件
       const quickConds = this.quickFilters.filter(f => !f.disabled && f.hasVal()).map(f => f.getConds()).flat();
@@ -184,8 +201,8 @@ export default {
         this.$http.post(this.option.pageUrl, this.pageQuery.toJson()).then(res => {
           const loadSuccess = this.option.loadSuccess;
           loadSuccess.call(context, {query: this.pageQuery, data: res.data, res}).then(({records, total}) => {
-            this.list = records
-            this.total = total
+            this.list = records.map(r => toTableRow(r, this.columnConfig));
+            this.total = total;
           })
         }).catch(err => {
           const loadFail = this.option.loadFail;
@@ -233,7 +250,7 @@ export default {
             const {deleteUrl, batchDeleteUrl, deleteSuccess, deleteFail} = this.option;
             const postPromise = (rows.length === 1 ? this.$http.post(deleteUrl, rows[0]) : this.$http.post(batchDeleteUrl, rows))
             postPromise.then(res => {
-              this.refreshList(); // 始终刷新
+              this.pageLoad(); // 始终刷新
               deleteSuccess.call(context, {rows: rows, res: res}).then(() => {
                 Message.success('删除成功');
               })
@@ -250,11 +267,17 @@ export default {
         // 取消删除提示和删除
       })
     },
+    /**
+     * 打开动筛面板: 构造动筛组件配置, 动态创建面板并弹出。由于动筛是动态的，不能在mounted阶段构造好。
+     * @param column
+     */
     openDynamicFilterForm(column) {
-      // 打开动筛创建面板
+      if (!this.option.enableColumnFilter) {
+        return;
+      }
       const {prop, label, order} = column
-      const {tableColumnComponentName, ...customConfig} = this.columnMap[prop]
-      const dynamicFilter = buildFinalFilterComponentConfig(customConfig, tableColumnComponentName, 'dynamic')
+      const {tableColumnComponentName, customConfig} = this.columnConfig[prop]
+      const dynamicFilter = buildFinalComponentConfig(customConfig, tableColumnComponentName, 'query', 'dynamic')
       openDialog({
         component: DynamicFilterForm,
         props: {
@@ -279,7 +302,7 @@ export default {
           this.buildOrder(prop, order.asc)
           column.order = '';
         }
-        this.refreshList();
+        this.pageLoad();
       }).catch(msg => {
         console.log(msg)
       })
@@ -289,6 +312,25 @@ export default {
     },
     handleCheckedChange(rows) {
       this.checkedRows = rows;
+    },
+    handleRowDblclick(row, column, event) {
+      const {enableDblClickEdit} = this.option;
+      if (!enableDblClickEdit) {
+        this.$emit('row-dblclick', row, column, event);
+        return;
+      }
+      // TODO 若当前编辑行已经处于编辑状态, 则直接emit并返回; 否则, 若已经存在其他编辑状态的行, 则将其他编辑状态的行提交保存
+      row.status = 'edit';
+      this.status = 'update';
+      this.editRows.push(row);
+    },
+    cancelEditStatus() {
+      this.editRows.forEach(r => r.status = 'normal');
+      this.status = 'normal';
+    },
+    saveEditRows() {
+      // TODO
+      console.log(this.editRows);
     }
   }
 }

@@ -30,6 +30,15 @@ const MAPPING = {
                     return [cond]
                 }
             }
+        },
+        edit: (config, type) => {
+            return {
+                component: 'el-input',
+                props: {
+                    clearable: false,
+                    class: 'fc-tighten'
+                }
+            }
         }
     },
     'fast-table-column-date-picker': {
@@ -75,7 +84,8 @@ const MAPPING = {
                 props: {
                     type: "date",
                     clearable: true,
-                    'value-format': 'yyyy-MM-dd'
+                    'value-format': 'yyyy-MM-dd',
+                    class: 'fc-tighten'
                 }
             }
         }
@@ -103,6 +113,14 @@ const MAPPING = {
                     }
                     easyOptParse(cond, operators)
                     return [cond]
+                }
+            }
+        },
+        edit: (config, type) => {
+            return {
+                component: 'el-upload',
+                props: {
+                    class: 'fc-tighten'
                 }
             }
         }
@@ -138,8 +156,8 @@ const MAPPING = {
             return {
                 component: 'el-input',
                 props: {
-                    clearable: true,
-                    placeholder: `请输入${config.label}`
+                    clearable: false,
+                    class: 'fc-tighten'
                 }
             }
         }
@@ -179,7 +197,9 @@ const MAPPING = {
                 component: 'el-input-number',
                 props: {
                     clearable: true,
-                    placeholder: `请输入${config.label}`
+                    'controls-position': "right",
+                    placeholder: `请输入${config.label}`,
+                    class: 'fc-tighten'
                 }
             }
         }
@@ -213,6 +233,16 @@ const MAPPING = {
                         return [cond]
                     }
                     return []
+                }
+            }
+        },
+        edit: (config, type) => {
+            const {props = {}} = config;
+            return {
+                component: 'fast-select',
+                props: {
+                    clearable: true,
+                    class: 'fc-tighten'
                 }
             }
         }
@@ -252,6 +282,7 @@ const MAPPING = {
                 props: {
                     clearable: true,
                     options: options,
+                    class: 'fc-tighten'
                     // placeholder: `请输入${config.label}`
                 }
             }
@@ -288,7 +319,8 @@ const MAPPING = {
             return {
                 component: 'el-input',
                 props: {
-                    type: 'textarea'
+                    type: 'textarea',
+                    class: 'fc-tighten'
                     // placeholder: `请输入${config.label}`
                 }
             }
@@ -329,7 +361,8 @@ const MAPPING = {
                 component: 'el-time-picker',
                 props: {
                     clearable: true,
-                    'value-format': 'HH:mm:ss'
+                    'value-format': 'HH:mm:ss',
+                    class: 'fc-tighten'
                 }
             }
         }
@@ -352,10 +385,10 @@ export const getConfigFn = function (tableColumnComponentName, type) {
  * @param tableColumnComponentName table-column组件名
  * @param filterType 类型, 可选: quick, easy, dynamic
  */
-export const buildFinalFilterComponentConfig = function (customConfig, tableColumnComponentName, filterType) {
-    const defaultConfigFn = getConfigFn(tableColumnComponentName, 'query');
+export const buildFinalComponentConfig = function (customConfig, tableColumnComponentName, action, filterType) {
+    const defaultConfigFn = getConfigFn(tableColumnComponentName, action);
     if (!isFunction(defaultConfigFn)) {
-        throw new Error(`未定义针对${tableColumnComponentName}的搜索控件`)
+        throw new Error(`未定义针对${tableColumnComponentName}的${action}控件`)
     }
     const {props: customProps, ...customConfigWithoutProps} = customConfig;
     const {props: defaultProps, ...defaultConfigWithoutProps} = defaultConfigFn(customConfig, filterType);

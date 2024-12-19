@@ -146,18 +146,17 @@ export class PageQuery extends Query {
 }
 
 /**
- * 筛选数据模型
+ * 筛选组件配置
  */
 export class FilterComponentConfig {
     component; // 渲染组件
-    col;
-    opt;
-    val;
+    col; // 字段名
+    opt; // 操作符
+    val; // 值
     label; // 显示中文名
     props; // 组件对应的props
-    defaultVal;
-    quick;
-    disabled;
+    defaultVal; // 默认值
+    disabled; // 是否禁用
     condMapFn = (cond) => [cond];
 
     /**
@@ -167,17 +166,15 @@ export class FilterComponentConfig {
      * @param opt 操作符
      * @param val 值
      * @param label 中文名
-     * @param quick 是否支持快筛
      * @param props 组件对应的props
      * @param condMapFn 条件获取过滤函数
      */
-    constructor({component, col, opt = Opt.LIKE, val, label, quick, props, condMapFn = (cond) => [cond]}) {
+    constructor({component, col, opt = Opt.LIKE, val, label, props, condMapFn = (cond) => [cond]}) {
         this.component = component;
         this.col = col;
         this.opt = opt;
         this.val = val;
         this.label = label;
-        this.quick = quick;
         this.props = props;
         if (!isUndefined(condMapFn)) {
             this.condMapFn = condMapFn;
@@ -200,6 +197,27 @@ export class FilterComponentConfig {
     }
 }
 
+/**
+ * 编辑组件配置
+ */
+export class EditComponentConfig {
+    component;
+    col;
+    label;
+    props;
+    defaultVal;
+    disabled;
+
+    constructor({component, col, label, props, defaultVal, disabled}) {
+        this.component = component;
+        this.col = col;
+        this.label = label;
+        this.props = props;
+        this.defaultVal = defaultVal;
+        this.disabled = disabled;
+    }
+}
+
 // 定义 FastTableOption 类
 class FastTableOption {
     context;
@@ -212,8 +230,8 @@ class FastTableOption {
     deleteUrl = '';
     batchDeleteUrl = '';
     enableDblClickEdit = true;
-    enableMulti = true;
-    enableColumnFilter = true;
+    enableMulti = true; // 启用多选
+    enableColumnFilter = true; // 启用列过滤：即动筛。TODO 关了以后，排序也用不了了: 需要在表头外面加排序按钮
     lazyLoad = false; // 不立即加载数据
     editType = 'inline'; // inline/form
     sortField;

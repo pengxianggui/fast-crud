@@ -12,8 +12,9 @@
     </div>
     <fast-table class="el-card" :option="tableOption">
       <fast-table-column label="ID" prop="id"/>
-      <fast-table-column-img label="头像" prop="avatar" :filter="false"/>
-      <fast-table-column label="姓名" prop="name" first-filter :quick-filter="true"/>
+      <!-- TODO 头像还不具备状态 -->
+<!--      <fast-table-column-img label="头像" prop="avatar" :filter="false"/>-->
+      <fast-table-column-input label="姓名" prop="name" first-filter :quick-filter="true"/>
       <fast-table-column-number label="年龄" prop="age"/>
       <fast-table-column-select label="性别" prop="sex" :options="sexOptions" :quick-filter="true"/>
       <fast-table-column-select label="爱好" prop="hobby" :options="hobbyOptions"

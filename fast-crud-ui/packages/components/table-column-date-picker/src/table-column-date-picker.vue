@@ -9,10 +9,11 @@
       </fast-table-head-cell>
     </template>
 
-    <template v-slot:default="{row, column, $index}">
-      <slot v-bind:default="{row, column, $index}">
-        <!-- TODO 实现行内编辑的关键编码位置 -->
-        <span>{{ row[column.property] | dateFormat(valueFormat) }}</span>
+    <template v-slot:default="{row: {row, editRow, status, config}, column, $index}">
+      <slot v-bind:default="{row, editRow, status, config, column, $index}">
+        <div v-if="status === 'normal'">{{ row[column.property] | dateFormat(valueFormat) }}</div>
+        <component :is="config[column.property]['component']"
+                   v-model="editRow[column.property]" v-bind="config[column.property]['props']" v-else></component>
       </slot>
     </template>
   </el-table-column>
