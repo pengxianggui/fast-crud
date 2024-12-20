@@ -15,7 +15,7 @@
       <fast-table-column label="ID" prop="id"/>
       <!-- TODO fast-table-column-img还不具备状态 -->
 <!--      <fast-table-column-img label="头像" prop="avatar" :filter="false"/>-->
-      <fast-table-column-input label="姓名" prop="name" first-filter :quick-filter="true"/>
+      <fast-table-column-input label="姓名" prop="name" first-filter :quick-filter="true" :required="true"/>
       <fast-table-column-number label="年龄" prop="age"/>
       <fast-table-column-select label="性别" prop="sex" :options="sexOptions" :quick-filter="true"/>
       <fast-table-column-select label="爱好" prop="hobby" :options="hobbyOptions"
@@ -31,7 +31,7 @@
       <fast-table-column-date-picker label="创建时间" prop="createTime" :picker-options__q="pickerOptionsQ" type="datetime"
                                      :quick-filter="false" :default-val__q="defaultQueryOfCreatedTime"
                                      value-format__q="yyyy-MM-dd HH:mm:ss"
-                                     value-format__e="yyyy-MM-dd'T'HH:mm:ss"
+                                     value-format__e="yyyy-MM-ddTHH:mm:ss"
                                      :default-time="['00:00:00', '23:59:59']"
                                      :editable="false"/>
     </fast-table>

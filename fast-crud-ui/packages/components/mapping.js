@@ -209,7 +209,6 @@ const MAPPING = {
                 props: {
                     clearable: true,
                     'controls-position': "right",
-                    placeholder: `请输入${config.label}`,
                     class: 'fc-tighten',
                     editable: true,
                     defaultVal: null
@@ -223,7 +222,7 @@ const MAPPING = {
             let val = []
             let component = 'fast-select';
 
-            if (type === 'easy') {
+            if (type === 'easy' || type === 'dynamic') {
                 props.multiple = true;
                 props.clearable = true;
             }
@@ -413,12 +412,24 @@ export const getConfigFn = function (tableColumnComponentName, type) {
  * @param type 类型, 当action为query时, 可选: quick, easy, dynamic; 当action为edit时, 可选: inline, form
  */
 export const buildFinalComponentConfig = function (customConfig, tableColumnComponentName, action, type) {
+    // 排除props中后缀为__e的属性, 因为这些配置项仅用于编辑控件, 并将__q后缀的属性名移除此后缀
+    const filteredProps = Object.keys(customConfig.props).filter(key => !key.endsWith(action === 'query' ? '__e' : '__q'))
+        .reduce((obj, key) => {
+            obj[key.replace(action === 'query' ? /__q$/ : /__e$/, '')] = customConfig.props[key];
+            return obj;
+        }, {});
+    const customFilterConfig = {
+        label: customConfig.label,
+        col: customConfig.col,
+        props: {...filteredProps}
+    }
+
     const defaultConfigFn = getConfigFn(tableColumnComponentName, action);
     if (!isFunction(defaultConfigFn)) {
         throw new Error(`未定义针对${tableColumnComponentName}的${action}控件`)
     }
-    const {props: customProps, ...customConfigWithoutProps} = customConfig;
-    const {props: defaultProps, ...defaultConfigWithoutProps} = defaultConfigFn(customConfig, type);
+    const {props: customProps, ...customConfigWithoutProps} = customFilterConfig;
+    const {props: defaultProps, ...defaultConfigWithoutProps} = defaultConfigFn(customFilterConfig, type);
 
     const highOptimizePropFn = getConfigFn(tableColumnComponentName, 'highOptimizeProp');
     const finalProps = merge({...customProps}, defaultProps, false, false, (obj1, obj2, key, valueOfObj2) => {

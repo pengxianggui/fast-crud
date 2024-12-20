@@ -72,14 +72,14 @@ export function iterBuildComponentConfig(vnodes, tableOption, callback) {
         const customConfig = {
             label: label,
             col: col,
-            props: {...props, ...defaultProp}
+            props: {...defaultProp, ...props}
         }
         // debugger
         try {
             if (filter) {
-                buildFilterComponentConfig(param, tableColumnComponentName, defaultProp, props);
+                buildFilterComponentConfig(param, tableColumnComponentName, customConfig);
             }
-            buildEditComponentConfig(param, tableColumnComponentName, defaultProp, props);
+            buildEditComponentConfig(param, tableColumnComponentName, customConfig);
         } catch (err) {
             console.error(err)
         } finally {
@@ -96,36 +96,25 @@ export function iterBuildComponentConfig(vnodes, tableOption, callback) {
  * @param defaultProp
  * @param props
  */
-function buildFilterComponentConfig(param, tableColumnComponentName, defaultProp, props) {
-    const {'quick-filter': quickFilter = false, label, prop} = props;
-    // 排除props中后缀为__e的属性, 因为这些配置项仅用于编辑控件, 并将__q后缀的属性名移除此后缀
-    const filteredProps = Object.keys(props).filter(key => !key.endsWith('__e'))
-        .reduce((obj, key) => {
-            obj[key.replace(/__q$/, '')] = props[key];
-            return obj;
-        }, {});
-    const customFilterConfig = {
-        label: label,
-        col: prop,
-        props: {...filteredProps, ...defaultProp}
-    }
+function buildFilterComponentConfig(param, tableColumnComponentName, customConfig) {
+    const {'quick-filter': quickFilter = false} = customConfig.props;
     // build quick filters
     if (quickFilter) {
         try {
-            param.quickFilter = buildFinalComponentConfig(customFilterConfig, tableColumnComponentName, 'query', 'quick');
+            param.quickFilter = buildFinalComponentConfig(customConfig, tableColumnComponentName, 'query', 'quick');
         } catch (e) {
             console.error(e.message)
         }
     }
     // build easy filters
     try {
-        param.easyFilter = buildFinalComponentConfig(customFilterConfig, tableColumnComponentName, 'query', 'easy');
+        param.easyFilter = buildFinalComponentConfig(customConfig, tableColumnComponentName, 'query', 'easy');
     } catch (e) {
         console.error(e.message)
     }
     // build easy filters
     try {
-        param.dynamicFilter = buildFinalComponentConfig(customFilterConfig, tableColumnComponentName, 'query', 'dynamic')
+        param.dynamicFilter = buildFinalComponentConfig(customConfig, tableColumnComponentName, 'query', 'dynamic')
     } catch (e) {
         console.error(e.message)
     }
@@ -139,28 +128,16 @@ function buildFilterComponentConfig(param, tableColumnComponentName, defaultProp
  * @param defaultProp
  * @param props
  */
-function buildEditComponentConfig(param, tableColumnComponentName, defaultProp, props) {
-    const {label, prop} = props;
-    // 排除props中后缀为__q的属性, 因为这些配置项仅用于筛选控件, 并将__e后缀的属性名移除此后缀
-    const filteredProps = Object.keys(props).filter(key => !key.endsWith('__q'))
-        .reduce((obj, key) => {
-            obj[key.replace(/__e$/, '')] = props[key];
-            return obj;
-        }, {});
-    const customEditConfig = {
-        label: label,
-        col: prop,
-        props: {...filteredProps, ...defaultProp}
-    }
+function buildEditComponentConfig(param, tableColumnComponentName, customConfig) {
     // form表单组件配置
     try {
-        param.formItemConfig = buildFinalComponentConfig(customEditConfig, tableColumnComponentName, 'edit', 'form');
+        param.formItemConfig = buildFinalComponentConfig(customConfig, tableColumnComponentName, 'edit', 'form');
     } catch (e) {
         console.error(e.message)
     }
     // 行内表单组件配置
     try {
-        param.inlineItemConfig = buildFinalComponentConfig(customEditConfig, tableColumnComponentName, 'edit', 'inline');
+        param.inlineItemConfig = buildFinalComponentConfig(customConfig, tableColumnComponentName, 'edit', 'inline');
     } catch (e) {
         console.error(e.message)
     }

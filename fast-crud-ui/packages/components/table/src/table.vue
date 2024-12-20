@@ -9,7 +9,7 @@
                          @search="pageLoad"/>
     </div>
     <el-divider class="fc-fast-table-divider"></el-divider>
-    <div class="fc-operation-bar">
+    <div class="fc-fast-table-operation-bar">
       <div class="fc-operation-filter">
         <!-- 简筛区 -->
         <easy-filter :filters="easyFilters" :size="option.style.size" @search="pageLoad"
@@ -17,22 +17,33 @@
         <!-- TODO 存筛区 -->
       </div>
       <!-- 按钮功能区 -->
-      <div class="fc-operation-btn">
-        <div v-if="status === 'normal'">
-          <el-button :size="option.style.size" @click="addRow">新增</el-button>
+      <div class="fc-fast-table-operation-btn">
+        <template v-if="status === 'normal'">
+          <el-button :size="option.style.size" icon="el-icon-plus" @click="addRow">新建</el-button>
           <el-button type="danger" plain :size="option.style.size" @click="deleteRow"
                      v-if="checkedRows.length === 0">删除
           </el-button>
           <el-button type="danger" :size="option.style.size" @click="deleteRows(checkedRows)"
                      v-if="checkedRows.length > 0">删除
           </el-button>
-        </div>
-        <div v-if="status === 'update' || status === 'insert'">
-          <el-button :size="option.style.size" @click="addRow">继续新增</el-button>
+        </template>
+        <template v-if="status === 'update' || status === 'insert'">
+          <el-button :size="option.style.size" icon="el-icon-plus" @click="addRow" v-if="status === 'insert'">继续新建</el-button>
           <el-button type="primary" :size="option.style.size" @click="saveEditRows">保存</el-button>
           <el-button :size="option.style.size" @click="cancelEditStatus">取消</el-button>
-        </div>
+        </template>
         <!-- TODO 下拉按钮-更多 -->
+        <el-dropdown class="fc-fast-table-operation-more">
+          <el-button type="primary" plain :size="option.style.size">
+            更多<i class="el-icon-arrow-down el-icon--right"></i>
+          </el-button>
+          <el-dropdown-menu slot="dropdown">
+            <el-dropdown-item @click.native="activeBatchEdit">批量编辑</el-dropdown-item>
+            <el-dropdown-item @click.native="activeBatchUpdate">批量修改</el-dropdown-item>
+            <el-dropdown-item>导出</el-dropdown-item>
+            <el-dropdown-item>自定义</el-dropdown-item>
+          </el-dropdown-menu>
+        </el-dropdown>
       </div>
     </div>
     <div class="fc-dynamic-filter-wrapper">
@@ -312,6 +323,7 @@ export default {
       const {prop, label, order} = column
       const {tableColumnComponentName, customConfig} = this.columnConfig[prop]
       const dynamicFilter = buildFinalComponentConfig(customConfig, tableColumnComponentName, 'query', 'dynamic')
+      debugger
       openDialog({
         component: DynamicFilterForm,
         props: {
@@ -384,6 +396,17 @@ export default {
       // })
     },
     /**
+     * 激活批量编辑
+     */
+    activeBatchEdit() {
+      if (this.status !== 'normal') {
+        Message.warning('请先退出编辑状态')
+        return;
+      }
+      this.list.forEach(r => r.status = 'update');
+      this.editRows.push(...this.list);
+    },
+    /**
      * 取消编辑状态: 包括新增、更新状态。会将编辑状态的行状态重置为'normal', 并清空编辑行数组editRows, 同时将表格状态重置为'normal'
      */
     cancelEditStatus() {
@@ -420,6 +443,12 @@ export default {
           this.pageLoad().then(() => resolve()).catch(() => reject());
         }).catch(() => reject());
       });
+    },
+    /**
+     * 批量更新记录
+     */
+    activeBatchUpdate() {
+      // TODO 激活勾选，针对勾选的记录弹出批量更新弹窗，可指定要更新的字段和值，点击确定应用于这些记录
     },
     /**
      * 新增行, 返回promise
@@ -512,10 +541,14 @@ export default {
     margin: 0 0 10px 0;
   }
 
-  .fc-operation-bar {
+  .fc-fast-table-operation-bar {
     margin-bottom: 10px;
     display: flex;
     justify-content: space-between;
+
+    .fc-fast-table-operation-more {
+      margin-left: 10px;
+    }
   }
 
   .fc-fast-table-wrapper {
