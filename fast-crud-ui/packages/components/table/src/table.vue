@@ -72,7 +72,7 @@ import DynamicFilterForm from "./dynamic-filter-form.vue";
 import DynamicFilterList from "./dynamic-filter-list.vue";
 import {Order, PageQuery} from '../../../model';
 import FastTableOption from "../../../model";
-import {ifBlank, isBoolean, isEmpty, noRepeatAdd} from "../../../util/util";
+import {ifBlank, isArray, isBoolean, isEmpty, noRepeatAdd} from "../../../util/util";
 import {iterBuildComponentConfig, toTableRow} from "./util";
 import {openDialog} from "../../../util/dialog";
 import {buildFinalComponentConfig} from "../../mapping";
@@ -87,6 +87,20 @@ export default {
     }
   },
   computed: {
+    // 状态: normal-常规状态; insert-新增状态; update-编辑状态
+    status() {
+      const {editRows} = this;
+      if (editRows.length === 0) {
+        return 'normal';
+      }
+      if (editRows.every(r => r.status === 'update')) {
+        return 'update';
+      } else if (editRows.every(r => r.status === 'insert')) {
+        return 'insert';
+      } else {
+        return 'normal';
+      }
+    },
     rowStyle() {
       return {
         height: this.option.style.bodyRowHeight
@@ -101,11 +115,10 @@ export default {
     }
 
     return {
-      status: 'normal', // 状态: normal-常规状态; insert-新增状态; update-编辑状态
       loading: false, // 表格数据是否正加载中
       choseRow: null, // 当前选中的行记录
       checkedRows: [], // 代表多选时勾选的行记录
-      editRows: [], // 处于编辑状态的行
+      editRows: [], // 处于编辑状态的行, 包括新增和更新
       pageQuery: pageQuery, // 分页查询构造参数
       columnConfig: {}, // 列对应的配置。key: column prop属性名, value为通过fast-table-column*定义的属性(外加tableColumnComponentName属性)
       quickFilters: [], // 快筛配置
@@ -196,31 +209,44 @@ export default {
       this.pageQuery.setConds(conds);
       const context = this.option.context;
       const beforeLoad = this.option.beforeLoad;
-      beforeLoad.call(context, {query: this.pageQuery}).then(() => {
-        this.loading = true;
-        this.$http.post(this.option.pageUrl, this.pageQuery.toJson()).then(res => {
-          const loadSuccess = this.option.loadSuccess;
-          loadSuccess.call(context, {query: this.pageQuery, data: res.data, res}).then(({records, total}) => {
-            this.list = records.map(r => toTableRow(r, this.columnConfig));
-            this.total = total;
+      return new Promise((resolve, reject) => {
+        beforeLoad.call(context, {query: this.pageQuery}).then(() => {
+          this.loading = true;
+          this.$http.post(this.option.pageUrl, this.pageQuery.toJson()).then(res => {
+            this.cancelEditStatus();
+            const loadSuccess = this.option.loadSuccess;
+            loadSuccess.call(context, {query: this.pageQuery, data: res.data, res}).then(({records, total}) => {
+              this.list = records.map(r => toTableRow(r, this.columnConfig));
+              this.total = total;
+            }).finally(() => {
+              resolve();
+            })
+          }).catch(err => {
+            const loadFail = this.option.loadFail;
+            loadFail.call(context, {query: this.pageQuery, error: err}).then(() => {
+              Message.success('加载失败:' + JSON.stringify(err));
+            })
+            reject(err);
+          }).finally(() => {
+            this.loading = false;
           })
         }).catch(err => {
-          const loadFail = this.option.loadFail;
-          loadFail.call(context, {query: this.pageQuery, error: err}).then(() => {
-            Message.success('加载失败:' + JSON.stringify(err));
-          })
-        }).finally(() => {
-          this.loading = false;
+          reject(err);
         })
-      }).catch(err => {
       })
     },
     addRow() {
       const {editType} = this.option;
+      if (this.status !== 'normal') {
+        console.warn(`当前FastTable处于${this.status}状态, 不允许新增`);
+        return;
+      }
       if (editType === 'form') {
         // TODO 表单编辑
+        console.error("暂未支持")
       } else {
-        // TODO 行内编辑: 增加一个编辑状态的空行
+        // TODO 行内编辑: 增加一个编辑状态的空行, status为insert, 属性和值取自columnConfig.inlineItemConfig(col和defaultVal)
+
       }
     },
     /**
@@ -247,16 +273,20 @@ export default {
       beforeDeleteTip.call(context, {rows: rows}).then(() => {
         MessageBox.confirm(`确定删除这${rows.length}条记录吗？`, '删除确认', {}).then(() => {
           const {beforeDelete} = this.option;
-          beforeDelete.call(context, {rows: rows}).then(() => {
+          beforeDelete.call(context, {rows: rows}).then((toBeDeleteRows) => {
+            if (!isArray(toBeDeleteRows) || isEmpty(toBeDeleteRows)) {
+              console.warn(`beforeDelete回调函数未resolve数组值.`)
+              return;
+            }
             const {deleteUrl, batchDeleteUrl, deleteSuccess, deleteFail} = this.option;
-            const postPromise = (rows.length === 1 ? this.$http.post(deleteUrl, rows[0]) : this.$http.post(batchDeleteUrl, rows))
+            const postPromise = (toBeDeleteRows.length === 1 ? this.$http.post(deleteUrl, toBeDeleteRows[0]) : this.$http.post(batchDeleteUrl, toBeDeleteRows))
             postPromise.then(res => {
               this.pageLoad(); // 始终刷新
-              deleteSuccess.call(context, {rows: rows, res: res}).then(() => {
+              deleteSuccess.call(context, {rows: rows, toBeDeleteRows: toBeDeleteRows, res: res}).then(() => {
                 Message.success('删除成功');
               })
             }).catch(err => {
-              deleteFail.call(context, {rows: rows, error: err}).then(() => {
+              deleteFail.call(context, {rows: rows, toBeDeleteRows: toBeDeleteRows, error: err}).then(() => {
                 Message.success('删除失败:' + JSON.stringify(err));
               })
             })
@@ -320,19 +350,123 @@ export default {
         this.$emit('row-dblclick', row, column, event);
         return;
       }
-      // TODO 若当前编辑行已经处于编辑状态, 则直接emit并返回; 否则, 若已经存在其他编辑状态的行, 则将其他编辑状态的行提交保存
-      row.status = 'edit';
-      this.status = 'update';
+      // 若当前编辑行已经处于编辑状态, 则直接emit并返回;
+      if (row.status === 'update' || row.status === 'insert') {
+        this.$emit('row-dblclick', row, column, event);
+        return;
+      }
+
+      // opt1: 当前存在编辑行时，不允许再新增编辑行
+      if (this.status !== 'normal') {
+        this.$emit('row-dblclick', row, column, event);
+        return;
+      }
+      row.status = 'update';
       this.editRows.push(row);
+
+      // // opt2: 如果已经存在编辑行, 则保存已存在的编辑(包括新增、更新)行。TODO opt2还存在问题: $nextTick不生效, 新编辑的行无法呈现为编辑状态
+      // this.saveEditRows().then(() => {
+      //   this.cancelEditStatus();
+      //   this.$nextTick(() => {
+      //     row.status = 'update';
+      //     row.editRow = {...row.row}
+      //     // this.status = 'update';
+      //     this.editRows.push(row);
+      //   })
+      // })
     },
+    /**
+     * 取消编辑状态: 包括新增、更新状态。会将编辑状态的行状态重置为'normal', 并清空编辑行数组editRows, 同时将表格状态重置为'normal'
+     */
     cancelEditStatus() {
       this.editRows.forEach(r => r.status = 'normal');
       this.editRows.length = 0;
-      this.status = 'normal';
     },
+    /**
+     * 保存编辑的行: 包括新增或更新状态的行。内部会将保存成功的记录的行状态置为normal
+     * @return 返回Promise。不存在需要保存的行 或 保存成功则返回resolve, 否则返回reject。
+     */
     saveEditRows() {
-      // TODO
-      console.log(this.editRows);
+      debugger
+      if (this.editRows.length === 0) {
+        return Promise.resolve();
+      }
+      // 保存编辑的行: 包括新增、更新状态的行
+      let promise;
+      if (this.status === 'insert') {
+        promise = this._insertRows(this.editRows);
+      } else if (this.status === 'update') {
+        promise = this._updateRows(this.editRows);
+      } else {
+        throw new Error(`当前FastTable状态异常:${this.status}, 无法保存编辑记录`);
+      }
+      return new Promise((resolve, reject) => {
+        promise.then(() => {
+          this.cancelEditStatus();
+          this.pageLoad().then(() => resolve()).catch(() => reject());
+        }).catch(() => reject());
+      });
+    },
+    /**
+     * 新增行, 返回promise
+     * @param rows
+     */
+    _insertRows(rows) {
+      if (rows.length === 0) {
+        return Promise.resolve();
+      }
+      return new Promise((resolve, reject) => {
+        const {context, beforeInsert} = this.option;
+        beforeInsert.call(context, {fatRows: rows}).then(() => {
+          const toBeInsertRows = rows.map(r => r.editRow);
+          const {insertUrl, batchInsertUrl, insertSuccess, insertFail} = this.option;
+          const postPromise = (toBeInsertRows.length === 1 ? this.$http.post(insertUrl, toBeInsertRows[0]) : this.$http.post(batchInsertUrl, toBeInsertRows))
+          postPromise.then(res => {
+            resolve();
+            insertSuccess.call(context, {fatRows: rows, rows: toBeInsertRows, res: res}).then(() => {
+              Message.success(`成功新增${toBeInsertRows.length}条记录`);
+            });
+          }).catch(err => {
+            reject(err);
+            insertFail.call(context, {fatRows: rows, rows: toBeInsertRows, error: err}).then(() => {
+              Message.success('新增失败:' + JSON.stringify(err));
+            });
+          })
+        }).catch(err => {
+          reject(err);
+        })
+      });
+    },
+    /**
+     * 更新行
+     * @param rows
+     * @return 返回promise, 若成功更新则resolve; 若失败或取消, 则返回reject err或用户自定义的内容
+     */
+    _updateRows(rows) {
+      if (rows.length === 0) {
+        return Promise.resolve();
+      }
+      return new Promise((resolve, reject) => {
+        const {context, beforeUpdate} = this.option;
+        beforeUpdate.call(context, {fatRows: rows}).then(() => {
+          const toBeUpdateRows = rows.map(r => r.editRow);
+          const {updateUrl, batchUpdateUrl, updateSuccess, updateFail} = this.option;
+          const postPromise = (toBeUpdateRows.length === 1 ? this.$http.post(updateUrl, toBeUpdateRows[0]) : this.$http.post(batchUpdateUrl, toBeUpdateRows))
+          postPromise.then(res => {
+            resolve();
+            updateSuccess.call(context, {fatRows: rows, rows: toBeUpdateRows, res: res}).then(() => {
+              Message.success(`成功更新${toBeUpdateRows.length}条记录`);
+            });
+          }).catch(err => {
+            reject(err);
+            updateFail.call(context, {fatRows: rows, rows: toBeUpdateRows, error: err}).then(() => {
+              Message.success('更新失败:' + JSON.stringify(err));
+            });
+          })
+        }).catch(err => {
+          reject(err);
+        })
+      });
     }
   }
 }

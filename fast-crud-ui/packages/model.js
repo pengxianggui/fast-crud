@@ -226,7 +226,9 @@ class FastTableOption {
     pageUrl = '';
     listUrl = '';
     insertUrl = '';
+    batchInsertUrl = '';
     updateUrl = '';
+    batchUpdateUrl = '';
     deleteUrl = '';
     batchDeleteUrl = '';
     enableDblClickEdit = true;
@@ -268,7 +270,9 @@ class FastTableOption {
                     pageUrl = '',
                     listUrl = '',
                     insertUrl = '',
+                    batchInsertUrl = '',
                     updateUrl = '',
+                    batchUpdateUrl = '',
                     deleteUrl = '',
                     batchDeleteUrl = '',
                     enableDblClickEdit = true,
@@ -292,12 +296,12 @@ class FastTableOption {
                     beforeInsert = (scope) => Promise.resolve(scope),
                     insertSuccess = (scope) => Promise.resolve(),
                     insertFail = (scope) => Promise.resolve(),
-                    beforeUpdate = (scope) => Promise.resolve(),
-                    updateSuccess = (scope) => Promise.resolve(),
-                    updateFail = (scope) => Promise.resolve(),
-                    beforeDelete = ({rows}) => Promise.resolve(),
-                    deleteSuccess = ({rows, res}) => Promise.resolve(),
-                    deleteFail = ({rows, error}) => Promise.resolve(),
+                    beforeUpdate = ({fatRows}) => Promise.resolve(fatRows),
+                    updateSuccess = ({fatRows, rows, res}) => Promise.resolve(),
+                    updateFail = ({fatRows, rows, error}) => Promise.resolve(),
+                    beforeDelete = ({rows}) => Promise.resolve(rows),
+                    deleteSuccess = ({rows, toBeDeleteRows, res}) => Promise.resolve(),
+                    deleteFail = ({rows, toBeDeleteRows, error}) => Promise.resolve(),
                     click = (scope) => Promise.resolve(),
                     dblclick = (scope) => Promise.resolve(),
                     beforeEnableCreate = (scope) => Promise.resolve(),
@@ -310,7 +314,9 @@ class FastTableOption {
         this.pageUrl = defaultIfBlank(pageUrl, module + '/page');
         this.listUrl = defaultIfBlank(listUrl, module + '/list');
         this.insertUrl = defaultIfBlank(insertUrl, module + '/insert');
+        this.batchInsertUrl = defaultIfBlank(batchInsertUrl, module + '/insert/batch');
         this.updateUrl = defaultIfBlank(updateUrl, module + '/update');
+        this.batchUpdateUrl = defaultIfBlank(batchUpdateUrl, module + '/update/batch');
         this.deleteUrl = defaultIfBlank(deleteUrl, module + '/delete');
         this.batchDeleteUrl = defaultIfBlank(batchDeleteUrl, module + '/delete/batch');
         this.enableDblClickEdit = enableDblClickEdit;

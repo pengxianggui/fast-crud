@@ -22,11 +22,12 @@ export function toTableRow(row, columnConfig, status = 'normal') {
         }
         return config;
     }
+    const config = getInlineItemConfig(columnConfig);
     return {
         row: row,
         editRow: {...row},
         status: status,
-        config: getInlineItemConfig(columnConfig)
+        config: config
     }
 }
 

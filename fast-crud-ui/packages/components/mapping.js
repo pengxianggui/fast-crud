@@ -36,15 +36,20 @@ const MAPPING = {
                 component: 'el-input',
                 props: {
                     clearable: false,
-                    class: 'fc-tighten'
+                    class: 'fc-tighten',
+                    editable: false
                 }
             }
         }
     },
     'fast-table-column-date-picker': {
         // 保证当前静态props中优先级更高的配置, 不被自定义覆盖
-        highOptimizeProp: (type) => {
-            return ['type']
+        highOptimizeProp: (action, type) => {
+            const fields = [];
+            if (action === 'query') {
+                fields.push('type');
+            }
+            return fields;
         },
         query: (config, type) => {
             let val = [];
@@ -76,7 +81,7 @@ const MAPPING = {
                 }
             }
         },
-        edit: (config) => {
+        edit: (config, type) => {
             return {
                 component: 'el-date-picker',
                 opt: Opt.BTW,
@@ -85,7 +90,9 @@ const MAPPING = {
                     type: "date",
                     clearable: true,
                     'value-format': 'yyyy-MM-dd',
-                    class: 'fc-tighten'
+                    class: 'fc-tighten',
+                    editable: true,
+                    defaultVal: null
                 }
             }
         }
@@ -120,7 +127,9 @@ const MAPPING = {
             return {
                 component: 'el-upload',
                 props: {
-                    class: 'fc-tighten'
+                    class: 'fc-tighten',
+                    editable: true,
+                    defaultVal: null
                 }
             }
         }
@@ -156,8 +165,10 @@ const MAPPING = {
             return {
                 component: 'el-input',
                 props: {
-                    clearable: false,
-                    class: 'fc-tighten'
+                    clearable: true,
+                    class: 'fc-tighten',
+                    editable: true,
+                    defaultVal: null
                 }
             }
         }
@@ -199,7 +210,9 @@ const MAPPING = {
                     clearable: true,
                     'controls-position': "right",
                     placeholder: `请输入${config.label}`,
-                    class: 'fc-tighten'
+                    class: 'fc-tighten',
+                    editable: true,
+                    defaultVal: null
                 }
             }
         }
@@ -242,7 +255,9 @@ const MAPPING = {
                 component: 'fast-select',
                 props: {
                     clearable: true,
-                    class: 'fc-tighten'
+                    class: 'fc-tighten',
+                    editable: true,
+                    defaultVal: null
                 }
             }
         }
@@ -282,7 +297,9 @@ const MAPPING = {
                 props: {
                     clearable: true,
                     options: options,
-                    class: 'fc-tighten'
+                    class: 'fc-tighten',
+                    editable: true,
+                    defaultVal: inactiveText
                     // placeholder: `请输入${config.label}`
                 }
             }
@@ -321,7 +338,9 @@ const MAPPING = {
                 props: {
                     type: 'textarea',
                     rows: 1,
-                    class: 'fc-tighten'
+                    class: 'fc-tighten',
+                    editable: true,
+                    defaultVal: ''
                     // placeholder: `请输入${config.label}`
                 }
             }
@@ -363,7 +382,9 @@ const MAPPING = {
                 props: {
                     clearable: true,
                     'value-format': 'HH:mm:ss',
-                    class: 'fc-tighten'
+                    class: 'fc-tighten',
+                    editable: true,
+                    defaultVal: null
                 }
             }
         }
@@ -384,20 +405,21 @@ export const getConfigFn = function (tableColumnComponentName, type) {
  * 构建最终的过滤组件的配置
  * @param customConfig 用户自定义配置。方法内不会改变此值
  * @param tableColumnComponentName table-column组件名
- * @param filterType 类型, 可选: quick, easy, dynamic
+ * @param action 行为: 可选: query, edit
+ * @param type 类型, 当action为query时, 可选: quick, easy, dynamic; 当action为edit时, 可选: inline, form
  */
-export const buildFinalComponentConfig = function (customConfig, tableColumnComponentName, action, filterType) {
+export const buildFinalComponentConfig = function (customConfig, tableColumnComponentName, action, type) {
     const defaultConfigFn = getConfigFn(tableColumnComponentName, action);
     if (!isFunction(defaultConfigFn)) {
         throw new Error(`未定义针对${tableColumnComponentName}的${action}控件`)
     }
     const {props: customProps, ...customConfigWithoutProps} = customConfig;
-    const {props: defaultProps, ...defaultConfigWithoutProps} = defaultConfigFn(customConfig, filterType);
+    const {props: defaultProps, ...defaultConfigWithoutProps} = defaultConfigFn(customConfig, type);
 
     const highOptimizePropFn = getConfigFn(tableColumnComponentName, 'highOptimizeProp');
     const finalProps = merge({...customProps}, defaultProps, false, false, (obj1, obj2, key, valueOfObj2) => {
         if (isFunction(highOptimizePropFn)) {
-            const highOptimizeProps = highOptimizePropFn(filterType)
+            const highOptimizeProps = highOptimizePropFn(action, type)
             if (highOptimizeProps.indexOf(key) > -1) {
                 obj1[key] = valueOfObj2
             }

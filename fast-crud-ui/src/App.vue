@@ -29,7 +29,10 @@
       <fast-table-column-number label="体重" prop="weight"/>
       <fast-table-column-date-picker label="创建时间" prop="createTime" :picker-options__q="pickerOptionsQ" type="datetime"
                                      :quick-filter="true" :default-val__q="defaultQueryOfCreatedTime"
-                                     value-format="yyyy-MM-dd HH:mm:ss" :default-time="['00:00:00', '23:59:59']"/>
+                                     value-format__q="yyyy-MM-dd HH:mm:ss"
+                                     value-format__e="yyyy-MM-dd'T'HH:mm:ss"
+                                     :default-time="['00:00:00', '23:59:59']"
+                                     :editable="false"/>
     </fast-table>
   </div>
 </template>
@@ -97,7 +100,7 @@ export default {
             Message.warning('删除记录中包含珊莎, 你已勾选不能删除珊莎');
             return Promise.reject();
           }
-          return Promise.resolve();
+          return Promise.resolve(rows);
         },
         deleteSuccess({rows, res}) {
           const {disableDefultDeleteSuccessWhenAL} = this.params;

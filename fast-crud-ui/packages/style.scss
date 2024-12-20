@@ -38,6 +38,14 @@
         .el-input-number__decrease, .el-input-number__increase {
           width: 15px;
         }
+
+        .el-input__prefix {
+          display: none;
+        }
+
+        input {
+          text-align: left;
+        }
       }
     }
   }
