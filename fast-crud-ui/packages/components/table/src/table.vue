@@ -16,7 +16,7 @@
                      v-if="easyFilters.length > 0"></easy-filter>
         <!-- TODO 存筛区 -->
       </div>
-      <!-- TODO 按钮功能区 -->
+      <!-- 按钮功能区 -->
       <div class="fc-operation-btn">
         <div v-if="status === 'normal'">
           <el-button :size="option.style.size" @click="addRow">新增</el-button>
@@ -28,9 +28,11 @@
           </el-button>
         </div>
         <div v-if="status === 'update' || status === 'insert'">
+          <el-button :size="option.style.size" @click="addRow">继续新增</el-button>
           <el-button type="primary" :size="option.style.size" @click="saveEditRows">保存</el-button>
           <el-button :size="option.style.size" @click="cancelEditStatus">取消</el-button>
         </div>
+        <!-- TODO 下拉按钮-更多 -->
       </div>
     </div>
     <div class="fc-dynamic-filter-wrapper">
@@ -45,7 +47,8 @@
                 @current-change="handleChosedChange"
                 @selection-change="handleCheckedChange"
                 @row-dblclick="handleRowDblclick"
-                v-loading="loading">
+                v-loading="loading"
+                :key="tableKey">
         <el-table-column type="selection" width="55" v-if="option.enableMulti"></el-table-column>
         <slot></slot>
       </el-table>
@@ -66,13 +69,14 @@
 
 <script>
 import {MessageBox, Message} from 'element-ui';
+import {remove} from 'lodash-es';
 import QuickFilterForm from "./quick-filter-form.vue";
 import EasyFilter from "./easy-filter.vue";
 import DynamicFilterForm from "./dynamic-filter-form.vue";
 import DynamicFilterList from "./dynamic-filter-list.vue";
 import {Order, PageQuery} from '../../../model';
 import FastTableOption from "../../../model";
-import {ifBlank, isArray, isBoolean, isEmpty, noRepeatAdd} from "../../../util/util";
+import {ifBlank, isBoolean, isEmpty, noRepeatAdd} from "../../../util/util";
 import {iterBuildComponentConfig, toTableRow} from "./util";
 import {openDialog} from "../../../util/dialog";
 import {buildFinalComponentConfig} from "../../mapping";
@@ -115,6 +119,7 @@ export default {
     }
 
     return {
+      tableKey: 0, // 用于前端刷新表格
       loading: false, // 表格数据是否正加载中
       choseRow: null, // 当前选中的行记录
       checkedRows: [], // 代表多选时勾选的行记录
@@ -237,7 +242,7 @@ export default {
     },
     addRow() {
       const {editType} = this.option;
-      if (this.status !== 'normal') {
+      if (this.status !== 'normal' && this.status !== 'insert') {
         console.warn(`当前FastTable处于${this.status}状态, 不允许新增`);
         return;
       }
@@ -245,8 +250,10 @@ export default {
         // TODO 表单编辑
         console.error("暂未支持")
       } else {
-        // TODO 行内编辑: 增加一个编辑状态的空行, status为insert, 属性和值取自columnConfig.inlineItemConfig(col和defaultVal)
-
+        // 行内编辑: 增加一个编辑状态的空行, status为insert, 属性和值取自columnConfig.inlineItemConfig(col和defaultVal)
+        const newRow = toTableRow({}, this.columnConfig, 'insert');
+        this.list.unshift(newRow);
+        this.editRows.push(newRow);
       }
     },
     /**
@@ -380,15 +387,21 @@ export default {
      * 取消编辑状态: 包括新增、更新状态。会将编辑状态的行状态重置为'normal', 并清空编辑行数组editRows, 同时将表格状态重置为'normal'
      */
     cancelEditStatus() {
+      if (this.editRows.length === 0) {
+        return;
+      }
+      // 移除列表中可能存在的insert状态记录
+      remove(this.list, item => item.status === 'insert');
+      // 将编辑的行状态改为normal, 并清空editRows
       this.editRows.forEach(r => r.status = 'normal');
       this.editRows.length = 0;
+      this.tableKey++; // 控制表格重新渲染
     },
     /**
      * 保存编辑的行: 包括新增或更新状态的行。内部会将保存成功的记录的行状态置为normal
      * @return 返回Promise。不存在需要保存的行 或 保存成功则返回resolve, 否则返回reject。
      */
     saveEditRows() {
-      debugger
       if (this.editRows.length === 0) {
         return Promise.resolve();
       }

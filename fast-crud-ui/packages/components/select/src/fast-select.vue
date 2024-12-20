@@ -10,7 +10,6 @@ export default {
   name: "fast-select",
   props: {
     value: {
-      type: [String, Number, Boolean, Array],
       required: true
     },
     options: {

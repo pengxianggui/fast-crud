@@ -1,5 +1,5 @@
 import {buildFinalComponentConfig} from "../../mapping";
-import {deepClone, isArray} from "../../../util/util";
+import {deepClone, isArray, merge} from "../../../util/util";
 
 /**
  * 将行数据转换为table-row格式
@@ -23,6 +23,16 @@ export function toTableRow(row, columnConfig, status = 'normal') {
         return config;
     }
     const config = getInlineItemConfig(columnConfig);
+    if (status === 'insert') {
+        // fill row
+        const cols = Object.keys(config);
+        const newRow = {};
+        cols.forEach(col => {
+            const {props: {defaultVal}} = config[col];
+            newRow[col] = deepClone(defaultVal);
+        })
+        merge(row, newRow, true, false)
+    }
     return {
         row: row,
         editRow: {...row},

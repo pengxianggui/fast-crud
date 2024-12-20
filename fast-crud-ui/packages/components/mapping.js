@@ -250,14 +250,18 @@ const MAPPING = {
             }
         },
         edit: (config, type) => {
-            const {props = {}} = config;
+            const {props: {multiple}} = config;
+            let defaultVal = null;
+            if (multiple === true) {
+                defaultVal = [];
+            }
             return {
                 component: 'fast-select',
                 props: {
                     clearable: true,
                     class: 'fc-tighten',
                     editable: true,
-                    defaultVal: null
+                    defaultVal: defaultVal
                 }
             }
         }
@@ -299,7 +303,7 @@ const MAPPING = {
                     options: options,
                     class: 'fc-tighten',
                     editable: true,
-                    defaultVal: inactiveText
+                    defaultVal: inactiveValue
                     // placeholder: `请输入${config.label}`
                 }
             }

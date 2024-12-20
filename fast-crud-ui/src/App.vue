@@ -13,7 +13,7 @@
     </div>
     <fast-table class="el-card" :option="tableOption">
       <fast-table-column label="ID" prop="id"/>
-      <!-- TODO 头像还不具备状态 -->
+      <!-- TODO fast-table-column-img还不具备状态 -->
 <!--      <fast-table-column-img label="头像" prop="avatar" :filter="false"/>-->
       <fast-table-column-input label="姓名" prop="name" first-filter :quick-filter="true"/>
       <fast-table-column-number label="年龄" prop="age"/>
@@ -21,7 +21,7 @@
       <fast-table-column-select label="爱好" prop="hobby" :options="hobbyOptions"
                                 :quick-filter="true" quick-filter-block quick-filter-checkbox
                                 val-key="code" label-key="name"
-                                :default-val__q="['1','4','7']" :disable-val__q="['2','3']"/>
+                                :default-val__q="['1', '2', '3', '4', '5']" :disable-val__q="['6']"/>
       <fast-table-column-textarea label="地址" prop="address"/>
       <fast-table-column-switch label="已毕业" prop="graduated" :quick-filter="true"/>
       <fast-table-column-time-picker label="闹钟" prop="clockTime"/>
@@ -29,7 +29,7 @@
       <fast-table-column-number label="身高" prop="height"/>
       <fast-table-column-number label="体重" prop="weight"/>
       <fast-table-column-date-picker label="创建时间" prop="createTime" :picker-options__q="pickerOptionsQ" type="datetime"
-                                     :quick-filter="true" :default-val__q="defaultQueryOfCreatedTime"
+                                     :quick-filter="false" :default-val__q="defaultQueryOfCreatedTime"
                                      value-format__q="yyyy-MM-dd HH:mm:ss"
                                      value-format__e="yyyy-MM-dd'T'HH:mm:ss"
                                      :default-time="['00:00:00', '23:59:59']"
@@ -61,11 +61,12 @@ export default {
         sortField: 'createTime',
         sortDesc: true,
         pagination: {
-          size: 5
+          size: 5,
+          "page-sizes": [5, 10, 20, 50, 100]
         },
         style: {
-          size: 'small',
-          bodyRowHeight: '40px'
+          size: 'small', // mini,small,medium
+          bodyRowHeight: '45px'
         },
         beforeLoad({query}) {
           if (this.params.loadCondition) {
