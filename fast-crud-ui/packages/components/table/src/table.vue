@@ -6,28 +6,39 @@
       <quick-filter-form :filters="quickFilters"
                          :form-label-width="option.style.formLabelWidth"
                          :size="option.style.size"
-                         @search="refreshList"/>
+                         @search="pageLoad"/>
     </div>
     <el-divider class="fc-fast-table-divider"></el-divider>
     <div class="fc-operation-bar">
       <div class="fc-operation-filter">
         <!-- 简筛区 -->
-        <easy-filter :filters="easyFilters" :size="option.style.size" @search="refreshList"
+        <easy-filter :filters="easyFilters" :size="option.style.size" @search="pageLoad"
                      v-if="easyFilters.length > 0"></easy-filter>
         <!-- TODO 存筛区 -->
       </div>
-      <!-- TODO 按钮功能区 -->
+      <!-- 按钮功能区 -->
       <div class="fc-operation-btn">
-        <el-button :size="option.style.size" @click="addRow">新增</el-button>
-        <el-button type="danger" plain :size="option.style.size" @click="deleteRow" v-if="checkedRows.length === 0">删除</el-button>
-        <el-button type="danger" :size="option.style.size" @click="deleteRows(checkedRows)"
-                   v-if="checkedRows.length > 0">删除</el-button>
+        <div v-if="status === 'normal'">
+          <el-button :size="option.style.size" @click="addRow">新增</el-button>
+          <el-button type="danger" plain :size="option.style.size" @click="deleteRow"
+                     v-if="checkedRows.length === 0">删除
+          </el-button>
+          <el-button type="danger" :size="option.style.size" @click="deleteRows(checkedRows)"
+                     v-if="checkedRows.length > 0">删除
+          </el-button>
+        </div>
+        <div v-if="status === 'update' || status === 'insert'">
+          <el-button :size="option.style.size" @click="addRow">继续新增</el-button>
+          <el-button type="primary" :size="option.style.size" @click="saveEditRows">保存</el-button>
+          <el-button :size="option.style.size" @click="cancelEditStatus">取消</el-button>
+        </div>
+        <!-- TODO 下拉按钮-更多 -->
       </div>
     </div>
     <div class="fc-dynamic-filter-wrapper">
       <!-- 动筛列表 -->
       <dynamic-filter-list :filters="dynamicFilters" :size="option.style.size"
-                           @search="refreshList"></dynamic-filter-list>
+                           @search="pageLoad"></dynamic-filter-list>
     </div>
     <div class="fc-fast-table-wrapper">
       <el-table border :data="list"
@@ -35,8 +46,10 @@
                 highlight-current-row
                 @current-change="handleChosedChange"
                 @selection-change="handleCheckedChange"
-                v-loading="loading">
-        <el-table-column type="selection" width="55"></el-table-column>
+                @row-dblclick="handleRowDblclick"
+                v-loading="loading"
+                :key="tableKey">
+        <el-table-column type="selection" width="55" v-if="option.enableMulti"></el-table-column>
         <slot></slot>
       </el-table>
     </div>
@@ -45,8 +58,8 @@
                      :current-page.sync="pageQuery.current"
                      :page-sizes="option.pagination['page-sizes']"
                      :total="total"
-                     @current-change="refreshList"
-                     @size-change="refreshList"
+                     @current-change="pageLoad"
+                     @size-change="pageLoad"
                      :layout="option.pagination.layout"></el-pagination>
     </div>
 
@@ -56,6 +69,7 @@
 
 <script>
 import {MessageBox, Message} from 'element-ui';
+import {remove} from 'lodash-es';
 import QuickFilterForm from "./quick-filter-form.vue";
 import EasyFilter from "./easy-filter.vue";
 import DynamicFilterForm from "./dynamic-filter-form.vue";
@@ -63,9 +77,9 @@ import DynamicFilterList from "./dynamic-filter-list.vue";
 import {Order, PageQuery} from '../../../model';
 import FastTableOption from "../../../model";
 import {ifBlank, isBoolean, isEmpty, noRepeatAdd} from "../../../util/util";
-import {iterBuildFilterConfig} from "./util";
+import {iterBuildComponentConfig, toTableRow} from "./util";
 import {openDialog} from "../../../util/dialog";
-import {buildFinalFilterComponentConfig} from "../../mapping";
+import {buildFinalComponentConfig} from "../../mapping";
 
 export default {
   name: "FastTable",
@@ -77,6 +91,20 @@ export default {
     }
   },
   computed: {
+    // 状态: normal-常规状态; insert-新增状态; update-编辑状态
+    status() {
+      const {editRows} = this;
+      if (editRows.length === 0) {
+        return 'normal';
+      }
+      if (editRows.every(r => r.status === 'update')) {
+        return 'update';
+      } else if (editRows.every(r => r.status === 'insert')) {
+        return 'insert';
+      } else {
+        return 'normal';
+      }
+    },
     rowStyle() {
       return {
         height: this.option.style.bodyRowHeight
@@ -91,16 +119,17 @@ export default {
     }
 
     return {
-      status: 'normal', // 状态: normal-常规状态; insert-新增状态; update-编辑状态
+      tableKey: 0, // 用于前端刷新表格
       loading: false, // 表格数据是否正加载中
       choseRow: null, // 当前选中的行记录
       checkedRows: [], // 代表多选时勾选的行记录
+      editRows: [], // 处于编辑状态的行, 包括新增和更新
       pageQuery: pageQuery, // 分页查询构造参数
-      columnMap: {}, // key: column prop属性名, value为自定义filterConfig(外加tableColumnComponentName属性)
+      columnConfig: {}, // 列对应的配置。key: column prop属性名, value为通过fast-table-column*定义的属性(外加tableColumnComponentName属性)
       quickFilters: [], // 快筛配置
       easyFilters: [], // 简筛配置
       dynamicFilters: [], // 动筛配置
-      list: [], // 表格当前页的数据列表
+      list: [], // 表格当前页的数据, 不单纯有业务数据, 还有配置数据(用于实现行内、弹窗表单)
       total: 0 // 表格总数
     }
   },
@@ -110,25 +139,23 @@ export default {
     }
   },
   mounted() {
-    this.buildFilters()
+    this.buildComponentConfig();
     if (!this.option.lazyLoad) {
-      this.refreshList()
+      this.pageLoad();
     }
   },
   methods: {
-    buildFilters() {
+    buildComponentConfig() {
       const children = this.$slots.default ? this.$slots.default : [];
-      const props = { // 通过option传入配置项, 需要作用到filterConfig内
-        size: this.option.style.size
-      }
-      iterBuildFilterConfig(children, props, ({
-                                                tableColumnComponentName,
-                                                label,
-                                                prop,
-                                                customConfig,
-                                                quickFilter,
-                                                easyFilter
-                                              }) => {
+      iterBuildComponentConfig(children, this.option, ({
+                                                         tableColumnComponentName,
+                                                         col,
+                                                         customConfig,
+                                                         quickFilter,
+                                                         easyFilter,
+                                                         formItemConfig,
+                                                         inlineItemConfig
+                                                       }) => {
         if (quickFilter) {
           const {props = {}} = quickFilter;
           noRepeatAdd(this.quickFilters, quickFilter,
@@ -141,7 +168,12 @@ export default {
               (ele, item) => ele.col === item.col,
               props.hasOwnProperty('first-filter'))
         }
-        this.columnMap[prop] = {tableColumnComponentName, ...customConfig}
+        this.columnConfig[col] = {
+          tableColumnComponentName: tableColumnComponentName,
+          customConfig: customConfig,
+          formItemConfig: formItemConfig,
+          inlineItemConfig: inlineItemConfig
+        };
       })
     },
     /**
@@ -164,7 +196,10 @@ export default {
         this.pageQuery.addOrder(this.option.sortField, !this.option.sortDesc)
       }
     },
-    refreshList() {
+    /**
+     * 分页加载请求
+     */
+    pageLoad() {
       const conds = []
       // 添加快筛条件
       const quickConds = this.quickFilters.filter(f => !f.disabled && f.hasVal()).map(f => f.getConds()).flat();
@@ -179,31 +214,46 @@ export default {
       this.pageQuery.setConds(conds);
       const context = this.option.context;
       const beforeLoad = this.option.beforeLoad;
-      beforeLoad.call(context, {query: this.pageQuery}).then(() => {
-        this.loading = true;
-        this.$http.post(this.option.pageUrl, this.pageQuery.toJson()).then(res => {
-          const loadSuccess = this.option.loadSuccess;
-          loadSuccess.call(context, {query: this.pageQuery, data: res.data, res}).then(({records, total}) => {
-            this.list = records
-            this.total = total
+      return new Promise((resolve, reject) => {
+        beforeLoad.call(context, {query: this.pageQuery}).then(() => {
+          this.loading = true;
+          this.$http.post(this.option.pageUrl, this.pageQuery.toJson()).then(res => {
+            this.cancelEditStatus();
+            const loadSuccess = this.option.loadSuccess;
+            loadSuccess.call(context, {query: this.pageQuery, data: res.data, res}).then(({records, total}) => {
+              this.list = records.map(r => toTableRow(r, this.columnConfig));
+              this.total = total;
+            }).finally(() => {
+              resolve();
+            })
+          }).catch(err => {
+            const loadFail = this.option.loadFail;
+            loadFail.call(context, {query: this.pageQuery, error: err}).then(() => {
+              Message.success('加载失败:' + JSON.stringify(err));
+            })
+            reject(err);
+          }).finally(() => {
+            this.loading = false;
           })
         }).catch(err => {
-          const loadFail = this.option.loadFail;
-          loadFail.call(context, {query: this.pageQuery, error: err}).then(() => {
-            Message.success('加载失败:' + JSON.stringify(err));
-          })
-        }).finally(() => {
-          this.loading = false;
+          reject(err);
         })
-      }).catch(err => {
       })
     },
     addRow() {
       const {editType} = this.option;
+      if (this.status !== 'normal' && this.status !== 'insert') {
+        console.warn(`当前FastTable处于${this.status}状态, 不允许新增`);
+        return;
+      }
       if (editType === 'form') {
         // TODO 表单编辑
+        console.error("暂未支持")
       } else {
-        // TODO 行内编辑: 增加一个编辑状态的空行
+        // 行内编辑: 增加一个编辑状态的空行, status为insert, 属性和值取自columnConfig.inlineItemConfig(col和defaultVal)
+        const newRow = toTableRow({}, this.columnConfig, 'insert');
+        this.list.unshift(newRow);
+        this.editRows.push(newRow);
       }
     },
     /**
@@ -220,11 +270,12 @@ export default {
     /**
      * 批量删除: 删除当前勾选的行记录
      */
-    deleteRows(rows) {
-      if (isEmpty(rows)) {
+    deleteRows(list) {
+      if (isEmpty(list)) {
         Message.warning('请先选中一条记录');
         return;
       }
+      const rows = list.map(r => r.row)
       const {context, beforeDeleteTip} = this.option;
       beforeDeleteTip.call(context, {rows: rows}).then(() => {
         MessageBox.confirm(`确定删除这${rows.length}条记录吗？`, '删除确认', {}).then(() => {
@@ -233,7 +284,7 @@ export default {
             const {deleteUrl, batchDeleteUrl, deleteSuccess, deleteFail} = this.option;
             const postPromise = (rows.length === 1 ? this.$http.post(deleteUrl, rows[0]) : this.$http.post(batchDeleteUrl, rows))
             postPromise.then(res => {
-              this.refreshList(); // 始终刷新
+              this.pageLoad(); // 始终刷新
               deleteSuccess.call(context, {rows: rows, res: res}).then(() => {
                 Message.success('删除成功');
               })
@@ -250,11 +301,17 @@ export default {
         // 取消删除提示和删除
       })
     },
+    /**
+     * 打开动筛面板: 构造动筛组件配置, 动态创建面板并弹出。由于动筛是动态的，不能在mounted阶段构造好。
+     * @param column
+     */
     openDynamicFilterForm(column) {
-      // 打开动筛创建面板
+      if (!this.option.enableColumnFilter) {
+        return;
+      }
       const {prop, label, order} = column
-      const {tableColumnComponentName, ...customConfig} = this.columnMap[prop]
-      const dynamicFilter = buildFinalFilterComponentConfig(customConfig, tableColumnComponentName, 'dynamic')
+      const {tableColumnComponentName, customConfig} = this.columnConfig[prop]
+      const dynamicFilter = buildFinalComponentConfig(customConfig, tableColumnComponentName, 'query', 'dynamic')
       openDialog({
         component: DynamicFilterForm,
         props: {
@@ -279,7 +336,7 @@ export default {
           this.buildOrder(prop, order.asc)
           column.order = '';
         }
-        this.refreshList();
+        this.pageLoad();
       }).catch(msg => {
         console.log(msg)
       })
@@ -289,6 +346,141 @@ export default {
     },
     handleCheckedChange(rows) {
       this.checkedRows = rows;
+    },
+    handleRowDblclick(row, column, event) {
+      const {enableDblClickEdit} = this.option;
+      if (!enableDblClickEdit) {
+        this.$emit('row-dblclick', row, column, event);
+        return;
+      }
+      // 若当前编辑行已经处于编辑状态, 则直接emit并返回;
+      if (row.status === 'update' || row.status === 'insert') {
+        this.$emit('row-dblclick', row, column, event);
+        return;
+      }
+
+      // opt1: 当前存在编辑行时，不允许再新增编辑行
+      if (this.status !== 'normal') {
+        this.$emit('row-dblclick', row, column, event);
+        return;
+      }
+      const {context, beforeEnableUpdate} = this.option;
+      beforeEnableUpdate.call(context, {rows: [row.row]}).then(() => {
+        row.status = 'update';
+        this.editRows.push(row);
+      }).catch(() => {
+        console.debug('你已取消编辑')
+      })
+
+      // // opt2: 如果已经存在编辑行, 则保存已存在的编辑(包括新增、更新)行。TODO opt2还存在问题: $nextTick不生效, 新编辑的行无法呈现为编辑状态
+      // this.saveEditRows().then(() => {
+      //   this.cancelEditStatus();
+      //   this.$nextTick(() => {
+      //     row.status = 'update';
+      //     row.editRow = {...row.row}
+      //     // this.status = 'update';
+      //     this.editRows.push(row);
+      //   })
+      // })
+    },
+    /**
+     * 取消编辑状态: 包括新增、更新状态。会将编辑状态的行状态重置为'normal', 并清空编辑行数组editRows, 同时将表格状态重置为'normal'
+     */
+    cancelEditStatus() {
+      if (this.editRows.length === 0) {
+        return;
+      }
+      // 移除列表中可能存在的insert状态记录
+      remove(this.list, item => item.status === 'insert');
+      // 将编辑的行状态改为normal, 并清空editRows
+      this.editRows.forEach(r => r.status = 'normal');
+      this.editRows.length = 0;
+      this.tableKey++; // 控制表格重新渲染
+    },
+    /**
+     * 保存编辑的行: 包括新增或更新状态的行。内部会将保存成功的记录的行状态置为normal
+     * @return 返回Promise。不存在需要保存的行 或 保存成功则返回resolve, 否则返回reject。
+     */
+    saveEditRows() {
+      if (this.editRows.length === 0) {
+        return Promise.resolve();
+      }
+      // 保存编辑的行: 包括新增、更新状态的行
+      let promise;
+      if (this.status === 'insert') {
+        promise = this._insertRows(this.editRows);
+      } else if (this.status === 'update') {
+        promise = this._updateRows(this.editRows);
+      } else {
+        throw new Error(`当前FastTable状态异常:${this.status}, 无法保存编辑记录`);
+      }
+      return new Promise((resolve, reject) => {
+        promise.then(() => {
+          this.cancelEditStatus();
+          this.pageLoad().then(() => resolve()).catch(() => reject());
+        }).catch(() => reject());
+      });
+    },
+    /**
+     * 新增行, 返回promise
+     * @param rows
+     */
+    _insertRows(rows) {
+      if (rows.length === 0) {
+        return Promise.resolve();
+      }
+      return new Promise((resolve, reject) => {
+        const {context, beforeInsert} = this.option;
+        beforeInsert.call(context, {fatRows: rows}).then(() => {
+          const toBeInsertRows = rows.map(r => r.editRow);
+          const {insertUrl, batchInsertUrl, insertSuccess, insertFail} = this.option;
+          const postPromise = (toBeInsertRows.length === 1 ? this.$http.post(insertUrl, toBeInsertRows[0]) : this.$http.post(batchInsertUrl, toBeInsertRows))
+          postPromise.then(res => {
+            resolve();
+            insertSuccess.call(context, {fatRows: rows, rows: toBeInsertRows, res: res}).then(() => {
+              Message.success(`成功新增${toBeInsertRows.length}条记录`);
+            });
+          }).catch(err => {
+            reject(err);
+            insertFail.call(context, {fatRows: rows, rows: toBeInsertRows, error: err}).then(() => {
+              Message.success('新增失败:' + JSON.stringify(err));
+            });
+          })
+        }).catch(err => {
+          reject(err);
+        })
+      });
+    },
+    /**
+     * 更新行
+     * @param rows
+     * @return 返回promise, 若成功更新则resolve; 若失败或取消, 则返回reject err或用户自定义的内容
+     */
+    _updateRows(rows) {
+      if (rows.length === 0) {
+        return Promise.resolve();
+      }
+      return new Promise((resolve, reject) => {
+        const {context, beforeUpdate} = this.option;
+        beforeUpdate.call(context, {fatRows: rows}).then(() => {
+          const toBeUpdateRows = rows.map(r => r.editRow);
+          const {updateUrl, batchUpdateUrl, updateSuccess, updateFail} = this.option;
+          const postPromise = (toBeUpdateRows.length === 1 ? this.$http.post(updateUrl, toBeUpdateRows[0]) : this.$http.post(batchUpdateUrl, toBeUpdateRows))
+          postPromise.then(res => {
+            resolve();
+            updateSuccess.call(context, {fatRows: rows, rows: toBeUpdateRows, res: res}).then(() => {
+              Message.success(`成功更新${toBeUpdateRows.length}条记录`);
+            });
+          }).catch(err => {
+            reject(err);
+            updateFail.call(context, {fatRows: rows, rows: toBeUpdateRows, error: err}).then(() => {
+              Message.success('更新失败:' + JSON.stringify(err));
+            });
+          })
+        }).catch(err => {
+          reject(err);
+        })
+      });
     }
   }
 }

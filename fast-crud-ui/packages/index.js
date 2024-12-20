@@ -1,4 +1,4 @@
-import {Input, InputNumber, DatePicker, Switch, TimePicker, Loading} from 'element-ui'
+import {Input, InputNumber, DatePicker, Switch, TimePicker, Upload, Loading} from 'element-ui'
 import FastCheckboxGroup from "./components/checkbox-group";
 import FastSelect from "./components/select";
 import FastTable from './components/table'
@@ -22,6 +22,7 @@ const components = [
     DatePicker,
     Switch,
     TimePicker,
+    Upload,
     FastCheckboxGroup,
     FastSelect,
     FastTable,

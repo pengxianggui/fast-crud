@@ -9,9 +9,19 @@
       </fast-table-head-cell>
     </template>
 
-    <slot>
-      <!-- TODO 实现行内编辑的关键编码位置 -->
-    </slot>
+    <template v-slot:default="{row: {row, editRow, status, config}, column, $index}">
+      <slot v-bind:default="{row, editRow, status, config, column, $index}">
+        <div v-if="status === 'normal' || config[column.property]['props']['editable'] === false">
+          <slot v-bind:normal="{row, editRow, status, config, column, $index}">
+            <span>{{ row[column.property] }}</span>
+          </slot>
+        </div>
+        <slot v-bind:edit="{row, editRow, status, config, column, $index}" v-else>
+          <component :is="config[column.property]['component']"
+                     v-model="editRow[column.property]" v-bind="config[column.property]['props']"></component>
+        </slot>
+      </slot>
+    </template>
   </el-table-column>
 </template>
 
@@ -26,7 +36,7 @@ export default {
   props: {
     minWidth: {
       type: String,
-      default: () => '150px'
+      default: () => '180px'
     }
   },
   data() {
