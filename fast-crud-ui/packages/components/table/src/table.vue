@@ -273,20 +273,16 @@ export default {
       beforeDeleteTip.call(context, {rows: rows}).then(() => {
         MessageBox.confirm(`确定删除这${rows.length}条记录吗？`, '删除确认', {}).then(() => {
           const {beforeDelete} = this.option;
-          beforeDelete.call(context, {rows: rows}).then((toBeDeleteRows) => {
-            if (!isArray(toBeDeleteRows) || isEmpty(toBeDeleteRows)) {
-              console.warn(`beforeDelete回调函数未resolve数组值.`)
-              return;
-            }
+          beforeDelete.call(context, {rows: rows}).then(() => {
             const {deleteUrl, batchDeleteUrl, deleteSuccess, deleteFail} = this.option;
-            const postPromise = (toBeDeleteRows.length === 1 ? this.$http.post(deleteUrl, toBeDeleteRows[0]) : this.$http.post(batchDeleteUrl, toBeDeleteRows))
+            const postPromise = (rows.length === 1 ? this.$http.post(deleteUrl, rows[0]) : this.$http.post(batchDeleteUrl, rows))
             postPromise.then(res => {
               this.pageLoad(); // 始终刷新
-              deleteSuccess.call(context, {rows: rows, toBeDeleteRows: toBeDeleteRows, res: res}).then(() => {
+              deleteSuccess.call(context, {rows: rows, res: res}).then(() => {
                 Message.success('删除成功');
               })
             }).catch(err => {
-              deleteFail.call(context, {rows: rows, toBeDeleteRows: toBeDeleteRows, error: err}).then(() => {
+              deleteFail.call(context, {rows: rows, error: err}).then(() => {
                 Message.success('删除失败:' + JSON.stringify(err));
               })
             })
@@ -361,8 +357,13 @@ export default {
         this.$emit('row-dblclick', row, column, event);
         return;
       }
-      row.status = 'update';
-      this.editRows.push(row);
+      const {context, beforeEnableUpdate} = this.option;
+      beforeEnableUpdate.call(context, {rows: [row.row]}).then(() => {
+        row.status = 'update';
+        this.editRows.push(row);
+      }).catch(() => {
+        console.debug('你已取消编辑')
+      })
 
       // // opt2: 如果已经存在编辑行, 则保存已存在的编辑(包括新增、更新)行。TODO opt2还存在问题: $nextTick不生效, 新编辑的行无法呈现为编辑状态
       // this.saveEditRows().then(() => {

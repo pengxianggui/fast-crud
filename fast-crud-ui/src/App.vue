@@ -5,10 +5,11 @@
       <el-checkbox v-model="params.loadCondition">允许加载分页</el-checkbox>
       <el-checkbox v-model="params.loadSuccessTip">分页加载成功提示</el-checkbox>
       <el-checkbox v-model="params.customLoadFailTip">自定义加载失败提示</el-checkbox>
-      <el-checkbox v-model="params.notDeleteLWL">不允许删除利威尔(不弹窗)</el-checkbox>
+      <el-checkbox v-model="params.notDeleteLWL">不能删除利威尔(不弹窗)</el-checkbox>
       <el-checkbox v-model="params.notDeleteSS">不允许删除珊莎(弹窗后)</el-checkbox>
       <el-checkbox v-model="params.disableDefultDeleteSuccessWhenAL">删除艾伦时庆祝</el-checkbox>
       <el-checkbox v-model="params.customDeleteFailTip">自定义删除失败提示</el-checkbox>
+      <el-checkbox v-model="params.disableUpdateAM">阿明不允许编辑</el-checkbox>
     </div>
     <fast-table class="el-card" :option="tableOption">
       <fast-table-column label="ID" prop="id"/>
@@ -86,10 +87,18 @@ export default {
           }
           return Promise.resolve(); // 可以通过reject覆盖默认的加载失败提示
         },
+        beforeEnableUpdate({rows}) {
+          const { disableUpdateAM } = this.params;
+          if (rows.findIndex(r => r.name === '阿明') > -1 && disableUpdateAM) {
+            Message.warning("你已勾选【阿明不允许编辑】")
+            return Promise.reject();
+          }
+          return Promise.resolve();
+        },
         beforeDeleteTip({rows}) {
           const {notDeleteLWL} = this.params;
           if (rows.findIndex(r => r.name === '利威尔') > -1 && notDeleteLWL) {
-            Message.warning('删除记录中包含利威尔, 你已勾选不能删除利威尔');
+            Message.warning('你已勾选【不能删除利威尔】');
             return Promise.reject();
           }
           return Promise.resolve();
@@ -222,6 +231,7 @@ export default {
         notDeleteSS: true, // 不允许删除珊莎
         customDeleteFailTip: true, // 自定义删除失败提示
         disableDefultDeleteSuccessWhenAL: true, // 当删除对象包含艾伦时, 禁用默认删除成功提示
+        disableUpdateAM: true, // 阿明不允许编辑
       }
     }
   }
