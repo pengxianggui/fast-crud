@@ -95,7 +95,7 @@ export default {
       const {col, component, props} = this.localFilter;
       this.$http.post(this.listUrl, this.distinctQuery.toJson(), { signal: this.distinctAbortCtrl.signal}).then(({data = []}) => {
         const distinctValues = data.filter(item => isObject(item) && item.hasOwnProperty(col)).map(item => item[col]);
-        // 拼装distinctOptions TODO 如果结果值太多, 是采取前端滚动加载 or 展示top100? 如果太多, 比如针对createTime这种字段distinct就没有意义了
+        // 拼装distinctOptions TODO 1.0 如果结果值太多, 是采取前端滚动加载 or 展示top100? 如果太多, 比如针对createTime这种字段distinct就没有意义了
         this.distinctOptions = distinctValues.map(v => {
           return {
             value: v,

@@ -13,7 +13,7 @@ export const Opt = Object.freeze({
     NLIKE: "nlike",
     NULL: "null",
     NNULL: "nnull",
-    BTW: "between", // TODO 后端实现
+    BTW: "between",
 })
 
 export const Rel = Object.freeze({
@@ -119,7 +119,7 @@ export class Query {
     }
 
     toJson() {
-        // TODO [低优先级] 防止后端序列化策略为下划线, 这里将col、conds、orders中涉及的字段全部转换为驼峰, 因为这些值接口传输给后端时不受反序影响
+        // TODO 1.0 [低优先级] 防止后端序列化策略为下划线, 这里将col、conds、orders中涉及的字段全部转换为驼峰, 因为这些值接口传输给后端时不受反序影响
         //  为了保证后端能正常对应到entity中的字段, 因此转为驼峰(这里是坚信entity中属性是驼峰命名).
         return this;
     }
@@ -233,7 +233,7 @@ class FastTableOption {
     batchDeleteUrl = '';
     enableDblClickEdit = true;
     enableMulti = true; // 启用多选
-    enableColumnFilter = true; // 启用列过滤：即动筛。TODO 关了以后，排序也用不了了: 需要在表头外面加排序按钮
+    enableColumnFilter = true; // 启用列过滤：即动筛。TODO 1.0 关了以后，排序也用不了了: 需要在表头外面加排序按钮
     lazyLoad = false; // 不立即加载数据
     editType = 'inline'; // inline/form
     sortField;

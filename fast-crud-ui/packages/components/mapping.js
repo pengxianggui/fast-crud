@@ -1,7 +1,7 @@
 import {Cond, FilterComponentConfig, Opt} from "../model";
 import {easyOptParse, isArray, isEmpty, isFunction, isString, merge, ternary} from "../util/util.js";
 
-// TODO 支持:
+// TODO 1.0 支持:
 //  4. props过滤: 限定查询时只支持的props属性, 以及必要的属性名转换
 const MAPPING = {
     'fast-table-column': {
@@ -392,7 +392,9 @@ const MAPPING = {
             }
         }
     }
-    // TODO more
+    // TODO 1.0 more
+    //  1. FastTableColumnUpload: 替换FastTableColumnImg
+    //  2. FastTableColumnRadio
 }
 
 export const getConfigFn = function (tableColumnComponentName, type) {

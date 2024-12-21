@@ -14,7 +14,7 @@
         <!-- 简筛区 -->
         <easy-filter :filters="easyFilters" :size="option.style.size" @search="pageLoad"
                      v-if="easyFilters.length > 0"></easy-filter>
-        <!-- TODO 存筛区 -->
+        <!-- TODO 2.0 存筛区 -->
       </div>
       <!-- 按钮功能区 -->
       <div class="fc-fast-table-operation-btn">
@@ -32,16 +32,17 @@
           <el-button type="primary" :size="option.style.size" @click="saveEditRows">保存</el-button>
           <el-button :size="option.style.size" @click="cancelEditStatus">取消</el-button>
         </template>
-        <!-- TODO 下拉按钮-更多 -->
+        <!-- 下拉按钮-更多 -->
         <el-dropdown class="fc-fast-table-operation-more">
           <el-button type="primary" plain :size="option.style.size">
             更多<i class="el-icon-arrow-down el-icon--right"></i>
           </el-button>
           <el-dropdown-menu slot="dropdown">
             <el-dropdown-item @click.native="activeBatchEdit">批量编辑</el-dropdown-item>
-            <el-dropdown-item @click.native="activeBatchUpdate">批量修改</el-dropdown-item>
-            <el-dropdown-item>导出</el-dropdown-item>
-            <el-dropdown-item>自定义</el-dropdown-item>
+            <!-- TODO 2.0 批量编辑、导出和自定义表格 -->
+<!--            <el-dropdown-item @click.native="activeBatchUpdate">批量修改</el-dropdown-item>-->
+<!--            <el-dropdown-item @click.native="exportData">导出</el-dropdown-item>-->
+<!--            <el-dropdown-item @click.native="customTable">自定义表格</el-dropdown-item>-->
           </el-dropdown-menu>
         </el-dropdown>
       </div>
@@ -73,8 +74,6 @@
                      @size-change="pageLoad"
                      :layout="option.pagination.layout"></el-pagination>
     </div>
-
-    <!-- TODO form编辑dialog -->
   </div>
 </template>
 
@@ -258,7 +257,7 @@ export default {
         return;
       }
       if (editType === 'form') {
-        // TODO 表单编辑
+        // TODO 1.0 表单编辑
         console.error("暂未支持")
       } else {
         // 行内编辑: 增加一个编辑状态的空行, status为insert, 属性和值取自columnConfig.inlineItemConfig(col和defaultVal)
@@ -384,7 +383,7 @@ export default {
         console.debug('你已取消编辑')
       })
 
-      // // opt2: 如果已经存在编辑行, 则保存已存在的编辑(包括新增、更新)行。TODO opt2还存在问题: $nextTick不生效, 新编辑的行无法呈现为编辑状态
+      // // opt2: 如果已经存在编辑行, 则保存已存在的编辑(包括新增、更新)行。doubt: opt2还存在问题: $nextTick不生效, 新编辑的行无法呈现为编辑状态
       // this.saveEditRows().then(() => {
       //   this.cancelEditStatus();
       //   this.$nextTick(() => {
@@ -448,7 +447,19 @@ export default {
      * 批量更新记录
      */
     activeBatchUpdate() {
-      // TODO 激活勾选，针对勾选的记录弹出批量更新弹窗，可指定要更新的字段和值，点击确定应用于这些记录
+      // TODO 2.0 激活勾选，针对勾选的记录弹出批量更新弹窗，可指定要更新的字段和值，点击确定应用于这些记录
+    },
+    /**
+     * 导出数据
+     */
+    exportData() {
+      // TODO 2.0 导出数据，基于前端col和label,props。导出当前页或当前筛选条件下的全部数据
+    },
+    /**
+     * 自定义表格
+     */
+    customTable() {
+      // TODO 2.0 自定义表格: 可自定义——表格标题、默认简筛字段、默认排序字段和排序方式、各列宽、冻结哪些列等
     },
     /**
      * 新增行, 返回promise

@@ -13,7 +13,7 @@
     </div>
     <fast-table class="el-card" :option="tableOption">
       <fast-table-column label="ID" prop="id"/>
-      <!-- TODO fast-table-column-img还不具备状态 -->
+      <!-- TODO 1.0 fast-table-column-img还不具备状态 -->
 <!--      <fast-table-column-img label="头像" prop="avatar" :filter="false"/>-->
       <fast-table-column-input label="姓名" prop="name" first-filter :quick-filter="true" :required="true"/>
       <fast-table-column-number label="年龄" prop="age"/>
