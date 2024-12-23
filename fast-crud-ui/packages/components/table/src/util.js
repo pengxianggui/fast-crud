@@ -44,27 +44,36 @@ export function rowValid(fatRows) {
 }
 
 /**
+ * 获取编辑配置
+ * @param columnConfig 列配置
+ * @param editType 编辑类型(inline, form)
+ * @returns {{}}
+ */
+export const getEditConfig = function (columnConfig, editType) {
+    const config = {}
+    try {
+        const keys = Object.keys(columnConfig);
+        for (let i = 0; i < keys.length; i++) {
+            const col = keys[i];
+            const {inlineItemConfig, formItemConfig} = columnConfig[col]
+            config[col] = (editType === 'form' ? formItemConfig : inlineItemConfig)
+        }
+    } catch (err) {
+        console.error(err);
+    }
+    return config;
+}
+
+/**
  * 将行数据转换为table-row格式
  * @param row
  * @param columnConfig
+ * @param status 表格状态
+ * @prop editType
  * @returns {{editRow: *, row: *, status: string}}
  */
-export function toTableRow(row, columnConfig, status = 'normal') {
-    const getInlineItemConfig = (columnConfig) => {
-        const config = {}
-        try {
-            const keys = Object.keys(columnConfig);
-            for (let i = 0; i < keys.length; i++) {
-                const col = keys[i];
-                const {inlineItemConfig} = columnConfig[col]
-                config[col] = inlineItemConfig
-            }
-        } catch (err) {
-            console.error(err);
-        }
-        return config;
-    }
-    const config = getInlineItemConfig(columnConfig);
+export function toTableRow(row, columnConfig, status = 'normal', editType) {
+    const config = getEditConfig(columnConfig, editType);
     if (status === 'insert') {
         // fill row
         const cols = Object.keys(config);

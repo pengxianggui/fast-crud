@@ -15,6 +15,7 @@ import FastTableColumnTimePicker from './components/table-column-time-picker'
 import {openDialog} from "./util/dialog";
 import "element-ui/lib/theme-chalk/index.css";
 import "./style.scss"
+import FastTableOption from "./model";
 
 const components = [
     Input,
@@ -44,7 +45,8 @@ const directives = [
 
 const install = function (Vue, opts = {}) {
     if (opts.hasOwnProperty('$http')) {
-        Vue.prototype.$http = opts.$http
+        Vue.prototype.$http = opts.$http;
+        FastTableOption.$http = opts.$http;
     }
 
     components.forEach(component => {

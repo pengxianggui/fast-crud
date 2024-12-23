@@ -1,4 +1,5 @@
-import {coverMerge, defaultIfBlank, isUndefined} from "./util/util.js";
+import {Message, MessageBox} from 'element-ui';
+import {coverMerge, defaultIfBlank, isEmpty, isUndefined} from "./util/util.js";
 
 export const Opt = Object.freeze({
     EQ: "=",
@@ -238,6 +239,9 @@ class FastTableOption {
     enableColumnFilter = true; // 启用列过滤：即动筛。TODO 1.0 关了以后，排序也用不了了: 需要在表头外面加排序按钮
     lazyLoad = false; // 不立即加载数据
     editType = 'inline'; // inline/form
+    insertable = true; // 是否支持内置新建
+    updatable = true; // 是否支持内置编辑
+    deletable = true; // 是否支持内置删除
     sortField;
     sortDesc = true;
     pagination = {
@@ -260,10 +264,121 @@ class FastTableOption {
     deleteFail;
     click;
     dblclick;
-    beforeEnableCreate;
-    beforeEnableUpdate;
+    beforeToInsert; // 进入新建前(行内编辑新建前，或新建表单弹窗前)
+    beforeToUpdate; // 进入更新前(行内编辑更新前，或更新表单弹窗前)
     beforeDeleteTip;
     beforeCancel;
+
+    static $http;
+
+    /**
+     * 新增行, 返回promise
+     * @param fatRows
+     * @returns {Promise<void>|Promise<unknown>}
+     * @private
+     */
+    _insertRows(fatRows) {
+        if (fatRows.length === 0) {
+            return Promise.resolve();
+        }
+        return new Promise((resolve, reject) => {
+            const {context, beforeInsert} = this;
+            beforeInsert.call(context, {fatRows: fatRows}).then(() => {
+                const toBeInsertRows = fatRows.map(r => r.editRow);
+                const {insertUrl, batchInsertUrl, insertSuccess, insertFail} = this;
+                const postPromise = (toBeInsertRows.length === 1 ? FastTableOption.$http.post(insertUrl, toBeInsertRows[0]) : FastTableOption.$http.post(batchInsertUrl, toBeInsertRows))
+                postPromise.then(res => {
+                    resolve();
+                    insertSuccess.call(context, {fatRows: fatRows, rows: toBeInsertRows, res: res}).then(() => {
+                        Message.success(`成功新增${toBeInsertRows.length}条记录`);
+                    });
+                }).catch(err => {
+                    reject(err);
+                    insertFail.call(context, {fatRows: fatRows, rows: toBeInsertRows, error: err}).then(() => {
+                        Message.success('新增失败:' + JSON.stringify(err));
+                    });
+                })
+            }).catch(err => {
+                reject(err);
+            })
+        });
+    }
+
+    /**
+     * 批量删除: 删除当前勾选的行记录
+     */
+    _deleteRows(fatRows) {
+        if (this.deletable === false) {
+            return Promise.reject('当前表格不允许删除');
+        }
+        if (isEmpty(fatRows)) {
+            Message.warning('请先选中一条记录');
+            return Promise.reject('请先选中一条记录');
+        }
+
+        return new Promise((resolve, reject) => {
+            const rows = fatRows.map(r => r.row)
+            const {context, beforeDeleteTip} = this;
+            beforeDeleteTip.call(context, {rows: rows}).then(() => {
+                MessageBox.confirm(`确定删除这${rows.length}条记录吗？`, '删除确认', {}).then(() => {
+                    const {beforeDelete} = this;
+                    beforeDelete.call(context, {rows: rows}).then(() => {
+                        const {deleteUrl, batchDeleteUrl, deleteSuccess, deleteFail} = this;
+                        const postPromise = (rows.length === 1 ? FastTableOption.$http.post(deleteUrl, rows[0]) : FastTableOption.$http.post(batchDeleteUrl, rows))
+                        postPromise.then(res => {
+                            resolve(); // 始终刷新
+                            deleteSuccess.call(context, {rows: rows, res: res}).then(() => {
+                                Message.success('删除成功');
+                            })
+                        }).catch(err => {
+                            reject(err);
+                            deleteFail.call(context, {rows: rows, error: err}).then(() => {
+                                Message.success('删除失败:' + JSON.stringify(err));
+                            })
+                        })
+                    }).catch((err) => {
+                        // 取消删除
+                        reject(err);
+                    })
+                });
+            }).catch((err) => {
+                // 取消删除提示和删除
+                reject(err);
+            })
+        })
+    }
+
+    /**
+     * 更新行
+     * @param fatRows
+     * @return 返回promise, 若成功更新则resolve; 若失败或取消, 则返回reject err或用户自定义的内容
+     */
+    _updateRows(fatRows) {
+        if (fatRows.length === 0) {
+            return Promise.resolve();
+        }
+        return new Promise((resolve, reject) => {
+            const {context, beforeUpdate} = this;
+            beforeUpdate.call(context, {fatRows: fatRows}).then(() => {
+                const toBeUpdateRows = fatRows.map(r => r.editRow);
+                const {updateUrl, batchUpdateUrl, updateSuccess, updateFail} = this;
+                const postPromise = (toBeUpdateRows.length === 1 ? FastTableOption.$http.post(updateUrl, toBeUpdateRows[0]) : FastTableOption.$http.post(batchUpdateUrl, toBeUpdateRows))
+                postPromise.then(res => {
+                    resolve();
+                    updateSuccess.call(context, {fatRows: fatRows, rows: toBeUpdateRows, res: res}).then(() => {
+                        Message.success(`成功更新${toBeUpdateRows.length}条记录`);
+                    });
+                }).catch(err => {
+                    reject(err);
+                    updateFail.call(context, {fatRows: fatRows, rows: toBeUpdateRows, error: err}).then(() => {
+                        Message.success('更新失败:' + JSON.stringify(err));
+                    });
+                })
+            }).catch(err => {
+                reject(err);
+            })
+        });
+    }
 
     constructor({
                     context,
@@ -282,6 +397,9 @@ class FastTableOption {
                     enableColumnFilter = true,
                     lazyLoad = false,
                     editType = 'inline',
+                    insertable = true,
+                    updatable = true,
+                    deletable = true,
                     sortField = '',
                     sortDesc = true,
                     pagination = {
@@ -306,13 +424,14 @@ class FastTableOption {
                     deleteFail = ({rows, error}) => Promise.resolve(),
                     click = (scope) => Promise.resolve(),
                     dblclick = (scope) => Promise.resolve(),
-                    beforeEnableCreate = (scope) => Promise.resolve(),
-                    beforeEnableUpdate = (scope) => Promise.resolve(),
+                    beforeToInsert = () => Promise.resolve(),
+                    beforeToUpdate = ({fatRows, rows}) => Promise.resolve(),
                     beforeDeleteTip = ({rows}) => Promise.resolve(),
                     beforeCancel = (scope) => Promise.resolve(),
                 }) {
         this.context = context;
         this.title = title;
+        this.module = module;
         this.pageUrl = defaultIfBlank(pageUrl, module + '/page');
         this.listUrl = defaultIfBlank(listUrl, module + '/list');
         this.insertUrl = defaultIfBlank(insertUrl, module + '/insert');
@@ -326,6 +445,9 @@ class FastTableOption {
         this.enableColumnFilter = enableColumnFilter;
         this.lazyLoad = lazyLoad;
         this.editType = editType;
+        this.insertable = insertable;
+        this.updatable = updatable;
+        this.deletable = deletable;
         this.sortField = sortField;
         this.sortDesc = sortDesc;
         coverMerge(this.pagination, pagination, true, true)
@@ -350,8 +472,8 @@ class FastTableOption {
         this.click = click;
         this.dblclick = dblclick;
 
-        this.beforeEnableCreate = beforeEnableCreate;
-        this.beforeEnableUpdate = beforeEnableUpdate;
+        this.beforeToInsert = beforeToInsert;
+        this.beforeToUpdate = beforeToUpdate;
         this.beforeDeleteTip = beforeDeleteTip;
         this.beforeCancel = beforeCancel;
     }

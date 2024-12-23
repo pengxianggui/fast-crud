@@ -19,27 +19,30 @@
       <!-- 按钮功能区 -->
       <div class="fc-fast-table-operation-btn">
         <template v-if="status === 'normal'">
-          <el-button :size="option.style.size" icon="el-icon-plus" @click="addRow">新建</el-button>
-          <el-button type="danger" plain :size="option.style.size" @click="deleteRow"
-                     v-if="checkedRows.length === 0">删除
+          <el-button :size="option.style.size" icon="el-icon-plus" @click="toInsert"
+                     v-if="option.insertable">新建
           </el-button>
-          <el-button type="danger" :size="option.style.size" @click="deleteRows(checkedRows)"
-                     v-if="checkedRows.length > 0">删除
+          <el-button type="danger" plain :size="option.style.size" @click="deleteRow"
+                     v-if="checkedRows.length === 0 && option.deletable">删除
+          </el-button>
+          <el-button type="danger" :size="option.style.size" @click="deleteRows"
+                     v-if="checkedRows.length > 0 && option.deletable">删除
           </el-button>
         </template>
         <template v-if="status === 'update' || status === 'insert'">
-          <el-button :size="option.style.size" icon="el-icon-plus" @click="addRow" v-if="status === 'insert'">继续新建
+          <el-button :size="option.style.size" icon="el-icon-plus" @click="toInsert"
+                     v-if="status === 'insert' && option.insertable">继续新建
           </el-button>
           <el-button type="primary" :size="option.style.size" @click="saveEditRows">保存</el-button>
           <el-button :size="option.style.size" @click="cancelEditStatus">取消</el-button>
         </template>
         <!-- 下拉按钮-更多 -->
-        <el-dropdown class="fc-fast-table-operation-more">
+        <el-dropdown class="fc-fast-table-operation-more" trigger="click">
           <el-button type="primary" plain :size="option.style.size">
             更多<i class="el-icon-arrow-down el-icon--right"></i>
           </el-button>
           <el-dropdown-menu slot="dropdown">
-            <el-dropdown-item @click.native="activeBatchEdit">批量编辑</el-dropdown-item>
+            <el-dropdown-item @click.native="activeBatchEdit" v-if="option.updatable">批量编辑</el-dropdown-item>
             <!-- TODO 2.0 批量编辑、导出和自定义表格 -->
             <!--            <el-dropdown-item @click.native="activeBatchUpdate">批量修改</el-dropdown-item>-->
             <!--            <el-dropdown-item @click.native="exportData">导出</el-dropdown-item>-->
@@ -88,9 +91,10 @@ import DynamicFilterList from "./dynamic-filter-list.vue";
 import {Order, PageQuery} from '../../../model';
 import FastTableOption from "../../../model";
 import {ifBlank, isBoolean, isEmpty, noRepeatAdd} from "../../../util/util";
-import {iterBuildComponentConfig, rowValid, toTableRow} from "./util";
+import {getEditConfig, iterBuildComponentConfig, rowValid, toTableRow} from "./util";
 import {openDialog} from "../../../util/dialog";
 import {buildFinalComponentConfig} from "../../mapping";
+import RowForm from "./row-form.vue";
 
 export default {
   name: "FastTable",
@@ -232,7 +236,7 @@ export default {
             this.cancelEditStatus();
             const loadSuccess = this.option.loadSuccess;
             loadSuccess.call(context, {query: this.pageQuery, data: res.data, res}).then(({records, total}) => {
-              this.list = records.map(r => toTableRow(r, this.columnConfig));
+              this.list = records.map(r => toTableRow(r, this.columnConfig, 'normal', 'inline'));
               this.total = total;
             }).finally(() => {
               resolve();
@@ -251,23 +255,59 @@ export default {
         })
       })
     },
-    addRow() {
-      const {editType} = this.option;
+    toInsert() {
+      const {insertable, editType} = this.option;
+      if (insertable === false) {
+        return;
+      }
       if (this.status !== 'normal' && this.status !== 'insert') {
         console.warn(`当前FastTable处于${this.status}状态, 不允许新增`);
         return;
       }
-      if (editType === 'form') {
-        // TODO 1.0 表单编辑
-        console.error("暂未支持")
-      } else {
-        // 行内编辑: 增加一个编辑状态的空行, status为insert, 属性和值取自columnConfig.inlineItemConfig(col和defaultVal)
-        const newRow = toTableRow({}, this.columnConfig, 'insert');
-        this.list.unshift(newRow);
-        this.editRows.push(newRow);
-        rowValid(this.editRows).catch((errors) => {
-        }); // 立即校验一下以便标识出必填等字段
-      }
+
+      const {context, beforeToInsert} = this.option;
+      beforeToInsert.call(context).then(() => {
+        if (this.option.editType === 'form') {
+          this.addForm();
+        } else {
+          this.addRow();
+        }
+      }).catch(() => {
+        console.debug('你已取消新建')
+      })
+    },
+    /**
+     * 激活行内新增
+     */
+    addForm() {
+      const fatRow = toTableRow({}, this.columnConfig, 'insert', 'form');
+      openDialog({
+        component: RowForm,
+        props: {
+          option: this.option,
+          config: fatRow.config,
+          row: fatRow,
+          type: 'insert'
+        },
+        dialogProps: {
+          width: '50%',
+          title: '新增',
+          'close-on-click-modal': false
+        }
+      }).then(() => {
+        this.pageLoad();
+      })
+    },
+    /**
+     * 激活表单新增
+     */
+    addRow() {
+      // 行内编辑: 增加一个编辑状态的空行, status为insert, 属性和值取自columnConfig.inlineItemConfig(col和defaultVal)
+      const newRow = toTableRow({}, this.columnConfig, 'insert', 'inline');
+      this.list.unshift(newRow);
+      this.editRows.push(newRow);
+      rowValid(this.editRows).catch((errors) => {
+      }); // 立即校验一下以便标识出必填等字段
     },
     /**
      * 删除: 删除当前选中行记录
@@ -278,41 +318,10 @@ export default {
       if (!isEmpty(choseRow)) {
         rows.push(choseRow);
       }
-      this.deleteRows(rows);
+      this.option._deleteRows(rows).then(() => this.pageLoad());
     },
-    /**
-     * 批量删除: 删除当前勾选的行记录
-     */
-    deleteRows(list) {
-      if (isEmpty(list)) {
-        Message.warning('请先选中一条记录');
-        return;
-      }
-      const rows = list.map(r => r.row)
-      const {context, beforeDeleteTip} = this.option;
-      beforeDeleteTip.call(context, {rows: rows}).then(() => {
-        MessageBox.confirm(`确定删除这${rows.length}条记录吗？`, '删除确认', {}).then(() => {
-          const {beforeDelete} = this.option;
-          beforeDelete.call(context, {rows: rows}).then(() => {
-            const {deleteUrl, batchDeleteUrl, deleteSuccess, deleteFail} = this.option;
-            const postPromise = (rows.length === 1 ? this.$http.post(deleteUrl, rows[0]) : this.$http.post(batchDeleteUrl, rows))
-            postPromise.then(res => {
-              this.pageLoad(); // 始终刷新
-              deleteSuccess.call(context, {rows: rows, res: res}).then(() => {
-                Message.success('删除成功');
-              })
-            }).catch(err => {
-              deleteFail.call(context, {rows: rows, error: err}).then(() => {
-                Message.success('删除失败:' + JSON.stringify(err));
-              })
-            })
-          }).catch((err) => {
-            // 取消删除
-          })
-        });
-      }).catch((err) => {
-        // 取消删除提示和删除
-      })
+    deleteRows() {
+      this.option._deleteRows(this.checkedRows).then(() => this.pageLoad());
     },
     /**
      * 打开动筛面板: 构造动筛组件配置, 动态创建面板并弹出。由于动筛是动态的，不能在mounted阶段构造好。
@@ -366,6 +375,9 @@ export default {
         this.$emit('row-dblclick', row, column, event);
         return;
       }
+      if (this.option.updatable === false) {
+        return;
+      }
       // 若当前编辑行已经处于编辑状态, 则直接emit并返回;
       if (row.status === 'update' || row.status === 'insert') {
         this.$emit('row-dblclick', row, column, event);
@@ -377,24 +389,43 @@ export default {
         this.$emit('row-dblclick', row, column, event);
         return;
       }
-      const {context, beforeEnableUpdate} = this.option;
-      beforeEnableUpdate.call(context, {rows: [row.row]}).then(() => {
-        row.status = 'update';
-        this.editRows.push(row);
+
+      const {context, beforeToUpdate} = this.option;
+      beforeToUpdate.call(context, {fatRows: [row], rows: [row.row]}).then(() => {
+        if (this.option.editType === 'form') {
+          this.updateForm(row);
+        } else {
+          this.updateRow(row);
+        }
       }).catch(() => {
         console.debug('你已取消编辑')
       })
-
-      // // opt2: 如果已经存在编辑行, 则保存已存在的编辑(包括新增、更新)行。doubt: opt2还存在问题: $nextTick不生效, 新编辑的行无法呈现为编辑状态
-      // this.saveEditRows().then(() => {
-      //   this.cancelEditStatus();
-      //   this.$nextTick(() => {
-      //     row.status = 'update';
-      //     row.editRow = {...row.row}
-      //     // this.status = 'update';
-      //     this.editRows.push(row);
-      //   })
-      // })
+    },
+    /**
+     * 表单更新一行
+     * @param row
+     */
+    updateForm(row) {
+      openDialog({
+        component: RowForm,
+        props: {
+          option: this.option,
+          config: getEditConfig(this.columnConfig, 'form'),
+          row: row,
+          type: 'update'
+        },
+        dialogProps: {
+          width: '50%',
+          title: '编辑',
+          'close-on-click-modal': false
+        }
+      }).then(() => {
+        this.pageLoad();
+      })
+    },
+    updateRow(row) {
+      row.status = 'update';
+      this.editRows.push(row);
     },
     /**
      * 激活批量编辑
@@ -404,8 +435,13 @@ export default {
         Message.warning('请先退出编辑状态')
         return;
       }
-      this.list.forEach(r => r.status = 'update');
-      this.editRows.push(...this.list);
+      const {context, beforeToUpdate} = this.option;
+      beforeToUpdate.call(context, {fatRows: this.list, rows: this.list.map(r => r.row)}).then(() => {
+        this.list.forEach(r => r.status = 'update');
+        this.editRows.push(...this.list);
+      }).catch(() => {
+        console.debug('你已取消编辑')
+      })
     },
     /**
      * 取消编辑状态: 包括新增、更新状态。会将编辑状态的行状态重置为'normal', 并清空编辑行数组editRows, 同时将表格状态重置为'normal'
@@ -437,9 +473,9 @@ export default {
           // 保存编辑的行: 包括新增、更新状态的行
           let promise;
           if (this.status === 'insert') {
-            promise = this._insertRows(this.editRows);
+            promise = this.option._insertRows(this.editRows);
           } else {
-            promise = this._updateRows(this.editRows);
+            promise = this.option._updateRows(this.editRows);
           }
           promise.then(() => {
             this.cancelEditStatus();
@@ -469,67 +505,67 @@ export default {
     customTable() {
       // TODO 2.0 自定义表格: 可自定义——表格标题、默认简筛字段、默认排序字段和排序方式、各列宽、冻结哪些列等
     },
-    /**
-     * 新增行, 返回promise
-     * @param rows
-     */
-    _insertRows(rows) {
-      if (rows.length === 0) {
-        return Promise.resolve();
-      }
-      return new Promise((resolve, reject) => {
-        const {context, beforeInsert} = this.option;
-        beforeInsert.call(context, {fatRows: rows}).then(() => {
-          const toBeInsertRows = rows.map(r => r.editRow);
-          const {insertUrl, batchInsertUrl, insertSuccess, insertFail} = this.option;
-          const postPromise = (toBeInsertRows.length === 1 ? this.$http.post(insertUrl, toBeInsertRows[0]) : this.$http.post(batchInsertUrl, toBeInsertRows))
-          postPromise.then(res => {
-            resolve();
-            insertSuccess.call(context, {fatRows: rows, rows: toBeInsertRows, res: res}).then(() => {
-              Message.success(`成功新增${toBeInsertRows.length}条记录`);
-            });
-          }).catch(err => {
-            reject(err);
-            insertFail.call(context, {fatRows: rows, rows: toBeInsertRows, error: err}).then(() => {
-              Message.success('新增失败:' + JSON.stringify(err));
-            });
-          })
-        }).catch(err => {
-          reject(err);
-        })
-      });
-    },
-    /**
-     * 更新行
-     * @param rows
-     * @return 返回promise, 若成功更新则resolve; 若失败或取消, 则返回reject err或用户自定义的内容
-     */
-    _updateRows(rows) {
-      if (rows.length === 0) {
-        return Promise.resolve();
-      }
-      return new Promise((resolve, reject) => {
-        const {context, beforeUpdate} = this.option;
-        beforeUpdate.call(context, {fatRows: rows}).then(() => {
-          const toBeUpdateRows = rows.map(r => r.editRow);
-          const {updateUrl, batchUpdateUrl, updateSuccess, updateFail} = this.option;
-          const postPromise = (toBeUpdateRows.length === 1 ? this.$http.post(updateUrl, toBeUpdateRows[0]) : this.$http.post(batchUpdateUrl, toBeUpdateRows))
-          postPromise.then(res => {
-            resolve();
-            updateSuccess.call(context, {fatRows: rows, rows: toBeUpdateRows, res: res}).then(() => {
-              Message.success(`成功更新${toBeUpdateRows.length}条记录`);
-            });
-          }).catch(err => {
-            reject(err);
-            updateFail.call(context, {fatRows: rows, rows: toBeUpdateRows, error: err}).then(() => {
-              Message.success('更新失败:' + JSON.stringify(err));
-            });
-          })
-        }).catch(err => {
-          reject(err);
-        })
-      });
-    }
+    // /**
+    //  * 新增行, 返回promise
+    //  * @param rows
+    //  */
+    // _insertRows(rows) {
+    //   if (rows.length === 0) {
+    //     return Promise.resolve();
+    //   }
+    //   return new Promise((resolve, reject) => {
+    //     const {context, beforeInsert} = this.option;
+    //     beforeInsert.call(context, {fatRows: rows}).then(() => {
+    //       const toBeInsertRows = rows.map(r => r.editRow);
+    //       const {insertUrl, batchInsertUrl, insertSuccess, insertFail} = this.option;
+    //       const postPromise = (toBeInsertRows.length === 1 ? this.$http.post(insertUrl, toBeInsertRows[0]) : this.$http.post(batchInsertUrl, toBeInsertRows))
+    //       postPromise.then(res => {
+    //         resolve();
+    //         insertSuccess.call(context, {fatRows: rows, rows: toBeInsertRows, res: res}).then(() => {
+    //           Message.success(`成功新增${toBeInsertRows.length}条记录`);
+    //         });
+    //       }).catch(err => {
+    //         reject(err);
+    //         insertFail.call(context, {fatRows: rows, rows: toBeInsertRows, error: err}).then(() => {
+    //           Message.success('新增失败:' + JSON.stringify(err));
+    //         });
+    //       })
+    //     }).catch(err => {
+    //       reject(err);
+    //     })
+    //   });
+    // },
+    // /**
+    //  * 更新行
+    //  * @param rows
+    //  * @return 返回promise, 若成功更新则resolve; 若失败或取消, 则返回reject err或用户自定义的内容
+    //  */
+    // _updateRows(rows) {
+    //   if (rows.length === 0) {
+    //     return Promise.resolve();
+    //   }
+    //   return new Promise((resolve, reject) => {
+    //     const {context, beforeUpdate} = this.option;
+    //     beforeUpdate.call(context, {fatRows: rows}).then(() => {
+    //       const toBeUpdateRows = rows.map(r => r.editRow);
+    //       const {updateUrl, batchUpdateUrl, updateSuccess, updateFail} = this.option;
+    //       const postPromise = (toBeUpdateRows.length === 1 ? this.$http.post(updateUrl, toBeUpdateRows[0]) : this.$http.post(batchUpdateUrl, toBeUpdateRows))
+    //       postPromise.then(res => {
+    //         resolve();
+    //         updateSuccess.call(context, {fatRows: rows, rows: toBeUpdateRows, res: res}).then(() => {
+    //           Message.success(`成功更新${toBeUpdateRows.length}条记录`);
+    //         });
+    //       }).catch(err => {
+    //         reject(err);
+    //         updateFail.call(context, {fatRows: rows, rows: toBeUpdateRows, error: err}).then(() => {
+    //           Message.success('更新失败:' + JSON.stringify(err));
+    //         });
+    //       })
+    //     }).catch(err => {
+    //       reject(err);
+    //     })
+    //   });
+    // }
   }
 }
 </script>

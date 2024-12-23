@@ -1,8 +1,18 @@
 <template>
   <div class="demo">
     <div class="param">
-      <h3>开关</h3>
-      <el-checkbox v-model="params.loadCondition">允许加载分页</el-checkbox>
+      <h3>配置</h3>
+      <el-switch size="mini" v-model="params.editType" @change="(val) => updateOption('editType', val)"
+                 inactive-value="inline" inactive-color="#13ce66" inactive-text="行内编辑"
+                 active-value="form" active-color="#ff4949" active-text="表单编辑"></el-switch>
+      <el-checkbox v-model="params.pageLoadable">允许加载分页</el-checkbox>
+      <el-checkbox v-model="params.insertable" @change="(val) => updateOption('insertable', val)">允许新增</el-checkbox>
+      <el-checkbox v-model="params.updatable" @change="(val) => updateOption('updatable', val)">允许更新</el-checkbox>
+      <el-checkbox v-model="params.deletable" @change="(val) => updateOption('deletable', val)">允许删除</el-checkbox>
+      <el-checkbox v-model="params.enableColumnFilter" @change="(val) => updateOption('enableColumnFilter', val)">允许表头动态筛选</el-checkbox>
+      <el-checkbox v-model="params.enableMulti" @change="(val) => updateOption('enableMulti', val)">启用多选</el-checkbox>
+      <el-checkbox v-model="params.enableDblClickEdit" @change="(val) => updateOption('enableDblClickEdit', val)">启用双击编辑</el-checkbox>
+      <h3>钩子函数应用</h3>
       <el-checkbox v-model="params.loadSuccessTip">分页加载成功提示</el-checkbox>
       <el-checkbox v-model="params.customLoadFailTip">自定义加载失败提示</el-checkbox>
       <el-checkbox v-model="params.notDeleteLWL">不能删除利威尔(不弹窗)</el-checkbox>
@@ -10,8 +20,13 @@
       <el-checkbox v-model="params.disableDefultDeleteSuccessWhenAL">删除艾伦时庆祝</el-checkbox>
       <el-checkbox v-model="params.customDeleteFailTip">自定义删除失败提示</el-checkbox>
       <el-checkbox v-model="params.disableUpdateAM">阿明不允许编辑</el-checkbox>
+      <h3>方法</h3>
+      <div>
+        <el-button icon="el-icon-plus" size="mini" @click="$refs['fastTable'].addRow()">插入一行</el-button>
+        <el-button icon="el-icon-plus" size="mini" @click="$refs['fastTable'].addForm()">弹窗</el-button>
+      </div>
     </div>
-    <fast-table class="el-card" :option="tableOption">
+    <fast-table ref="fastTable" class="el-card" :option="tableOption">
       <fast-table-column label="ID" prop="id"/>
       <!-- TODO 1.0 fast-table-column-img还不具备状态 -->
       <!--      <fast-table-column-img label="头像" prop="avatar" :filter="false"/>-->
@@ -49,6 +64,7 @@ export default {
     const now = new Date();
     const monthAgo = new Date();
     monthAgo.setTime(monthAgo.getTime() - 3600 * 1000 * 24 * 30);
+    const defaultEditType = 'inline';
     return {
       tableOption: new FastTableOption({
         context: this, // important! 否则钩子函数里无法获取当当前组件实例上下文
@@ -58,7 +74,10 @@ export default {
         enableMulti: true,
         enableColumnFilter: true,
         lazyLoad: false,
-        editType: 'inline',
+        editType: defaultEditType, // 默认inline
+        // insertable: false,
+        // updatable: false,
+        // deletable: false,
         sortField: 'createTime',
         sortDesc: true,
         pagination: {
@@ -67,10 +86,11 @@ export default {
         },
         style: {
           size: 'small', // mini,small,medium
-          bodyRowHeight: '45px'
+          bodyRowHeight: '45px',
+          formLabelWidth: 'auto' // 默认为auto
         },
         beforeLoad({query}) {
-          if (this.params.loadCondition) {
+          if (this.params.pageLoadable) {
             return Promise.resolve();
           }
           Message.warning('未勾选【允许加载分页】, 不会分页请求');
@@ -89,7 +109,7 @@ export default {
           }
           return Promise.resolve(); // 可以通过reject覆盖默认的加载失败提示
         },
-        beforeEnableUpdate({rows}) {
+        beforeToUpdate({rows}) {
           const {disableUpdateAM} = this.params;
           if (rows.findIndex(r => r.name === '阿明') > -1 && disableUpdateAM) {
             Message.warning("你已勾选【阿明不允许编辑】")
@@ -226,7 +246,14 @@ export default {
       ],
       defaultQueryOfCreatedTime: [monthAgo, now],
       params: {
-        loadCondition: true, // 允许分页加载
+        editType: defaultEditType,
+        pageLoadable: true, // 允许分页加载
+        insertable: true, // 允许新增
+        updatable: true, // 允许编辑
+        deletable: true, // 允许删除
+        enableColumnFilter: true, // 允许动态筛选
+        enableMulti: true, // 启用多选
+        enableDblClickEdit: true, // 启用双击编辑
         loadSuccessTip: false, // 加载成功时提示
         customLoadFailTip: true, // 自定义加载失败提示
         notDeleteLWL: true, // 不允许删除利威尔
@@ -235,6 +262,11 @@ export default {
         disableDefultDeleteSuccessWhenAL: true, // 当删除对象包含艾伦时, 禁用默认删除成功提示
         disableUpdateAM: true, // 阿明不允许编辑
       },
+    }
+  },
+  methods: {
+    updateOption(key, val) {
+      this.tableOption[key] = val;
     }
   }
 }
@@ -247,6 +279,11 @@ export default {
   .param {
     width: 200px;
     padding: 0 20px;
+
+    & > * {
+      display: block;
+      margin-bottom: 5px;
+    }
   }
 }
 </style>
