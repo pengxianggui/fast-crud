@@ -267,7 +267,7 @@ export default {
 
       const {context, beforeToInsert} = this.option;
       beforeToInsert.call(context).then(() => {
-        if (this.option.editType === 'form') {
+        if (editType === 'form') {
           this.addForm();
         } else {
           this.addRow();
