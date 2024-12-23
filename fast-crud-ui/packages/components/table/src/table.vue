@@ -322,7 +322,6 @@ export default {
       const {prop, label, order} = column
       const {tableColumnComponentName, customConfig} = this.columnConfig[prop]
       const dynamicFilter = buildFinalComponentConfig(customConfig, tableColumnComponentName, 'query', 'dynamic')
-      debugger
       openDialog({
         component: DynamicFilterForm,
         props: {
