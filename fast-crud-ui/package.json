@@ -18,6 +18,7 @@
     "publish": "npm publish --access public"
   },
   "dependencies": {
+    "async-validator": "^4.2.5",
     "element-ui": "^2.15.14",
     "lodash-es": "^4.17.21",
     "moment": "^2.30.1",

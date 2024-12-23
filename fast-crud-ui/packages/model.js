@@ -207,14 +207,16 @@ export class EditComponentConfig {
     props;
     defaultVal;
     disabled;
+    eventHandlers;
 
-    constructor({component, col, label, props, defaultVal, disabled}) {
+    constructor({component, col, label, props, defaultVal, disabled, eventHandlers}) {
         this.component = component;
         this.col = col;
         this.label = label;
         this.props = props;
         this.defaultVal = defaultVal;
         this.disabled = disabled;
+        this.eventHandlers = eventHandlers;
     }
 }
 

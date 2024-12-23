@@ -1,4 +1,4 @@
-import {FilterComponentConfig} from "../model";
+import {EditComponentConfig, FilterComponentConfig} from "../model";
 import {isFunction} from "../util/util.js";
 import FastTableColumnConfig from './table-column/config';
 import FastTableColumnDatePickerConfig from './table-column-date-picker/config';
@@ -61,5 +61,5 @@ export const buildFinalComponentConfig = function (customConfig, tableColumnComp
         throw new Error(`未定义针对${tableColumnComponentName}的${action}控件`)
     }
     const finalConfig = finalConfigFn(customFilterConfig, type);
-    return new FilterComponentConfig(finalConfig); // 创建Filter对象
+    return action === 'query' ? new FilterComponentConfig(finalConfig) : new EditComponentConfig(finalConfig); // 创建Filter对象
 }

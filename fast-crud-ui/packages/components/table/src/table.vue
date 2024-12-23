@@ -28,7 +28,8 @@
           </el-button>
         </template>
         <template v-if="status === 'update' || status === 'insert'">
-          <el-button :size="option.style.size" icon="el-icon-plus" @click="addRow" v-if="status === 'insert'">继续新建</el-button>
+          <el-button :size="option.style.size" icon="el-icon-plus" @click="addRow" v-if="status === 'insert'">继续新建
+          </el-button>
           <el-button type="primary" :size="option.style.size" @click="saveEditRows">保存</el-button>
           <el-button :size="option.style.size" @click="cancelEditStatus">取消</el-button>
         </template>
@@ -40,9 +41,9 @@
           <el-dropdown-menu slot="dropdown">
             <el-dropdown-item @click.native="activeBatchEdit">批量编辑</el-dropdown-item>
             <!-- TODO 2.0 批量编辑、导出和自定义表格 -->
-<!--            <el-dropdown-item @click.native="activeBatchUpdate">批量修改</el-dropdown-item>-->
-<!--            <el-dropdown-item @click.native="exportData">导出</el-dropdown-item>-->
-<!--            <el-dropdown-item @click.native="customTable">自定义表格</el-dropdown-item>-->
+            <!--            <el-dropdown-item @click.native="activeBatchUpdate">批量修改</el-dropdown-item>-->
+            <!--            <el-dropdown-item @click.native="exportData">导出</el-dropdown-item>-->
+            <!--            <el-dropdown-item @click.native="customTable">自定义表格</el-dropdown-item>-->
           </el-dropdown-menu>
         </el-dropdown>
       </div>
@@ -87,7 +88,7 @@ import DynamicFilterList from "./dynamic-filter-list.vue";
 import {Order, PageQuery} from '../../../model';
 import FastTableOption from "../../../model";
 import {ifBlank, isBoolean, isEmpty, noRepeatAdd} from "../../../util/util";
-import {iterBuildComponentConfig, toTableRow} from "./util";
+import {iterBuildComponentConfig, rowValid, toTableRow} from "./util";
 import {openDialog} from "../../../util/dialog";
 import {buildFinalComponentConfig} from "../../mapping";
 
@@ -264,6 +265,8 @@ export default {
         const newRow = toTableRow({}, this.columnConfig, 'insert');
         this.list.unshift(newRow);
         this.editRows.push(newRow);
+        rowValid(this.editRows).catch((errors) => {
+        }); // 立即校验一下以便标识出必填等字段
       }
     },
     /**
@@ -426,20 +429,26 @@ export default {
       if (this.editRows.length === 0) {
         return Promise.resolve();
       }
-      // 保存编辑的行: 包括新增、更新状态的行
-      let promise;
-      if (this.status === 'insert') {
-        promise = this._insertRows(this.editRows);
-      } else if (this.status === 'update') {
-        promise = this._updateRows(this.editRows);
-      } else {
+      if (this.status !== 'insert' && this.status !== 'update') {
         throw new Error(`当前FastTable状态异常:${this.status}, 无法保存编辑记录`);
       }
       return new Promise((resolve, reject) => {
-        promise.then(() => {
-          this.cancelEditStatus();
-          this.pageLoad().then(() => resolve()).catch(() => reject());
-        }).catch(() => reject());
+        rowValid(this.editRows).then(() => {
+          // 保存编辑的行: 包括新增、更新状态的行
+          let promise;
+          if (this.status === 'insert') {
+            promise = this._insertRows(this.editRows);
+          } else {
+            promise = this._updateRows(this.editRows);
+          }
+          promise.then(() => {
+            this.cancelEditStatus();
+            this.pageLoad().then(() => resolve()).catch(() => reject());
+          }).catch(() => reject());
+        }).catch((errors) => {
+          const firstError = errors[0];
+          Message.error(firstError.message);
+        })
       });
     },
     /**

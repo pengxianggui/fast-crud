@@ -16,7 +16,7 @@ const defaultEditConfig = {
     props: {
         clearable: true,
         options: [],
-        class: 'fc-tighten',
+        class: 'fc-table-inline-edit-component',
         editable: true,
         defaultVal: null
         // placeholder: `请输入${config.label}`

@@ -28,7 +28,7 @@
     .cell {
       padding: 0 3px;
 
-      .fc-tighten {
+      .fc-table-inline-edit-component {
         width: 100%;
 
         .el-input__inner {
@@ -46,6 +46,9 @@
         input {
           text-align: left;
         }
+      }
+      .fc-table-inline-edit-component.valid-error {
+        border: 1px solid #d93025;
       }
     }
   }

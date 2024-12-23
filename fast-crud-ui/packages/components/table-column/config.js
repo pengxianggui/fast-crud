@@ -23,7 +23,7 @@ const defaultEditConfig = {
     component: 'el-input',
     props: {
         clearable: false,
-        class: 'fc-tighten',
+        class: 'fc-table-inline-edit-component',
         editable: false
     }
 }

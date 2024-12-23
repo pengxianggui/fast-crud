@@ -21,7 +21,7 @@ const defaultQueryConfig = {
 const defaultEditConfig = {
     component: 'el-upload',
     props: {
-        class: 'fc-tighten',
+        class: 'fc-table-inline-edit-component',
         editable: true,
         defaultVal: null
     }

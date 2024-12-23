@@ -1,5 +1,47 @@
 import {buildFinalComponentConfig} from "../../mapping";
-import {deepClone, isArray, merge} from "../../../util/util";
+import {deepClone, defaultIfBlank, defaultIfEmpty, isArray, isEmpty, merge} from "../../../util/util";
+
+import Schema from 'async-validator'
+
+/**
+ * 单个col值校验, 校验失败会添加class: valid-error并reject(errors), 成功则会移除可能存在的valid-error，并resolve
+ * @param val object数据
+ * @param config col完整的config配置
+ * @returns {Promise<unknown>} 若校验通过resolve, 否则reject(errors)
+ */
+export function colValid(val, config) {
+    const {col, props} = config;
+    return new Promise((resolve, reject) => {
+        const validator = new Schema({
+            [col]: defaultIfEmpty(props.rules, [])
+        });
+        validator.validate({[col]: val}, (errors, fields) => {
+            if (isEmpty(errors)) {
+                props.class = defaultIfBlank(props.class, '').replace('valid-error', '');
+                resolve();
+            } else {
+                props.class = defaultIfBlank(props.class, '') + ' valid-error';
+                reject(errors);
+            }
+        })
+    })
+}
+
+/**
+ * 多行(整行)校验, 校验失败会为每个col配置添加class: valid-error并reject(errors), 成功则会移除每个col可能存在的valid-error，并resolve。
+ * @param fatRows 完整的行记录
+ */
+export function rowValid(fatRows) {
+    const validPromises = [];
+    for (let i = 0; i < fatRows.length; i++) {
+        const fatRow = fatRows[i];
+        Object.keys(fatRow.config).map(col => {
+            const colValidPromise = colValid(fatRow.editRow[col], fatRow.config[col]);
+            validPromises.push(colValidPromise);
+        });
+    }
+    return Promise.all(validPromises);
+}
 
 /**
  * 将行数据转换为table-row格式
