@@ -234,6 +234,8 @@ class FastTableOption {
     batchUpdateUrl = '';
     deleteUrl = '';
     batchDeleteUrl = '';
+    uploadUrl = ''; // 文件上传接口
+    exportUrl = ''; // 数据导出接口
     enableDblClickEdit = true;
     enableMulti = true; // 启用多选
     enableColumnFilter = true; // 启用列过滤：即动筛。TODO 1.0 关了以后，排序也用不了了: 需要在表头外面加排序按钮
@@ -392,6 +394,8 @@ class FastTableOption {
                     batchUpdateUrl = '',
                     deleteUrl = '',
                     batchDeleteUrl = '',
+                    uploadUrl = '',
+                    exportUrl = '',
                     enableDblClickEdit = true,
                     enableMulti = true,
                     enableColumnFilter = true,
@@ -440,6 +444,8 @@ class FastTableOption {
         this.batchUpdateUrl = defaultIfBlank(batchUpdateUrl, module + '/update/batch');
         this.deleteUrl = defaultIfBlank(deleteUrl, module + '/delete');
         this.batchDeleteUrl = defaultIfBlank(batchDeleteUrl, module + '/delete/batch');
+        this.uploadUrl = defaultIfBlank(uploadUrl, module + '/upload');
+        this.exportUrl = defaultIfBlank(exportUrl, module + '/export');
         this.enableDblClickEdit = enableDblClickEdit;
         this.enableMulti = enableMulti;
         this.enableColumnFilter = enableColumnFilter;

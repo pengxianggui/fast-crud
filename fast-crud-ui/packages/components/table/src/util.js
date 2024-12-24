@@ -130,7 +130,7 @@ export function iterBuildComponentConfig(vnodes, tableOption, callback) {
             if (filter) {
                 buildFilterComponentConfig(param, tableColumnComponentName, customConfig);
             }
-            buildEditComponentConfig(param, tableColumnComponentName, customConfig);
+            buildEditComponentConfig(param, tableColumnComponentName, customConfig, tableOption);
         } catch (err) {
             console.error(err)
         } finally {
@@ -179,16 +179,16 @@ function buildFilterComponentConfig(param, tableColumnComponentName, customConfi
  * @param defaultProp
  * @param props
  */
-function buildEditComponentConfig(param, tableColumnComponentName, customConfig) {
+function buildEditComponentConfig(param, tableColumnComponentName, customConfig, tableOption) {
     // form表单组件配置
     try {
-        param.formItemConfig = buildFinalComponentConfig(customConfig, tableColumnComponentName, 'edit', 'form');
+        param.formItemConfig = buildFinalComponentConfig(customConfig, tableColumnComponentName, 'edit', 'form', tableOption);
     } catch (e) {
         console.error(e.message)
     }
     // 行内表单组件配置
     try {
-        param.inlineItemConfig = buildFinalComponentConfig(customConfig, tableColumnComponentName, 'edit', 'inline');
+        param.inlineItemConfig = buildFinalComponentConfig(customConfig, tableColumnComponentName, 'edit', 'inline', tableOption);
     } catch (e) {
         console.error(e.message)
     }

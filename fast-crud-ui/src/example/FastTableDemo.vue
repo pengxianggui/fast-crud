@@ -9,9 +9,14 @@
       <el-checkbox v-model="params.insertable" @change="(val) => updateOption('insertable', val)">允许新增</el-checkbox>
       <el-checkbox v-model="params.updatable" @change="(val) => updateOption('updatable', val)">允许更新</el-checkbox>
       <el-checkbox v-model="params.deletable" @change="(val) => updateOption('deletable', val)">允许删除</el-checkbox>
-      <el-checkbox v-model="params.enableColumnFilter" @change="(val) => updateOption('enableColumnFilter', val)">允许表头动态筛选</el-checkbox>
-      <el-checkbox v-model="params.enableMulti" @change="(val) => updateOption('enableMulti', val)">启用多选</el-checkbox>
-      <el-checkbox v-model="params.enableDblClickEdit" @change="(val) => updateOption('enableDblClickEdit', val)">启用双击编辑</el-checkbox>
+      <el-checkbox v-model="params.enableColumnFilter" @change="(val) => updateOption('enableColumnFilter', val)">
+        允许表头动态筛选
+      </el-checkbox>
+      <el-checkbox v-model="params.enableMulti" @change="(val) => updateOption('enableMulti', val)">启用多选
+      </el-checkbox>
+      <el-checkbox v-model="params.enableDblClickEdit" @change="(val) => updateOption('enableDblClickEdit', val)">
+        启用双击编辑
+      </el-checkbox>
       <h3>钩子函数应用</h3>
       <el-checkbox v-model="params.loadSuccessTip">分页加载成功提示</el-checkbox>
       <el-checkbox v-model="params.customLoadFailTip">自定义加载失败提示</el-checkbox>
@@ -28,21 +33,20 @@
     </div>
     <fast-table ref="fastTable" class="el-card" :option="tableOption">
       <fast-table-column label="ID" prop="id"/>
-      <!-- TODO 1.0 fast-table-column-img还不具备状态 -->
-      <!--      <fast-table-column-img label="头像" prop="avatar" :filter="false"/>-->
+      <fast-table-column-img label="头像" prop="avatarUrl" :filter="false"/>
       <fast-table-column-input label="姓名" prop="name" first-filter :quick-filter="true" required/>
       <fast-table-column-number label="年龄" prop="age" required/>
       <fast-table-column-select label="性别" prop="sex" :options="sexOptions" :quick-filter="true" required/>
       <fast-table-column-select label="爱好" prop="hobby" :options="hobbyOptions"
                                 :quick-filter="true" quick-filter-block quick-filter-checkbox
                                 val-key="code" label-key="name"
-                                :default-val__q="['1', '2', '3', '4', '5']" :disable-val__q="['6']" required/>
+                                :default-val__q="['1', '2', '3', '4', '5']" :disable-val__q="['6']"
+                                required/>
       <fast-table-column-textarea label="地址" prop="address" required/>
       <fast-table-column-switch label="已毕业" prop="graduated" :quick-filter="true"/>
-      <fast-table-column-time-picker label="闹钟" prop="clockTime" required/>
+      <fast-table-column-time-picker label="幸运时刻" prop="luckTime" required/>
       <fast-table-column-date-picker label="生日" prop="birthday" :picker-options="pickerOptionsE" required/>
-      <fast-table-column-number label="身高" prop="height"/>
-      <fast-table-column-number label="体重" prop="weight"/>
+      <fast-table-column-file label="简历" prop="resumeUrl" :filter="false" :show-overflow-tool-tip="true"/>
       <fast-table-column-date-picker label="创建时间" prop="createTime" :picker-options__q="pickerOptionsQ"
                                      type="datetime"
                                      :quick-filter="false" :default-val__q="defaultQueryOfCreatedTime"
@@ -50,6 +54,8 @@
                                      value-format__e="yyyy-MM-ddTHH:mm:ss"
                                      :default-time="['00:00:00', '23:59:59']"
                                      :editable="false"/>
+      <!-- 操作 -->
+      <!--      <el-table-column label="创建时间" prop="createTime"></el-table-column>-->
     </fast-table>
   </div>
 </template>

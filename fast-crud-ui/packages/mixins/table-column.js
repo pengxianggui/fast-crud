@@ -1,5 +1,5 @@
 export default {
-    inject: ['openDynamicFilterForm'],
+    inject: ['openDynamicFilterForm', 'tableStyle'],
     props: {
         prop: String,
         label: String,
@@ -9,7 +9,7 @@ export default {
         },
         showOverflowToolTip: {
             type: Boolean,
-            default: () => true
+            default: () => false
         }
     },
     data() {

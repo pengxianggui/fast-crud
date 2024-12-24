@@ -20,7 +20,7 @@ public class Student {
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
 
-    private String avatar;
+    private String avatarUrl;
 
     private String name;
 
@@ -36,13 +36,14 @@ public class Student {
 
     private Boolean graduated;
 
-    private String clockTime;
-
-    private Double height;
-
-    private Double weight;
+    private String luckTime;
 
     private LocalDate birthday;
+
+    /**
+     * 简历地址
+     */
+    private String resumeUrl;
 
     @TableField(insertStrategy = FieldStrategy.NEVER, updateStrategy = FieldStrategy.NEVER)
     private LocalDateTime createTime;

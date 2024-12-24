@@ -13,10 +13,12 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Validator;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -113,5 +115,19 @@ public class BaseController<T> {
     @PostMapping("exists")
     public Boolean exists(@RequestBody List<Cond> conditions) {
         return baseService.exists(conditions);
+    }
+
+    @ApiOperation(value = "上传", notes = "某个字段为图片/文件字段时需要使用上传接口")
+    @PostMapping("upload")
+    public String upload(MultipartFile file) throws IOException {
+        // TODO 上传逻辑：支持扩展
+        return "https://fuss10.elemecdn.com/3/63/4e7f3a15429bfda99bce42a18cdd1jpeg.jpeg";
+    }
+
+    @ApiOperation(value = "导出", notes = "数据导出")
+    @PostMapping("export")
+    public String export() {
+        // TODO 支持传入表头的config, 以便导出时显示excel表头，以及一些option选项之类的
+        return null;
     }
 }

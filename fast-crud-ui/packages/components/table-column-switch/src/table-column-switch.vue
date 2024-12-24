@@ -18,7 +18,8 @@
         </div>
         <slot v-bind:edit="{row, editRow, status, config, column, $index}" v-else>
           <component :is="config[column.property]['component']"
-                     v-model="editRow[column.property]" v-bind="config[column.property]['props']"></component>
+                     v-model="editRow[column.property]"
+                     v-bind="config[column.property]['props']"></component>
         </slot>
       </slot>
     </template>

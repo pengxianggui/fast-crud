@@ -150,7 +150,8 @@ export default {
   },
   provide() {
     return {
-      openDynamicFilterForm: this.openDynamicFilterForm // 提供给fast-table-column* 触发创建动筛的能力
+      openDynamicFilterForm: this.openDynamicFilterForm, // 提供给fast-table-column* 触发创建动筛的能力
+      tableStyle: this.option.style // 提供给fast-table-column显示高度、尺寸等配置
     }
   },
   mounted() {

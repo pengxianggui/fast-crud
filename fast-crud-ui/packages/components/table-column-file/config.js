@@ -28,7 +28,7 @@ const defaultEditConfig = (config) => {
         component: 'fast-upload',
         props: {
             action: '/',
-            'list-type': 'picture-card',
+            'list-type': 'text',
             class: 'fc-table-inline-edit-component',
             multiple: multiple, // 默认单选文件
             editable: true,
@@ -51,7 +51,7 @@ export default {
         const finalConfig = merge(config, defaultEditConfig(config), true, false);
         const baseURL = defaultIfBlank(FastTableOption.$http.defaults.baseURL, '');
         finalConfig.props.action = baseURL + addStartWith(tableOption.uploadUrl, '/');
-        finalConfig.props['list-type'] = 'picture-card'; // 固定避免被自定义覆盖
+        finalConfig.props['list-type'] = 'text'; // 固定避免被自定义覆盖
         return finalConfig;
     }
 }

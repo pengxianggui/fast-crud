@@ -1,5 +1,8 @@
 <template>
-  <el-table-column :prop="prop" :label="label" :show-overflow-tooltip="showOverflowToolTip" :min-width="minWidth"
+  <el-table-column :prop="prop"
+                   :label="label"
+                   :show-overflow-tooltip="showOverflowToolTip"
+                   :min-width="minWidth"
                    v-bind="$attrs">
     <template v-slot:header="{column, $index}">
       <fast-table-head-cell class="fc-table-column-head-cell" :class="{'filter': filter}" :column="columnProp"

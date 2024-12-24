@@ -1,3 +1,7 @@
+export function addStartWith(str, startWith) {
+    return str.startsWith(startWith) ? str : startWith + str;
+}
+
 export function defaultIfBlank(str, defaultStr) {
     return ifBlank(str) ? defaultStr : str;
 }

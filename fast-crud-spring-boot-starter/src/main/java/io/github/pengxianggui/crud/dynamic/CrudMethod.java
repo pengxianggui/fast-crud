@@ -10,7 +10,9 @@ public enum CrudMethod {
     DETAIL("detail"),
     DELETE("delete"),
     DELETE_BATCH("deleteBatch"),
-    EXISTS("exists");
+    EXISTS("exists"),
+    UPLOAD("upload"),
+    EXPORT("export");
 
     private String name;
 

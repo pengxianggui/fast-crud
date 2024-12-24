@@ -11,14 +11,22 @@
 
     <template v-slot:default="{row: {row, editRow, status, config}, column, $index}">
       <slot v-bind:default="{row, editRow, status, config, column, $index}">
-        <div v-if="status === 'normal' || config[column.property]['props']['editable'] === false">
+        <template v-if="status === 'normal' || config[column.property]['props']['editable'] === false">
           <slot v-bind:normal="{row, editRow, status, config, column, $index}">
-            <span>{{ row[column.property] }}</span>
+            <div class="img-list">
+              <template v-if="isArray(row[column.property])">
+                <img v-for="url in row[column.property]" :style="{'height': tableStyle.bodyRowHeight}" :src="url"/>
+              </template>
+              <img :style="{'height': tableStyle.bodyRowHeight}" :src="row[column.property]" v-else/>
+            </div>
           </slot>
-        </div>
+        </template>
         <slot v-bind:edit="{row, editRow, status, config, column, $index}" v-else>
-          <component :is="config[column.property]['component']"
-                     v-model="editRow[column.property]" v-bind="config[column.property]['props']"></component>
+          <component :style="{'height': tableStyle.bodyRowHeight}"
+                     :is="config[column.property]['component']"
+                     v-model="editRow[column.property]"
+                     v-bind="config[column.property]['props']"
+                     v-on="config[column.property]['eventHandlers']"></component>
         </slot>
       </slot>
     </template>
@@ -28,9 +36,11 @@
 <script>
 import FastTableHeadCell from "../../table-head-cell/src/table-head-cell.vue";
 import tableColumn from "../../../mixins/table-column";
+import {isArray} from "../../../util/util";
 
 export default {
   name: "FastTableColumnImg",
+  methods: {isArray},
   components: {FastTableHeadCell},
   mixins: [tableColumn],
   props: {
@@ -45,6 +55,13 @@ export default {
 }
 </script>
 
-<style scoped>
-
+<style scoped lang="scss">
+.img-list {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 3px 0;
+}
+img {
+  object-fit: cover;
+}
 </style>
