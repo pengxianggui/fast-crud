@@ -21,6 +21,10 @@
   }
 }
 
+.fc-fast-upload.__hide .el-upload {
+  display: none;
+}
+
 .fc-fast-table {
   .el-table__cell {
     padding: 0;
@@ -47,24 +51,40 @@
           text-align: left;
         }
 
-        .el-upload--picture-card {
+
+        .el-upload-list--picture-card .el-upload-list__item, .el-upload--picture-card {
           width: auto;
           height: 100%;
           aspect-ratio: 1 / 1;
           line-height: 100%;
+          margin: 0;
+
           & .el-icon-plus {
             $uploadIconSize: 18px;
             font-size: $uploadIconSize;
             width: $uploadIconSize;
             height: $uploadIconSize;
-            margin-top: calc(50% - $uploadIconSize/2);
+            margin-top: calc(50% - $uploadIconSize / 2);
+          }
+        }
+
+        .el-upload-list--text {
+          .el-upload-list__item {
+            //word-break: normal;
+            margin: 0;
+            line-height: 1;
+
+            & > * {
+              display: inline;
+            }
           }
         }
 
         .el-link {
-          word-break: normal;
+          //word-break: normal;
         }
       }
+
       .fc-table-inline-edit-component.valid-error {
         border: 1px solid #d93025;
       }

@@ -46,7 +46,7 @@
       <fast-table-column-switch label="已毕业" prop="graduated" :quick-filter="true"/>
       <fast-table-column-time-picker label="幸运时刻" prop="luckTime" required/>
       <fast-table-column-date-picker label="生日" prop="birthday" :picker-options="pickerOptionsE" required/>
-      <fast-table-column-file label="简历" prop="resumeUrl" :filter="false" :show-overflow-tool-tip="true"/>
+      <fast-table-column-file label="简历" prop="resumeUrl" :filter="false" :show-overflow-tool-tip="false"/>
       <fast-table-column-date-picker label="创建时间" prop="createTime" :picker-options__q="pickerOptionsQ"
                                      type="datetime"
                                      :quick-filter="false" :default-val__q="defaultQueryOfCreatedTime"

@@ -301,3 +301,11 @@ export function noRepeatAdd(arr, item, repeatPredicate = (ele, item) => ele === 
         addToStart ? arr.unshift(item) : arr.push(item);
     }
 }
+
+export function getNameFromUrl(url) {
+    const lastIndex = url.lastIndexOf('/');
+    if (lastIndex === -1) {
+        return url;
+    }
+    return url.substring(lastIndex + 1);
+}

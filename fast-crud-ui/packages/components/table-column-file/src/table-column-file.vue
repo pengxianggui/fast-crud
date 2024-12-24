@@ -14,25 +14,26 @@
 
     <template v-slot:default="{row: {row, editRow, status, config}, column, $index}">
       <slot v-bind:default="{row, editRow, status, config, column, $index}">
-        <template v-if="status === 'normal' || config[column.property]['props']['editable'] === false">
-          <slot v-bind:normal="{row, editRow, status, config, column, $index}">
-            <div class="file-list" :style="{'height': tableStyle.bodyRowHeight}">
-              <template v-if="isArray(row[column.property])">
-                <el-link v-for="url in row[column.property]" :href="url">{{ url }}</el-link>
-              </template>
-              <el-link :href="row[column.property]" v-else>
-                {{ row[column.property] }}
-              </el-link>
-            </div>
-          </slot>
-        </template>
-        <slot v-bind:edit="{row, editRow, status, config, column, $index}" v-else>
+<!--        <template v-if="status === 'normal' || config[column.property]['props']['editable'] === false">-->
+<!--          <slot v-bind:normal="{row, editRow, status, config, column, $index}">-->
+<!--            <div class="file-list" :style="{'height': tableStyle.bodyRowHeight}">-->
+<!--              <template v-if="isArray(row[column.property])">-->
+<!--                <el-link v-for="url in row[column.property]" :href="url">{{ url }}</el-link>-->
+<!--              </template>-->
+<!--              <el-link :href="row[column.property]" v-else>-->
+<!--                {{ row[column.property] }}-->
+<!--              </el-link>-->
+<!--            </div>-->
+<!--          </slot>-->
+<!--        </template>-->
+<!--        <slot v-bind="{row, editRow, status, config, column, $index}">-->
           <component :style="{'height': tableStyle.bodyRowHeight}"
                      :is="config[column.property]['component']"
                      v-model="editRow[column.property]"
                      v-bind="config[column.property]['props']"
+                     :disabled="status === 'normal' || config[column.property]['props']['editable'] === false"
                      v-on="config[column.property]['eventHandlers']"></component>
-        </slot>
+<!--        </slot>-->
       </slot>
     </template>
   </el-table-column>

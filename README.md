@@ -64,7 +64,6 @@
 
 ##### 其它
 - [ ] 增加FastTableColumnUpload替代FastTableColumnImg，同时检具文件上传和图片上传功能
-- [ ] 增加FastTableColumnRadio
 
 ### 2.0 版本：CRUD的外围扩展
 

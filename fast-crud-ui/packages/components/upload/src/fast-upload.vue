@@ -2,37 +2,53 @@
   <el-upload v-model="modelValue"
              v-bind="$attrs"
              :action="action"
-             :multiple="multiple"
              :limit="limit"
              :list-type="listType"
-             :show-file-list="false"
+             :file-list="files"
+             :show-file-list="true"
              :on-success="handleSuccess"
              :on-error="handleError"
-             class="uploader-wrapper">
-    <template v-if="isEmpty(modelValue)">
+             :on-change="handleChange"
+             :on-exceed="handleExceed"
+             class="fc-fast-upload"
+             :class="{'__hide': hideUploadButton}">
+    <template #default>
       <i class="el-icon-plus"></i>
     </template>
-    <template v-else>
+    <template #file="{file}">
       <!-- 图片 -->
       <template v-if="isPicture">
-        <div class="picture-list" v-if="multiple">
-          <img v-for="url in modelValue" :src="url">
-        </div>
-        <img :src="modelValue" v-else>
+        <img class="el-upload-list__item-thumbnail" :src="file.url" alt=""/>
+        <span class="el-upload-list__item-actions">
+          <span class="el-upload-list__item-preview" @click="preview(file)">
+            <i class="el-icon-zoom-in"></i>
+          </span>
+          <!--        <span-->
+          <!--            v-if="!disabled"-->
+          <!--            class="el-upload-list__item-download"-->
+          <!--            @click="handleDownload(file)"-->
+          <!--        >-->
+          <!--          <i class="el-icon-download"></i>-->
+          <!--        </span>-->
+          <span v-if="!disabled" class="el-upload-list__item-delete" @click="handleRemove(file)">
+            <i class="el-icon-delete"></i>
+          </span>
+        </span>
       </template>
       <!-- 普通文件 -->
       <template v-else>
-        <div class="file-list" v-if="multiple">
-          <el-link v-for="url in modelValue" :href="url">{{url}}</el-link>
-        </div>
-        <el-link :href="modelValue" v-else>{{modelValue}}</el-link>
+        <i :class="'el-icon-paperclip'" v-if="disabled"></i>
+        <el-button type="text" icon="el-icon-delete" style="padding: 2px; color: #f56c6c;" v-else
+                   @click="handleRemove(file)"></el-button>
+        <el-link :href="file.url" style="display: inline">{{ file.name }}</el-link>
       </template>
     </template>
   </el-upload>
 </template>
 
 <script>
-import {isEmpty, isFunction} from "../../../util/util";
+import {Message} from 'element-ui';
+import {isArray, isEmpty, isFunction, getNameFromUrl} from "../../../util/util";
 
 export default {
   name: "fast-upload",
@@ -41,10 +57,6 @@ export default {
     value: {
       type: [String, Array],
       default: () => null
-    },
-    multiple: {
-      type: Boolean,
-      default: () => false
     },
     action: {
       type: String,
@@ -58,6 +70,10 @@ export default {
       type: Number,
       default: () => 1
     },
+    disabled: {
+      type: Boolean,
+      default: () => false
+    },
     /**
      * 上传成功后的回调, 必须解析出并返回url地址
      */
@@ -69,6 +85,7 @@ export default {
   computed: {
     modelValue: {
       get() {
+        this.refreshFiles(this.value)
         return this.value;
       },
       set(val) {
@@ -77,16 +94,48 @@ export default {
     },
     isPicture() {
       return this.listType === 'picture-card';
+    },
+    hideUploadButton() {
+      return this.disabled || (!isEmpty(this.modelValue) && this.files.length >= this.limit);
+    }
+  },
+  data() {
+    return {
+      files: []
     }
   },
   methods: {
     isEmpty,
+    refreshFiles(value) {
+      const urls = [];
+      if (isArray(value)) {
+        urls.push(...value)
+      } else if (!isEmpty(value)) {
+        urls.push(value)
+      }
+
+      if (isEmpty(urls)) {
+        this.files = [];
+        return;
+      }
+      urls.forEach(url => {
+        const name = getNameFromUrl(url);
+        if (this.files.every(f => f.name !== name && f.url !== url)) {
+          this.files.push({name: name, url: url});
+        }
+      });
+      for (let i = this.files.length - 1; i >= 0; i--) {
+        if (urls.every(url => url !== this.files[i].url)) {
+          this.files.splice(i, 1);
+        }
+      }
+    },
     handleSuccess(response, file, fileList) {
       const url = this.responseHandler(response, file, fileList);
-      if (this.multiple) {
-        this.modelValue.push(url);
-      } else {
+      if (this.limit === 1) {
         this.modelValue = url;
+      } else {
+        this.modelValue = this.modelValue.push(url);
       }
       if (this.$attrs.hasOwnProperty('on-success')) {
         const customOnSuccess = this.$attrs['on-success'];
@@ -97,12 +146,47 @@ export default {
     },
     handleError(err, file, fileList) {
       debugger
+    },
+    handleChange(file, fileList) {
+      // TODO
+      debugger
+    },
+    handleExceed(files, fileList) {
+      Message.warning('文件数量超过限制');
+    },
+    handleRemove(file) {
+      const index = this.files.findIndex(f => f.url === file.url);
+      this.files.splice(index, 1);
+      const urls = this.files.map(f => f.url);
+      if (this.limit === 1) {
+        this.modelValue = isEmpty(urls) ? '' : urls[0];
+      } else {
+        this.modelValue = urls;
+      }
+    },
+    preview(file) {
+      // TODO
     }
   }
 }
 </script>
 
 <style scoped lang="scss">
+.el-upload-list__item-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  //justify-content: center;
+
+  & > * {
+    margin: 0 !important;
+
+    & i {
+      font-size: 14px;
+    }
+  }
+}
+
 img {
   height: 100%;
   object-fit: cover;
