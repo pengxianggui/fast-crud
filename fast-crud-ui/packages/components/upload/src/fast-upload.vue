@@ -224,6 +224,9 @@ export default {
         font-size: 14px;
       }
     }
+    &::after {
+      display: none;
+    }
   }
 
   img {
