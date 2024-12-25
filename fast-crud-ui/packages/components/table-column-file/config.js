@@ -49,8 +49,7 @@ export default {
     },
     edit: (config, type, tableOption) => {
         const finalConfig = merge(config, defaultEditConfig(config), true, false);
-        const baseURL = defaultIfBlank(FastTableOption.$http.defaults.baseURL, '');
-        finalConfig.props.action = baseURL + addStartWith(tableOption.uploadUrl, '/');
+        finalConfig.props.action = addStartWith(tableOption.uploadUrl, '/');
         finalConfig.props['list-type'] = 'text'; // 固定避免被自定义覆盖
         return finalConfig;
     }

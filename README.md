@@ -16,6 +16,7 @@
 - **mybatis-plus**: 3.5.7, 更高版本会存在一些问题
 - **knife4j**: 3.0.3
 - **hutool-core**: 5.8.8
+- **hutool-extra**: 5.8.8
 - **freemarker**: 2.3.31
 
 ## Roadmap
@@ -63,7 +64,7 @@
 - [x] 删除功能: 删除单行/批量删除
 
 ##### 其它
-- [ ] 增加FastTableColumnUpload替代FastTableColumnImg，同时检具文件上传和图片上传功能
+- [x] 增加FastTableColumnFile和FastTableColumnImg，分别文件上传和图片上传功能
 
 ### 2.0 版本：CRUD的外围扩展
 

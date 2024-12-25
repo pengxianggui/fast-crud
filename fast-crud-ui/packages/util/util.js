@@ -303,9 +303,12 @@ export function noRepeatAdd(arr, item, repeatPredicate = (ele, item) => ele === 
 }
 
 export function getNameFromUrl(url) {
-    const lastIndex = url.lastIndexOf('/');
+    const decodeUrl = decodeURIComponent(url);
+    const lastSlashIndex = decodeUrl.lastIndexOf('/');
+    const lastBackslashIndex = decodeUrl.lastIndexOf('\\');
+    const lastIndex = Math.max(lastSlashIndex, lastBackslashIndex);
     if (lastIndex === -1) {
-        return url;
+        return decodeUrl;
     }
-    return url.substring(lastIndex + 1);
+    return decodeUrl.substring(lastIndex + 1);
 }

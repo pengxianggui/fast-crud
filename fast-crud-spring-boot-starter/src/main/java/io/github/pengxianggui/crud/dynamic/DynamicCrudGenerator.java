@@ -94,8 +94,12 @@ public class DynamicCrudGenerator {
                 null);
 
         ctClass.setGenericSignature(cs.encode());
-        CtConstructor ctConstructor = new CtConstructor(new CtClass[]{classPool.get(BaseService.class.getName()), classPool.get("javax.validation.Validator")}, ctClass);
-        ctConstructor.setBody("{super($1,$2);}");
+        CtConstructor ctConstructor = new CtConstructor(new CtClass[]{
+                classPool.get(BaseService.class.getName()),
+                classPool.get("javax.validation.Validator"),
+                classPool.get("java.lang.String")
+        }, ctClass);
+        ctConstructor.setBody("{super($1,$2,$3);}");
         ctClass.addConstructor(ctConstructor);
 
         ClassFile classFile = ctClass.getClassFile();
@@ -126,9 +130,10 @@ public class DynamicCrudGenerator {
         ctClass = classPool.makeClass(classFile);
         Class ctlClass = ctClass.toClass();
 
-        Constructor constructor = ctlClass.getConstructor(BaseService.class, Validator.class);
+        Constructor constructor = ctlClass.getConstructor(BaseService.class, Validator.class, String.class);
 
-        BaseController<T> ctl = (BaseController<T>) constructor.newInstance(baseService, this.validator);
+        String basePath = basePaths.length > 0 ? basePaths[0] : "";
+        BaseController<T> ctl = (BaseController<T>) constructor.newInstance(baseService, this.validator, basePath);
 
         Method[] methods = ctl.getClass().getMethods();
 

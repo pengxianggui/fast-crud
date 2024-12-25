@@ -1,6 +1,9 @@
 package io.github.pengxianggui.crud;
 
 import cn.hutool.core.lang.Assert;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.extra.spring.SpringUtil;
+import io.github.pengxianggui.crud.download.FileResourceHttpRequestHandler;
 import io.github.pengxianggui.crud.meta.EntityUtil;
 import io.github.pengxianggui.crud.query.*;
 import io.github.pengxianggui.crud.valid.CrudInsert;
@@ -8,28 +11,48 @@ import io.github.pengxianggui.crud.valid.CrudUpdate;
 import io.github.pengxianggui.crud.valid.ValidUtil;
 import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 import io.swagger.annotations.ApiOperation;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.MediaTypeFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindException;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Validator;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class BaseController<T> {
     private BaseService<T> baseService;
     public Validator validator;
+    private String basePath;
 
-    public BaseController(BaseService<T> baseService, Validator validator) {
+    public BaseController(BaseService<T> baseService, Validator validator, String basePath) {
         this.baseService = baseService;
         this.validator = validator;
+        basePath = StrUtil.nullToDefault(basePath, "");
+        if (StrUtil.isNotBlank(basePath) && !basePath.startsWith("/")) {
+            basePath = "/" + basePath;
+        }
+        this.basePath = basePath;
     }
 
     @ApiOperation("插入")
@@ -119,15 +142,54 @@ public class BaseController<T> {
 
     @ApiOperation(value = "上传", notes = "某个字段为图片/文件字段时需要使用上传接口")
     @PostMapping("upload")
-    public String upload(MultipartFile file) throws IOException {
-        // TODO 上传逻辑：支持扩展
-        return "https://fuss10.elemecdn.com/3/63/4e7f3a15429bfda99bce42a18cdd1jpeg.jpeg";
+    public String upload(@RequestParam("row") String row, @RequestParam("col") String col, MultipartFile file) throws IOException {
+        String filePath = baseService.upload(row, col, file);
+        if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
+            return filePath;
+        }
+        return this.basePath + "/download?path=" + URLEncoder.encode(filePath);
+    }
+
+    @ApiOperation(value = "下载/预览", notes = "针对上传的文件进行下载, 若是图片进行预览")
+    @GetMapping("download")
+    public void download(@RequestParam("path") String path, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        File file = baseService.download(path);
+        if (!file.exists()) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            response.setCharacterEncoding(StandardCharsets.UTF_8.toString());
+            return;
+        }
+        try {
+            String fileName = URLEncoder.encode(file.getName(), Charset.defaultCharset().toString());
+            Optional<MediaType> optional = MediaTypeFactory.getMediaType(fileName);
+            response.setContentType(optional.orElse(MediaType.APPLICATION_OCTET_STREAM).getType());
+            response.setHeader("Connection", "close");
+            response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", fileName));
+
+            FileResourceHttpRequestHandler fileResourceHttpRequestHandler = SpringUtil.getBean(FileResourceHttpRequestHandler.class);
+            request.setAttribute(FileResourceHttpRequestHandler.FILE_PATH, file.getAbsolutePath());
+            fileResourceHttpRequestHandler.handleRequest(request, response);
+        } catch (IOException | ServletException e) {
+            throw e;
+        }
     }
 
     @ApiOperation(value = "导出", notes = "数据导出")
     @PostMapping("export")
     public String export() {
         // TODO 支持传入表头的config, 以便导出时显示excel表头，以及一些option选项之类的
+//        return responseFile(null)
         return null;
+    }
+
+    protected ResponseEntity<FileSystemResource> responseFile(File file) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Cache-Control", "no-cache, no-store, must-revalidate");
+        headers.add("Content-Disposition", String.format("attachment; filename=\"%s\"", file.getName()));
+        headers.add("Pragma", "no-cache");
+        headers.add("Expires", "0");
+
+        MediaType mediaType = MediaTypeFactory.getMediaType(file.getName()).orElse(MediaType.APPLICATION_OCTET_STREAM);
+        return ResponseEntity.ok().headers(headers).contentType(mediaType).body(new FileSystemResource(file));
     }
 }

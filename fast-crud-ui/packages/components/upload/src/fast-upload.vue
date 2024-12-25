@@ -1,7 +1,8 @@
 <template>
   <el-upload v-model="modelValue"
              v-bind="$attrs"
-             :action="action"
+             :action="actionValue"
+             :data="formData"
              :limit="limit"
              :list-type="listType"
              :file-list="files"
@@ -48,7 +49,9 @@
 
 <script>
 import {Message} from 'element-ui';
-import {isArray, isEmpty, isFunction, getNameFromUrl} from "../../../util/util";
+import {isArray, isEmpty, isFunction, getNameFromUrl, defaultIfBlank} from "../../../util/util";
+import FastTableOption from "../../../model";
+import {openDialog} from "../../../util/dialog";
 
 export default {
   name: "fast-upload",
@@ -74,6 +77,20 @@ export default {
       type: Boolean,
       default: () => false
     },
+    col: {
+      type: String,
+      default: () => ''
+    },
+    row: {
+      type: Object,
+      default: () => {
+      }
+    },
+    data: {
+      type: Object,
+      default: () => {
+      }
+    },
     /**
      * 上传成功后的回调, 必须解析出并返回url地址
      */
@@ -92,16 +109,27 @@ export default {
         this.$emit('input', val);
       }
     },
+    actionValue() {
+      return this.apiPrefix + this.action;
+    },
     isPicture() {
       return this.listType === 'picture-card';
     },
     hideUploadButton() {
       return this.disabled || (!isEmpty(this.modelValue) && this.files.length >= this.limit);
+    },
+    formData() {
+      return {
+        row: JSON.stringify(this.row),
+        col: this.col,
+        ...this.data
+      }
     }
   },
   data() {
     return {
-      files: []
+      files: [],
+      apiPrefix: defaultIfBlank(FastTableOption.$http.defaults.baseURL, '')
     }
   },
   methods: {
@@ -113,19 +141,20 @@ export default {
       } else if (!isEmpty(value)) {
         urls.push(value)
       }
-
       if (isEmpty(urls)) {
         this.files = [];
         return;
       }
+      const {apiPrefix} = this;
       urls.forEach(url => {
+        debugger
         const name = getNameFromUrl(url);
         if (this.files.every(f => f.name !== name && f.url !== url)) {
-          this.files.push({name: name, url: url});
+          this.files.push({name: name, url: apiPrefix + url});
         }
       });
       for (let i = this.files.length - 1; i >= 0; i--) {
-        if (urls.every(url => url !== this.files[i].url)) {
+        if (urls.every(url => apiPrefix + url !== this.files[i].url)) {
           this.files.splice(i, 1);
         }
       }
@@ -165,30 +194,43 @@ export default {
       }
     },
     preview(file) {
-      // TODO
+      openDialog({
+        component: {
+          render: function (h) {
+            return h('img', {
+              attrs: {
+                src: file.url,
+                width: '100%'
+              }
+            })
+          }
+        }
+      })
     }
   }
 }
 </script>
 
 <style scoped lang="scss">
-.el-upload-list__item-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  //justify-content: center;
+.fc-fast-upload {
+  .el-upload-list__item-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    //justify-content: center;
 
-  & > * {
-    margin: 0 !important;
+    & > * {
+      margin: 0 !important;
 
-    & i {
-      font-size: 14px;
+      & i {
+        font-size: 14px;
+      }
     }
   }
-}
 
-img {
-  height: 100%;
-  object-fit: cover;
+  img {
+    height: 100%;
+    object-fit: cover;
+  }
 }
 </style>

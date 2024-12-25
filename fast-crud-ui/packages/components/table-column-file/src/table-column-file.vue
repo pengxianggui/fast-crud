@@ -14,26 +14,25 @@
 
     <template v-slot:default="{row: {row, editRow, status, config}, column, $index}">
       <slot v-bind:default="{row, editRow, status, config, column, $index}">
-<!--        <template v-if="status === 'normal' || config[column.property]['props']['editable'] === false">-->
-<!--          <slot v-bind:normal="{row, editRow, status, config, column, $index}">-->
-<!--            <div class="file-list" :style="{'height': tableStyle.bodyRowHeight}">-->
-<!--              <template v-if="isArray(row[column.property])">-->
-<!--                <el-link v-for="url in row[column.property]" :href="url">{{ url }}</el-link>-->
-<!--              </template>-->
-<!--              <el-link :href="row[column.property]" v-else>-->
-<!--                {{ row[column.property] }}-->
-<!--              </el-link>-->
-<!--            </div>-->
-<!--          </slot>-->
-<!--        </template>-->
-<!--        <slot v-bind="{row, editRow, status, config, column, $index}">-->
+        <template v-if="status === 'normal' || config[column.property]['props']['editable'] === false">
+          <slot v-bind:normal="{row, editRow, status, config, column, $index}">
+            <fast-upload :style="{'height': tableStyle.bodyRowHeight}"
+                         class="fc-fast-upload-file"
+                         v-model="row[column.property]"
+                         v-bind="config[column.property]['props']"
+                         list-type="text"
+                         :disabled="true"></fast-upload>
+          </slot>
+        </template>
+        <slot v-bind="{row, editRow, status, config, column, $index}" v-else>
           <component :style="{'height': tableStyle.bodyRowHeight}"
+                     class="fc-fast-upload-file"
                      :is="config[column.property]['component']"
                      v-model="editRow[column.property]"
+                     :row="editRow" :col="column.property"
                      v-bind="config[column.property]['props']"
-                     :disabled="status === 'normal' || config[column.property]['props']['editable'] === false"
                      v-on="config[column.property]['eventHandlers']"></component>
-<!--        </slot>-->
+        </slot>
       </slot>
     </template>
   </el-table-column>
@@ -62,15 +61,9 @@ export default {
 </script>
 
 <style scoped lang="scss">
-.file-list {
+.fc-fast-upload-file {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  flex-wrap: wrap;
-  padding: 3px 0;
-
-  .el-link {
-    word-break: normal;
-  }
 }
 </style>

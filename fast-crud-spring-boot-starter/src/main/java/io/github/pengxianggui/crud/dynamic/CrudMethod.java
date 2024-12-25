@@ -12,6 +12,7 @@ public enum CrudMethod {
     DELETE_BATCH("deleteBatch"),
     EXISTS("exists"),
     UPLOAD("upload"),
+    DOWNLOAD("download"),
     EXPORT("export");
 
     private String name;

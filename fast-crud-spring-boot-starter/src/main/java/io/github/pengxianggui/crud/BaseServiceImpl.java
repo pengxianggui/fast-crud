@@ -1,5 +1,6 @@
 package io.github.pengxianggui.crud;
 
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.annotation.FieldStrategy;
@@ -11,9 +12,16 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import io.github.pengxianggui.crud.meta.EntityUtil;
 import io.github.pengxianggui.crud.query.*;
 import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Date;
 import java.util.List;
 
 public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends ServiceImpl<M, T> implements BaseService<T> {
@@ -21,6 +29,9 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
 
     @PostConstruct
     public abstract void init();
+
+    @Resource
+    private FastCrudProperty fastCrudProperty;
 
     @Override
     public List<T> queryList(Query query) {
@@ -69,6 +80,51 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
         QueryWrapperUtil.addConditions(wrapper, conditions, clazz);
         wrapper.last(" limit 1");
         return this.count(wrapper) > 0;
+    }
+
+    @Override
+    public String upload(String row, String col, MultipartFile file) throws IOException {
+        String uploadDir;
+        if (StrUtil.isBlank(fastCrudProperty.getUploadDir())) {
+            try {
+                Path tempDir = Files.createTempDirectory("upload");
+                uploadDir = tempDir.toAbsolutePath().toString();
+            } catch (IOException e) {
+                throw e;
+            }
+        } else {
+            uploadDir = fastCrudProperty.getUploadDir();
+        }
+        if (!uploadDir.endsWith(File.separator)) {
+            uploadDir += File.separator;
+        }
+        String fileName = file.getOriginalFilename();
+        File targetFile = new File(uploadDir + File.separator + DateUtil.format(new Date(), "yyyyMMddHHmmssSSS") + File.separator + fileName);
+        try {
+            if (!targetFile.getParentFile().exists()) {
+                targetFile.getParentFile().mkdirs();
+            }
+            file.transferTo(targetFile);
+        } catch (IOException e) {
+            throw e;
+        }
+        return buildPreviewFileUrl(targetFile);
+    }
+
+    @Override
+    public File download(String path) {
+        return new File(path);
+    }
+
+    /**
+     * 构建文件预览地址。在文件资源上传之后会调用此方法。默认将返回文件的绝对路径, 客户端将通过内置的 xxx/download?path=${path}来访问此资源。
+     * 若希望上传到oss并返回绝对oss资源路径,可以重写此方法实现oss上传并返回http绝对资源路径，返回给客户端的将是绝对oss资源路径，而不会再通过xxx/download?path=来访问。
+     *
+     * @param targetFile
+     * @return
+     */
+    String buildPreviewFileUrl(File targetFile) {
+        return targetFile.getAbsolutePath();
     }
 
     /**
