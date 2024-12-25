@@ -125,7 +125,6 @@ export function iterBuildComponentConfig(vnodes, tableOption, callback) {
             col: col,
             props: {...defaultProp, ...props}
         }
-        // debugger
         try {
             if (filter) {
                 buildFilterComponentConfig(param, tableColumnComponentName, customConfig);

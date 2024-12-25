@@ -17,6 +17,27 @@ import {openDialog} from "./util/dialog";
 import "element-ui/lib/theme-chalk/index.css";
 import "./style.scss"
 import FastTableOption from "./model";
+import {ellipsis} from "./filters";
+import {
+    isEmpty,
+    isString,
+    isNumber,
+    isArray,
+    ifBlank,
+    isFunction,
+    isObject,
+    isBoolean,
+    isNull,
+    isUndefined,
+    defaultIfEmpty,
+    defaultIfBlank,
+    camelCaseTo,
+    caseToCamel,
+    clear,
+    deepClone,
+    merge,
+    coverMerge
+} from "./util/util";
 
 const components = [
     Input,
@@ -64,7 +85,32 @@ if (typeof window !== 'undefined' && window.Vue) {
     install(window.Vue);
 }
 
-export default {
-    install,
+export const util = {
+    isEmpty,
+    isString,
+    isNumber,
+    isArray,
+    ifBlank,
+    isFunction,
+    isObject,
+    isBoolean,
+    isNull,
+    isUndefined,
+    defaultIfEmpty,
+    defaultIfBlank,
+    camelCaseTo,
+    caseToCamel,
+    clear,
+    deepClone,
+    merge,
+    coverMerge,
     openDialog
+}
+
+export const filters = {
+    ellipsis
+}
+
+export default {
+    install
 };

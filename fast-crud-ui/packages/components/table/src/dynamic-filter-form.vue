@@ -83,7 +83,7 @@ export default {
     return {
       localFilter: localFilter,
       asc: this.order === 'asc' ? true : (this.order === 'desc' ? false : ''),
-      distinctQuery: new Query().setDistinct().setCols([col]).setConds(this.conds),
+      distinctQuery: new Query().setDistinct().setCols([col]), //.setConds(this.conds), 表格上的筛选条件不用上来
       distinctLoaded: false, // 是否distinct query loaded
       distinctLoading: false, // 是否distinct query loading中
       distinctOptions: [], // 检索出的distinct选项
@@ -99,8 +99,10 @@ export default {
       this.distinctAbortCtrl = new AbortController();
       const {col, component, props} = this.localFilter;
       this.$http.post(this.listUrl, this.distinctQuery.toJson(), {signal: this.distinctAbortCtrl.signal}).then(({data = []}) => {
+        if (data.length > 10000) { // 为防止页面卡死, 最多显示10000个
+          data.splice(10001);
+        }
         const distinctValues = data.filter(item => isObject(item) && item.hasOwnProperty(col)).map(item => item[col]);
-        // 拼装distinctOptions TODO 1.0 如果结果值太多, 是采取前端滚动加载 or 展示top100? 如果太多, 比如针对createTime这种字段distinct就没有意义了
         this.distinctOptions = distinctValues.map(v => {
           return {
             value: v,
@@ -201,6 +203,7 @@ export default {
   .fc-dynamic-filter-distinct {
     border: 1px solid #e1e1e1;
     padding: 10px;
+    overflow: auto;
 
     .fc-dynamic-filter-distinct-options {
       margin-top: 10px;

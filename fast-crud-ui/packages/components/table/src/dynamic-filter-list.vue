@@ -4,7 +4,7 @@
       <template v-slot:reference>
         <div class="fc-dynamic-filter-btns">
           <el-button type="text" class="fc-dynamic-filter-open-btn" :class="{'strikethrough': f.disabled}">
-            {{ f | label }}
+            {{ f | label | ellipsis(30) }}
           </el-button>
           <el-button type="text" class="fc-dynamic-filter-del-btn" icon="el-icon-close"
                      @click.stop="delConfig(index)"></el-button>
@@ -28,6 +28,8 @@
 <script>
 import {Opt} from "../../../model";
 import {escapeValToLabel} from "./util";
+import {ellipsis} from "../../../filters";
+import {isEmpty, isString} from "../../../util/util";
 
 export default {
   name: "dynamic-filter-list",
@@ -47,6 +49,7 @@ export default {
     }
   },
   filters: {
+    ellipsis,
     label(filter) {
       const {label, component} = filter;
       if (!filter.isEffective()) {
@@ -58,7 +61,7 @@ export default {
       const {props} = filter
       for (let i = 0; i < conds.length; i++) {
         let {opt, val} = conds[i];
-        val = escapeValToLabel(component, val, props)
+        val = escapeValToLabel(component, val, props);
         switch (opt) {
           case Opt.EQ:
           case Opt.GT:
@@ -174,6 +177,7 @@ export default {
   margin: 10px 0;
   max-width: 420px;
   max-height: 600px;
+  overflow: auto;
 
   ::v-deep {
     .fc-checkbox-group {

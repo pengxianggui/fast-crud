@@ -147,7 +147,6 @@ export default {
       }
       const {apiPrefix} = this;
       urls.forEach(url => {
-        debugger
         const name = getNameFromUrl(url);
         if (this.files.every(f => f.name !== name && f.url !== url)) {
           this.files.push({name: name, url: apiPrefix + url});
@@ -174,11 +173,10 @@ export default {
       }
     },
     handleError(err, file, fileList) {
-      debugger
+      // debugger
     },
     handleChange(file, fileList) {
-      // TODO
-      debugger
+      // debugger
     },
     handleExceed(files, fileList) {
       Message.warning('文件数量超过限制');
