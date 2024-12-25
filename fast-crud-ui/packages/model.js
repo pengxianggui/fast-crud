@@ -14,6 +14,8 @@ export const Opt = Object.freeze({
     NLIKE: "nlike",
     NULL: "null",
     NNULL: "nnull",
+    EMPTY: "empty",
+    NEMPTY: "nempty",
     BTW: "between",
 })
 
@@ -185,7 +187,14 @@ export class FilterComponentConfig {
         this.disabled = false;
     }
 
-    hasVal() {
+    /**
+     * 此筛选项是否有效
+     * @returns {boolean}
+     */
+    isEffective() {
+        if (this.opt === Opt.NULL || this.opt === Opt.NNULL || this.opt === Opt.EMPTY || this.opt === Opt.NEMPTY) {
+            return true;
+        }
         return this.val !== null && this.val !== undefined && this.val !== '' && this.val.length !== 0;
     }
 
@@ -194,6 +203,9 @@ export class FilterComponentConfig {
     }
 
     getConds() {
+        if (this.opt === Opt.NULL || this.opt === Opt.NNULL || this.opt === Opt.EMPTY || this.opt === Opt.NEMPTY) {
+            return [new Cond(this.col, this.opt, null)]
+        }
         return this.condMapFn(new Cond(this.col, this.opt, this.val));
     }
 }
@@ -250,7 +262,10 @@ class FastTableOption {
         layout: 'total, sizes, prev, pager, next, jumper', 'page-sizes': [10, 20, 50, 100, 200], size: 10
     };
     style = {
-        bodyRowHeight: '50px', size: 'default', formLabelWidth: 'auto'
+        bodyRowHeight: '50px', // 行高
+        size: 'medium',  // 尺寸
+        formLabelWidth: 'auto', // 表单标签宽度:
+        formLayout: null // 表单布局: 只作用于form表单, 对快筛和行内编辑无效
     };
     beforeLoad;
     loadSuccess;
@@ -412,7 +427,10 @@ class FastTableOption {
                         size: 10
                     },
                     style = {
-                        bodyRowHeight: '50px', size: 'default', formLabelWidth: 'auto'
+                        bodyRowHeight: '50px',
+                        size: 'medium',
+                        formLabelWidth: 'auto',
+                        formLayout: null
                     },
                     beforeLoad = ({query}) => Promise.resolve(),
                     loadSuccess = ({query, data, res}) => Promise.resolve(data),

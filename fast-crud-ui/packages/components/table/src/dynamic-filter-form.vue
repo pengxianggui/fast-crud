@@ -1,9 +1,9 @@
 <template>
   <div class="fc-dynamic-filter-form">
     <div class="fc-dynamic-filter-sort-btn">
-      <el-radio v-model="asc" label="" border :size="filter.props.size">不排序</el-radio>
-      <el-radio v-model="asc" :label="true" border :size="filter.props.size">升序</el-radio>
-      <el-radio v-model="asc" :label="false" border :size="filter.props.size">降序</el-radio>
+      <el-radio v-model="asc" label="" border :size="size">不排序</el-radio>
+      <el-radio v-model="asc" :label="true" border :size="size">升序</el-radio>
+      <el-radio v-model="asc" :label="false" border :size="size">降序</el-radio>
     </div>
     <div class="fc-dynamic-filter-component-wrapper">
       <div class="title">输入过滤：</div>
@@ -23,7 +23,8 @@
       <!-- 由于distinct查询可能比较慢, 因此由用户点击触发展示 -->
       <div class="fc-dynamic-filter-distinct" v-loading="distinctLoading">
         <!-- distinct 勾选项 -->
-        <el-input size="mini" v-model="distinctOptionFilterKeyword" :clearable="true" placeholder="输入过滤.." v-if="distinctLoaded"></el-input>
+        <el-input size="mini" v-model="distinctOptionFilterKeyword" :clearable="true" placeholder="输入过滤.."
+                  v-if="distinctLoaded"></el-input>
         <fast-checkbox-group :options="distinctFilteredOptions" :show-chose-all="false"
                              class="fc-dynamic-filter-distinct-options"
                              v-model="distinctCheckedValue"
@@ -37,14 +38,17 @@
       </div>
     </div>
     <div class="fc-dynamic-filter-form-btn">
-      <el-button type="primary" size="small" @click="ok">确认</el-button>
-      <el-button size="small" @click="close">关闭</el-button>
+      <el-button :size="size" @click="getEmpty">查空值</el-button>
+      <el-button :size="size" @click="getNotEmpty">查非空值</el-button>
+      <span style="flex: 1;"></span>
+      <el-button type="primary" :size="size" @click="ok">确认</el-button>
+      <el-button :size="size" @click="close">关闭</el-button>
     </div>
   </div>
 </template>
 
 <script>
-import {FilterComponentConfig, Query} from "../../../model";
+import {FilterComponentConfig, Query, Opt} from "../../../model";
 import {escapeValToLabel} from "./util";
 import {isEmpty, isObject, toStr} from "../../../util/util";
 
@@ -57,7 +61,8 @@ export default {
     conds: {
       type: Array,
       default: () => []
-    }
+    },
+    size: String
   },
   computed: {
     distinctOptionsAscIcon() {
@@ -93,7 +98,7 @@ export default {
       this.distinctLoading = true;
       this.distinctAbortCtrl = new AbortController();
       const {col, component, props} = this.localFilter;
-      this.$http.post(this.listUrl, this.distinctQuery.toJson(), { signal: this.distinctAbortCtrl.signal}).then(({data = []}) => {
+      this.$http.post(this.listUrl, this.distinctQuery.toJson(), {signal: this.distinctAbortCtrl.signal}).then(({data = []}) => {
         const distinctValues = data.filter(item => isObject(item) && item.hasOwnProperty(col)).map(item => item[col]);
         // 拼装distinctOptions TODO 1.0 如果结果值太多, 是采取前端滚动加载 or 展示top100? 如果太多, 比如针对createTime这种字段distinct就没有意义了
         this.distinctOptions = distinctValues.map(v => {
@@ -107,6 +112,24 @@ export default {
         console.error(err)
       }).finally(() => {
         this.distinctLoading = false;
+      })
+    },
+    getEmpty() {
+      this.$emit('ok', {
+        filter: new FilterComponentConfig({...this.localFilter, opt: Opt.EMPTY}),
+        order: {
+          col: this.localFilter.col,
+          asc: this.asc
+        }
+      })
+    },
+    getNotEmpty() {
+      this.$emit('ok', {
+        filter: new FilterComponentConfig({...this.localFilter, opt: Opt.NEMPTY}),
+        order: {
+          col: this.localFilter.col,
+          asc: this.asc
+        }
       })
     },
     ok() {
@@ -192,7 +215,7 @@ export default {
 
   .fc-dynamic-filter-form-btn {
     display: flex;
-    justify-content: right;
+    //justify-content: right;
   }
 }
 

@@ -88,90 +88,105 @@ public class QueryWrapperUtil {
     }
 
     private static <T> QueryWrapper addCondition(QueryWrapper<T> queryWrapper, Cond cond, Class<?> entityClazz) {
+        String dbField = ColumnMapperUtil.toDbField(cond.getCol(), entityClazz);
         switch (cond.getOpt()) {
             case EQ:
                 if (cond.getRel() == Cond.Relation.AND) {
-                    queryWrapper.eq(ColumnMapperUtil.toDbField(cond.getCol(), entityClazz), cond.getVal());
+                    queryWrapper.eq(dbField, cond.getVal());
                 } else {
-                    queryWrapper.or(q -> q.eq(ColumnMapperUtil.toDbField(cond.getCol(), entityClazz), cond.getVal()));
+                    queryWrapper.or(q -> q.eq(dbField, cond.getVal()));
                 }
                 break;
             case NE:
                 if (cond.getRel() == Cond.Relation.AND) {
-                    queryWrapper.ne(ColumnMapperUtil.toDbField(cond.getCol(), entityClazz), cond.getVal());
+                    queryWrapper.ne(dbField, cond.getVal());
                 } else {
-                    queryWrapper.or(q -> q.ne(ColumnMapperUtil.toDbField(cond.getCol(), entityClazz), cond.getVal()));
+                    queryWrapper.or(q -> q.ne(dbField, cond.getVal()));
                 }
                 break;
             case GT:
                 if (cond.getRel() == Cond.Relation.AND) {
-                    queryWrapper.gt(ColumnMapperUtil.toDbField(cond.getCol(), entityClazz), cond.getVal());
+                    queryWrapper.gt(dbField, cond.getVal());
                 } else {
-                    queryWrapper.or(q -> q.gt(ColumnMapperUtil.toDbField(cond.getCol(), entityClazz), cond.getVal()));
+                    queryWrapper.or(q -> q.gt(dbField, cond.getVal()));
                 }
                 break;
             case GE:
                 if (cond.getRel() == Cond.Relation.AND) {
-                    queryWrapper.ge(ColumnMapperUtil.toDbField(cond.getCol(), entityClazz), cond.getVal());
+                    queryWrapper.ge(dbField, cond.getVal());
                 } else {
-                    queryWrapper.or(q -> q.ge(ColumnMapperUtil.toDbField(cond.getCol(), entityClazz), cond.getVal()));
+                    queryWrapper.or(q -> q.ge(dbField, cond.getVal()));
                 }
                 break;
             case LT:
                 if (cond.getRel() == Cond.Relation.AND) {
-                    queryWrapper.lt(ColumnMapperUtil.toDbField(cond.getCol(), entityClazz), cond.getVal());
+                    queryWrapper.lt(dbField, cond.getVal());
                 } else {
-                    queryWrapper.or(q -> q.lt(ColumnMapperUtil.toDbField(cond.getCol(), entityClazz), cond.getVal()));
+                    queryWrapper.or(q -> q.lt(dbField, cond.getVal()));
                 }
                 break;
             case LE:
                 if (cond.getRel() == Cond.Relation.AND) {
-                    queryWrapper.le(ColumnMapperUtil.toDbField(cond.getCol(), entityClazz), cond.getVal());
+                    queryWrapper.le(dbField, cond.getVal());
                 } else {
-                    queryWrapper.or(q -> q.le(ColumnMapperUtil.toDbField(cond.getCol(), entityClazz), cond.getVal()));
+                    queryWrapper.or(q -> q.le(dbField, cond.getVal()));
                 }
                 break;
             case IN:
                 if (cond.getRel() == Cond.Relation.AND) {
-                    queryWrapper.in(ColumnMapperUtil.toDbField(cond.getCol(), entityClazz), (Collection) cond.getVal());
+                    queryWrapper.in(dbField, (Collection) cond.getVal());
                 } else {
-                    queryWrapper.or(q -> q.in(ColumnMapperUtil.toDbField(cond.getCol(), entityClazz), cond.getVal()));
+                    queryWrapper.or(q -> q.in(dbField, cond.getVal()));
                 }
                 break;
             case NIN:
                 if (cond.getRel() == Cond.Relation.AND) {
-                    queryWrapper.notIn(ColumnMapperUtil.toDbField(cond.getCol(), entityClazz), (Collection) cond.getVal());
+                    queryWrapper.notIn(dbField, (Collection) cond.getVal());
                 } else {
-                    queryWrapper.or(q -> q.notIn(ColumnMapperUtil.toDbField(cond.getCol(), entityClazz), cond.getVal()));
+                    queryWrapper.or(q -> q.notIn(dbField, cond.getVal()));
                 }
                 break;
 
             case LIKE:
                 if (cond.getRel() == Cond.Relation.AND) {
-                    queryWrapper.like(ColumnMapperUtil.toDbField(cond.getCol(), entityClazz), cond.getVal());
+                    queryWrapper.like(dbField, cond.getVal());
                 } else {
-                    queryWrapper.or(q -> q.like(ColumnMapperUtil.toDbField(cond.getCol(), entityClazz), cond.getVal()));
+                    queryWrapper.or(q -> q.like(dbField, cond.getVal()));
                 }
                 break;
             case NLIKE:
                 if (cond.getRel() == Cond.Relation.AND) {
-                    queryWrapper.notLike(ColumnMapperUtil.toDbField(cond.getCol(), entityClazz), cond.getVal());
+                    queryWrapper.notLike(dbField, cond.getVal());
                 } else {
-                    queryWrapper.or(q -> q.notLike(ColumnMapperUtil.toDbField(cond.getCol(), entityClazz), cond.getVal()));
+                    queryWrapper.or(q -> q.notLike(dbField, cond.getVal()));
                 }
                 break;
             case NULL:
                 if (cond.getRel() == Cond.Relation.AND) {
-                    queryWrapper.isNull(ColumnMapperUtil.toDbField(cond.getCol(), entityClazz));
+                    queryWrapper.isNull(dbField);
                 } else {
-                    queryWrapper.or(q -> q.isNull(ColumnMapperUtil.toDbField(cond.getCol(), entityClazz)));
+                    queryWrapper.or(q -> q.isNull(dbField));
                 }
                 break;
             case NNULL:
                 if (cond.getRel() == Cond.Relation.AND) {
-                    queryWrapper.isNotNull(ColumnMapperUtil.toDbField(cond.getCol(), entityClazz));
+                    queryWrapper.isNotNull(dbField);
                 } else {
-                    queryWrapper.or(q -> q.isNotNull(ColumnMapperUtil.toDbField(cond.getCol(), entityClazz)));
+                    queryWrapper.or(q -> q.isNotNull(dbField));
+                }
+                break;
+            case EMPTY:
+                if (cond.getRel() == Cond.Relation.AND) {
+                    queryWrapper.nested(q -> q.isNull(dbField).or().eq(dbField, ""));
+                } else {
+                    queryWrapper.or(q -> q.nested(n -> n.isNull(dbField).or().eq(dbField, "")));
+                }
+                break;
+            case NEMPTY:
+                if (cond.getRel() == Cond.Relation.AND) {
+                    queryWrapper.nested(q -> q.isNotNull(dbField).ne(dbField, ""));
+                } else {
+                    queryWrapper.or(q -> q.nested(n -> n.isNotNull(dbField).ne(dbField, "")));
                 }
                 break;
         }

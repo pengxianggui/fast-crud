@@ -1,5 +1,5 @@
 <template>
-  <el-select v-model="modelValue" v-bind="$attrs" :multiple="multiple" @input="handleInput" @change="handleChange">
+  <el-select v-model="modelValue" v-bind="$attrs" :size="size" :multiple="multiple" @input="handleInput" @change="handleChange">
     <el-option v-for="item in options" :key="item.value" :label="item[labelKey]" :value="item[valKey]"
                :disabled="disableVal.indexOf(item[valKey]) > -1"></el-option>
   </el-select>
@@ -31,7 +31,8 @@ export default {
     disableVal: {
       type: Array,
       default: () => []
-    }
+    },
+    size: String
   },
   computed: {
     modelValue: {

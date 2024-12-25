@@ -35,7 +35,20 @@ public class Cond {
     private List<Cond> conds;
 
     public enum Operation {
-        EQ("="), NE("!="), GT(">"), GE(">="), LT("<"), LE("<="), IN("in"), NIN("nin"), LIKE("like"), NLIKE("nlike"), NULL("null"), NNULL("nnull");
+        EQ("="),
+        NE("!="),
+        GT(">"),
+        GE(">="),
+        LT("<"),
+        LE("<="),
+        IN("in"),
+        NIN("nin"),
+        LIKE("like"),
+        NLIKE("nlike"),
+        NULL("null"),
+        EMPTY("empty"), // 空值，包括null和空字符串, 注意: 空格组成的字符串不视为空值
+        NNULL("nnull"),
+        NEMPTY("nempty"); // 非空，不为null且不为空字符串。 与empty相反
 
         private String value;
 

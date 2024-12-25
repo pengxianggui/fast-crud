@@ -6,7 +6,7 @@
                   :label="filter.label + '：'"
                   :class="filter.props && filter.props.hasOwnProperty('quick-filter-block') ? 'fc-quick-filter-form-item-block': ''"
                   class="fc-quick-filter-form-item">
-      <component :is="filter.component" v-model="filter.val" v-bind="filter.props"/>
+      <component :size="size" :is="filter.component" v-model="filter.val" v-bind="filter.props"/>
     </el-form-item>
     <div class="fc-quick-filter-form-btns">
       <el-button type="primary" :size="size" icon="el-icon-search" @click="search"></el-button>

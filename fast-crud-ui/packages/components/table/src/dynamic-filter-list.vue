@@ -10,7 +10,8 @@
                      @click.stop="delConfig(index)"></el-button>
         </div>
       </template>
-      <component class="component" :is="f.component" v-model="f.val" v-bind="f.props"/>
+      <component class="component" :is="f.component" v-model="f.val" v-bind="f.props"
+                 v-if="f.opt !== Opt.NULL && f.opt !== Opt.NNULL && f.opt !== Opt.EMPTY && f.opt !== Opt.NEMPTY"/>
       <div class="fc-dynamic-filter-footer">
         <el-button type="primary" size="mini" icon="el-icon-search" @click="confirm">查询</el-button>
         <el-button :type="f.disabled ? 'primary' : 'info'" plain size="mini" @click="toggleFilter(f)">
@@ -40,10 +41,15 @@ export default {
       default: () => 'small'
     }
   },
+  data() {
+    return {
+      Opt: Opt
+    }
+  },
   filters: {
     label(filter) {
       const {label, component} = filter;
-      if (!filter.hasVal()) {
+      if (!filter.isEffective()) {
         filter.disabled = true;
         return `[${label}]无有效值`
       }
@@ -78,6 +84,12 @@ export default {
             break;
           case Opt.NNULL:
             tip += `${label} 不为null`;
+            break;
+          case Opt.EMPTY:
+            tip += `${label} 为空`;
+            break;
+          case Opt.NEMPTY:
+            tip += `${label} 不为空`;
             break;
           case Opt.BTW:
             tip += `${label} 在${val}之间`;
@@ -166,6 +178,7 @@ export default {
   ::v-deep {
     .fc-checkbox-group {
       display: block;
+
       .el-checkbox {
         display: block;
       }

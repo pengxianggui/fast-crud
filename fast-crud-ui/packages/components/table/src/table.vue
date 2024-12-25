@@ -218,13 +218,13 @@ export default {
     pageLoad() {
       const conds = []
       // 添加快筛条件
-      const quickConds = this.quickFilters.filter(f => !f.disabled && f.hasVal()).map(f => f.getConds()).flat();
+      const quickConds = this.quickFilters.filter(f => !f.disabled && f.isEffective()).map(f => f.getConds()).flat();
       conds.push(...quickConds)
       // 添加简筛条件
-      const easyConds = this.easyFilters.filter(f => !f.disabled && f.hasVal()).map(f => f.getConds()).flat();
+      const easyConds = this.easyFilters.filter(f => !f.disabled && f.isEffective()).map(f => f.getConds()).flat();
       conds.push(...easyConds)
       // 添加动筛条件
-      const dynamicConds = this.dynamicFilters.filter(f => !f.disabled && f.hasVal()).map(f => f.getConds()).flat();
+      const dynamicConds = this.dynamicFilters.filter(f => !f.disabled && f.isEffective()).map(f => f.getConds()).flat();
       conds.push(...dynamicConds)
 
       this.pageQuery.setConds(conds);
@@ -341,14 +341,15 @@ export default {
           filter: dynamicFilter,
           order: order,
           listUrl: this.option.listUrl,
-          conds: this.pageQuery.conds
+          conds: this.pageQuery.conds,
+          size: this.option.style.size
         },
         dialogProps: {
           width: '480px',
           title: `数据筛选及排序: ${label}`,
         }
       }).then(({filter: dynamicFilter, order}) => {
-        if (dynamicFilter.hasVal()) {
+        if (dynamicFilter.isEffective()) {
           this.dynamicFilters.push(dynamicFilter);
         }
 
