@@ -1,47 +1,7 @@
 <template>
   <div class="demo">
-    <el-form class="param" label-position="left" label-width="40px">
-      <h3>行为配置</h3>
-      <el-switch size="mini" v-model="params.editType" @change="(val) => updateOption('editType', val)"
-                 inactive-value="inline" inactive-color="#13ce66" inactive-text="行内编辑"
-                 active-value="form" active-color="#ff4949" active-text="表单编辑"></el-switch>
-      <el-checkbox v-model="params.pageLoadable">允许加载分页</el-checkbox>
-      <el-checkbox v-model="params.insertable" @change="(val) => updateOption('insertable', val)">允许新增</el-checkbox>
-      <el-checkbox v-model="params.updatable" @change="(val) => updateOption('updatable', val)">允许更新</el-checkbox>
-      <el-checkbox v-model="params.deletable" @change="(val) => updateOption('deletable', val)">允许删除</el-checkbox>
-      <el-checkbox v-model="params.enableColumnFilter" @change="(val) => updateOption('enableColumnFilter', val)">
-        允许表头动态筛选
-      </el-checkbox>
-      <el-checkbox v-model="params.enableMulti" @change="(val) => updateOption('enableMulti', val)">启用多选
-      </el-checkbox>
-      <el-checkbox v-model="params.enableDblClickEdit" @change="(val) => updateOption('enableDblClickEdit', val)">
-        启用双击编辑
-      </el-checkbox>
+    <param-config :params="params" :option="tableOption" @refresh="refreshTable"></param-config>
 
-      <h3>外观配置</h3>
-      <el-form-item label="尺寸">
-        <fast-select size="mini" v-model="params.size" @change="(val) => updateOptionStyle('size', val)"
-                     :options="[{label:'超小',value: 'mini'}, {label:'小',value: 'small'}, {label:'中等',value: 'medium'}, {label:'大', value: 'default'}]"></fast-select>
-      </el-form-item>
-      <el-form-item label="行高">
-        <el-slider v-model="params.bodyRowHeight" :min="40" :max="100"
-                   @change="(val) => updateOptionStyle('bodyRowHeight', val + 'px')"></el-slider>
-      </el-form-item>
-
-      <h3>钩子函数应用</h3>
-      <el-checkbox v-model="params.loadSuccessTip">分页加载成功提示</el-checkbox>
-      <el-checkbox v-model="params.customLoadFailTip">自定义加载失败提示</el-checkbox>
-      <el-checkbox v-model="params.notDeleteLWL">不能删除利威尔(不弹窗)</el-checkbox>
-      <el-checkbox v-model="params.notDeleteSS">不允许删除珊莎(弹窗后)</el-checkbox>
-      <el-checkbox v-model="params.disableDefultDeleteSuccessWhenAL">删除艾伦时庆祝</el-checkbox>
-      <el-checkbox v-model="params.customDeleteFailTip">自定义删除失败提示</el-checkbox>
-      <el-checkbox v-model="params.disableUpdateAM">阿明不允许编辑</el-checkbox>
-      <h3>方法</h3>
-      <div>
-        <el-button size="mini" @click="$refs['fastTable'].addRow()">插入一行</el-button>
-        <el-button size="mini" @click="$refs['fastTable'].addForm()">弹窗新增</el-button>
-      </div>
-    </el-form>
     <fast-table ref="fastTable" class="el-card" :option="tableOption" :key="tableKey">
       <fast-table-column label="ID" prop="id"/>
       <fast-table-column-img label="头像" prop="avatarUrl"/>
@@ -65,8 +25,6 @@
                                      value-format__e="yyyy-MM-ddTHH:mm:ss"
                                      :default-time="['00:00:00', '23:59:59']"
                                      :editable="false"/>
-      <!-- 操作 -->
-      <!--      <el-table-column label="创建时间" prop="createTime"></el-table-column>-->
     </fast-table>
   </div>
 </template>
@@ -74,9 +32,12 @@
 <script>
 import FastTableOption from "../../packages/model";
 import {Message} from 'element-ui';
+import ParamConfig from "@/example/ParamConfig.vue";
+import staticDict from './dict'
 
 export default {
   name: "FastTableDemo",
+  components: {ParamConfig},
   data() {
     const now = new Date();
     const monthAgo = new Date();
@@ -85,7 +46,6 @@ export default {
     const defaultSize = 'medium';
     const defaultRowHeight = 45;
     return {
-      tableKey: 0,
       tableOption: new FastTableOption({
         context: this, // important! 否则钩子函数里无法获取当当前组件实例上下文
         title: '学生管理',
@@ -95,9 +55,9 @@ export default {
         enableColumnFilter: true,
         lazyLoad: false,
         editType: defaultEditType, // 默认inline
-        // insertable: false,
-        // updatable: false,
-        // deletable: false,
+        insertable: true,
+        updatable: true,
+        deletable: true,
         sortField: 'createTime',
         sortDesc: true,
         pagination: {
@@ -108,7 +68,7 @@ export default {
           size: defaultSize, // mini,small,medium,default
           bodyRowHeight: defaultRowHeight + 'px',
           formLabelWidth: 'auto', // 默认为auto
-          formLayout: 'avatarUrl|name, age|graduated|sex, hobby, address, birthday|luckTime, resumeUrl, createTime' // 弹窗表单布局设置
+          formLayout: 'avatarUrl|name, age|graduated, sex|hobby, address, birthday|luckTime, resumeUrl, createTime' // 弹窗表单布局设置
         },
         beforeLoad({query}) {
           if (this.params.pageLoadable) {
@@ -170,101 +130,8 @@ export default {
           return Promise.resolve();
         }
       }),
-      pickerOptionsQ: {
-        disabledDate(time) {
-          return time.getTime() > Date.now();
-        },
-        shortcuts: [{
-          text: '最近一周',
-          onClick(picker) {
-            const end = new Date();
-            const start = new Date();
-            start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
-            picker.$emit('pick', [start, end]);
-          }
-        }, {
-          text: '最近一个月',
-          onClick(picker) {
-            const end = new Date();
-            const start = new Date();
-            start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
-            picker.$emit('pick', [start, end]);
-          }
-        }, {
-          text: '最近三个月',
-          onClick(picker) {
-            const end = new Date();
-            const start = new Date();
-            start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
-            picker.$emit('pick', [start, end]);
-          }
-        }]
-      },
-      pickerOptionsE: {
-        disabledDate(time) {
-          return time.getTime() > Date.now();
-        },
-        shortcuts: [{
-          text: '今天',
-          onClick(picker) {
-            picker.$emit('pick', new Date());
-          }
-        }, {
-          text: '昨天',
-          onClick(picker) {
-            const date = new Date();
-            date.setTime(date.getTime() - 3600 * 1000 * 24);
-            picker.$emit('pick', date);
-          }
-        }, {
-          text: '一周前',
-          onClick(picker) {
-            const date = new Date();
-            date.setTime(date.getTime() - 3600 * 1000 * 24 * 7);
-            picker.$emit('pick', date);
-          }
-        }]
-      },
-      sexOptions: [
-        {
-          label: '男',
-          value: '1'
-        },
-        {
-          label: '女',
-          value: '0'
-        }
-      ],
-      hobbyOptions: [
-        {
-          name: '篮球',
-          code: '1'
-        },
-        {
-          name: '足球',
-          code: '2'
-        },
-        {
-          name: '排球',
-          code: '3'
-        },
-        {
-          name: '乒乓球',
-          code: '4'
-        },
-        {
-          name: '羽毛球',
-          code: '5'
-        },
-        {
-          name: '台球',
-          code: '6'
-        },
-        {
-          name: '游泳',
-          code: '7'
-        }
-      ],
+
+      tableKey: 0,
       defaultQueryOfCreatedTime: [monthAgo, now],
       params: {
         editType: defaultEditType,
@@ -285,17 +152,12 @@ export default {
         disableDefultDeleteSuccessWhenAL: true, // 当删除对象包含艾伦时, 禁用默认删除成功提示
         disableUpdateAM: true, // 阿明不允许编辑
       },
+      ...staticDict,
     }
   },
   methods: {
-    updateOption(key, val) {
-      this.tableOption[key] = val;
-    },
-    updateOptionStyle(key, val) {
-      this.tableOption.style[key] = val;
-      if (key === 'size') {
-        this.tableKey += 1; // 强刷
-      }
+    refreshTable() {
+      this.tableKey += 1; // 强刷
     }
   }
 }
