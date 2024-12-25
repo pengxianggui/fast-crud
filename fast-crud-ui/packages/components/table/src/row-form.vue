@@ -5,14 +5,20 @@
              :model="formData"
              :rules="rules"
              :label-width="option.style.formLabelWidth">
-      <el-form-item v-for="(conf, key) in config" :key="key"
-                    :prop="key" :label="conf.label"
-                    v-if="conf.props.editable !== false">
-        <component :is="conf.component"
-                   v-bind="conf.props"
-                   v-model="formData[key]"
-                   style="width: 100%"></component>
-      </el-form-item>
+      <el-row v-for="row in localLayout">
+        <el-col v-for="(span, col) in row" :span="span">
+          <el-form-item :prop="col"
+                        :label="config[col].label"
+                        :key="col"
+                        v-if="config.hasOwnProperty(col) && config[col].props.editable !== false">
+            <component :is="config[col].component"
+                       v-bind="config[col].props"
+                       v-model="formData[col]"
+                       style="width: 100%"></component>
+          </el-form-item>
+          <span v-else>&nbsp;</span>
+        </el-col>
+      </el-row>
     </el-form>
     <div class="fc-table-edit-form-btns">
       <el-button :size="option.style.size" type="primary" @click="submit">保存</el-button>
@@ -32,7 +38,8 @@ export default {
     option: FastTableOption,
     config: EditComponentConfig,
     row: Object,
-    type: String
+    type: String,
+    layout: String
   },
   data() {
     const ruleMap = {};
@@ -42,13 +49,30 @@ export default {
         ruleMap[col] = rules;
       }
     }
-    ;
     const {editRow} = this.row
     return {
       rules: ruleMap,
       formData: {
         ...editRow
       }
+    }
+  },
+  computed: {
+    localLayout() {
+      let {layout, config} = this;
+      const colArr = Object.keys(config);
+      if (isEmpty(layout)) {
+        layout = colArr.join(",");
+      }
+      return layout.split(",").map(row => {
+        const rowObj = {};
+        const cols = row.split("|");
+        cols.forEach(col => {
+          const key = col.trim();
+          rowObj[key] = 24 / cols.length
+        });
+        return rowObj;
+      })
     }
   },
   methods: {
@@ -80,9 +104,9 @@ export default {
 <style scoped lang="scss">
 .fc-table-edit-form-wrapper {
   .fc-table-edit-form {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    column-gap: 20px;
+    //display: grid;
+    //grid-template-columns: 1fr 1fr;
+    //column-gap: 20px;
   }
 
   .fc-table-edit-form-btns {

@@ -288,7 +288,8 @@ export default {
           option: this.option,
           config: fatRow.config,
           row: fatRow,
-          type: 'insert'
+          type: 'insert',
+          layout: this.option.style.formLayout
         },
         dialogProps: {
           width: '50%',
@@ -414,7 +415,8 @@ export default {
           option: this.option,
           config: getEditConfig(this.columnConfig, 'form'),
           row: row,
-          type: 'update'
+          type: 'update',
+          layout: this.option.style.formLayout
         },
         dialogProps: {
           width: '50%',

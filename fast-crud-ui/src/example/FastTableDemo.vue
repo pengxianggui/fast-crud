@@ -108,7 +108,7 @@ export default {
           size: defaultSize, // mini,small,medium,default
           bodyRowHeight: defaultRowHeight + 'px',
           formLabelWidth: 'auto', // 默认为auto
-          formLayout: []
+          formLayout: 'avatarUrl|name, age|graduated|sex, hobby, address, birthday|luckTime, resumeUrl, createTime' // 弹窗表单布局设置
         },
         beforeLoad({query}) {
           if (this.params.pageLoadable) {

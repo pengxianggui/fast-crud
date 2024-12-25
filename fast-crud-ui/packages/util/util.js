@@ -36,13 +36,8 @@ export function defaultIfEmpty(val, defaultVal) {
  * @returns {*}
  */
 export function camelCaseTo(str, separator = '_') {
-    let temp = str.replace(/[A-Z]/g, function (match) {
-        return separator + match.toLowerCase();
-    });
-    if (temp.slice(0, separator.length) === separator) { //如果首字母是大写，执行replace时会多一个_，这里需要去掉
-        temp = temp.slice(1);
-    }
-    return temp
+    if (!/[A-Z]/.test(str)) return str; // 无需转换直接返回
+    return str.replace(/([A-Z])/g, `${separator}$1`).toLowerCase();
 }
 
 /**
@@ -51,12 +46,9 @@ export function camelCaseTo(str, separator = '_') {
  * @param separator
  */
 export function caseToCamel(str, separator = '_') {
-    return str.split(separator).map((word, index) => {
-        if (index === 0) {
-            return word.toLowerCase();
-        }
-        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-    }).join('');
+    if (!str.includes(separator)) return str; // 无需转换直接返回
+    const regex = new RegExp(`\\${separator}([a-z])`, 'g');
+    return str.replace(regex, (_, letter) => letter.toUpperCase());
 }
 
 /**

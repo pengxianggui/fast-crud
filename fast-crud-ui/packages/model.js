@@ -1,5 +1,5 @@
 import {Message, MessageBox} from 'element-ui';
-import {coverMerge, defaultIfBlank, isEmpty, isUndefined} from "./util/util.js";
+import {caseToCamel, coverMerge, defaultIfBlank, isEmpty, isUndefined} from "./util/util.js";
 
 export const Opt = Object.freeze({
     EQ: "=",
@@ -122,9 +122,17 @@ export class Query {
     }
 
     toJson() {
-        // TODO 1.0 [低优先级] 防止后端序列化策略为下划线, 这里将col、conds、orders中涉及的字段全部转换为驼峰, 因为这些值接口传输给后端时不受反序影响
+        // 防止后端序列化策略为下划线, 这里将col、conds、orders中涉及的字段全部转换为驼峰, 因为这些值接口传输给后端时不受反序影响
         //  为了保证后端能正常对应到entity中的字段, 因此转为驼峰(这里是坚信entity中属性是驼峰命名).
-        return this;
+        const cols = this.cols.map(col => caseToCamel(col, '_'));
+        const conds = this.conds.map(cond => new Cond(caseToCamel(cond.col, '_'), cond.opt, cond.val));
+        const orders = this.orders.map(order => new Order(caseToCamel(order.col, '_'), order.asc));
+        return {
+            cols: cols,
+            conds: conds,
+            orders: orders,
+            distinct: this.distinct
+        };
     }
 }
 
@@ -145,6 +153,15 @@ export class PageQuery extends Query {
     setSize(size) {
         this.size = size;
         return this;
+    }
+
+    toJson() {
+        const json = super.toJson();
+        return {
+            ...json,
+            current: this.current,
+            size: this.size
+        }
     }
 }
 
@@ -250,7 +267,7 @@ class FastTableOption {
     exportUrl = ''; // 数据导出接口
     enableDblClickEdit = true;
     enableMulti = true; // 启用多选
-    enableColumnFilter = true; // 启用列过滤：即动筛。TODO 1.0 关了以后，排序也用不了了: 需要在表头外面加排序按钮
+    enableColumnFilter = true; // 启用列过滤：即动筛
     lazyLoad = false; // 不立即加载数据
     editType = 'inline'; // inline/form
     insertable = true; // 是否支持内置新建
