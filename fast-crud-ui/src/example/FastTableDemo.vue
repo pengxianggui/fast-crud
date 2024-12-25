@@ -11,10 +11,11 @@
       <fast-table-column-select label="爱好" prop="hobby" :options="hobbyOptions"
                                 :quick-filter="true" quick-filter-block quick-filter-checkbox
                                 val-key="code" label-key="name"
-                                :default-val__q="['1', '2', '3', '4', '5']" :disable-val__q="['6']"
+                                :default-val__q="['1', '2', '3', '4', '5']"
+                                :disable-val="['6']"
                                 required/>
       <fast-table-column-textarea label="地址" prop="address" required/>
-      <fast-table-column-switch label="已毕业" prop="graduated" :quick-filter="true"/>
+      <fast-table-column-switch label="已毕业" prop="graduated" :quick-filter="true" :default-val__e="true"/>
       <fast-table-column-time-picker label="幸运时刻" prop="luckTime" required/>
       <fast-table-column-date-picker label="生日" prop="birthday" :picker-options="pickerOptionsE" required/>
       <fast-table-column-file label="简历" prop="resumeUrl" :show-overflow-tool-tip="false"/>

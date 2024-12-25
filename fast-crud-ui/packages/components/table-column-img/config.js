@@ -1,4 +1,13 @@
-import {addStartWith, defaultIfBlank, easyOptParse, isEmpty, isString, merge, ternary} from "../../util/util";
+import {
+    addStartWith,
+    defaultIfBlank,
+    defaultIfEmpty,
+    easyOptParse,
+    isEmpty,
+    isString,
+    merge,
+    ternary
+} from "../../util/util";
 import FastTableOption, {Opt} from "../../model";
 
 const defaultQueryConfig = {
@@ -19,20 +28,19 @@ const defaultQueryConfig = {
     }
 }
 const defaultEditConfig = (config) => {
-    let defaultVal = null;
-    const {props: {multiple = false}} = config;
+    let {props: {multiple = false, 'default-val': defaultVal = null}} = config;
     if (multiple) {
-        defaultVal = [];
+        defaultVal = defaultIfEmpty(defaultVal, []);
     }
     return {
         component: 'fast-upload',
+        val: defaultVal,
         props: {
             action: '/',
             'list-type': 'picture-card',
             class: 'fc-table-inline-edit-component',
             multiple: multiple, // 默认单选文件
-            editable: true,
-            defaultVal: defaultVal
+            editable: true
         }
     }
 }

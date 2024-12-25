@@ -1,4 +1,4 @@
-import {isArray, isEmpty, merge, ternary} from "../../util/util";
+import {defaultIfEmpty, isArray, isEmpty, merge, ternary} from "../../util/util";
 import {Opt} from "../../model";
 import {colValid} from "../table/src/util";
 
@@ -19,18 +19,21 @@ const defaultQueryConfig = {
 }
 const defaultEditConfig = (config) => {
     const {props, label} = config;
-    const {rules = []} = props;
+    let {multiple, rules = [], 'default-val': defaultVal = null} = props;
     // 如果含有值不为false的required属性, 则将其转换为rules规则添加到props中
     if (props.hasOwnProperty('required') && props.required !== false) {
         rules.push({required: true, message: `${label}不能为空`})
     }
+    if (multiple) {
+        defaultVal = ternary(isArray(defaultVal) && !isEmpty(defaultVal), defaultVal, []);
+    }
     return {
         component: 'fast-select',
+        val: defaultVal,
         props: {
             clearable: true,
             class: 'fc-table-inline-edit-component',
             editable: true,
-            defaultVal: null,
             rules: rules
         },
         eventHandlers: {
@@ -61,12 +64,6 @@ export default {
         return merge(config, defaultQueryConfig, true, false)
     },
     edit: (config, type) => {
-        const {props: {multiple, required} = {}} = config;
-        let defaultVal = null;
-        if (multiple === true) {
-            defaultVal = [];
-        }
-        config.props.defaultVal = defaultVal;
         return merge(config, defaultEditConfig(config), true, false)
     }
 }

@@ -19,12 +19,16 @@ const defaultQueryConfig = {
         return [cond]
     }
 }
-const defaultEditConfig = {
-    component: 'el-input',
-    props: {
-        clearable: false,
-        class: 'fc-table-inline-edit-component',
-        editable: false
+const defaultEditConfig = (config) => {
+    const {props: {'default-val': defaultVal = null} = {}} = config;
+    return {
+        component: 'el-input',
+        val: defaultVal,
+        props: {
+            clearable: false,
+            class: 'fc-table-inline-edit-component',
+            editable: false
+        }
     }
 }
 export default {
@@ -39,6 +43,6 @@ export default {
         return merge(config, defaultQueryConfig, true, false)
     },
     edit: (config, type) => {
-        return merge(config, defaultEditConfig, true, false)
+        return merge(config, defaultEditConfig(config), true, false)
     }
 }

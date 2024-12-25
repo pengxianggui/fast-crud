@@ -1,4 +1,4 @@
-import {merge, ternary} from "../../util/util";
+import {isUndefined, merge, ternary} from "../../util/util";
 import {Opt} from "../../model";
 
 const defaultQueryConfig = {
@@ -13,6 +13,7 @@ const defaultQueryConfig = {
 }
 const defaultEditConfig = {
     component: 'el-switch',
+    val: null,
     props: {
         clearable: true,
         options: [],
@@ -40,12 +41,12 @@ export default {
         return merge(config, defaultQueryConfig, true, false)
     },
     edit: (config, type) => {
-        const {props: {activeValue, inactiveValue, activeText, inactiveText}} = config
+        const {props: {activeValue, inactiveValue, activeText, inactiveText, 'default-val': defaultVal}} = config
         const options = [
             {label: inactiveText, value: inactiveValue},
             {label: activeText, value: activeValue}
         ]
-        config.props.defaultVal = inactiveValue;
+        config.val = ternary(isUndefined(defaultVal), inactiveValue, defaultVal);
         config.props.options = options;
         return merge(config, defaultEditConfig, true, false)
     }

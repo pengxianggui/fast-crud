@@ -79,8 +79,9 @@ export function toTableRow(row, columnConfig, status = 'normal', editType) {
         const cols = Object.keys(config);
         const newRow = {};
         cols.forEach(col => {
-            const {props: {defaultVal}} = config[col];
-            newRow[col] = deepClone(defaultVal);
+            const {val} = config[col];
+            debugger
+            newRow[col] = deepClone(val);
         })
         merge(row, newRow, true, false)
     }

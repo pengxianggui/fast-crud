@@ -25,19 +25,19 @@ const defaultQueryConfig = {
 }
 const defaultEditConfig = (config) => {
     const {props, label} = config;
-    const {rules = []} = props;
+    const {rules = [], 'default-val': defaultVal = null} = props;
     // 如果含有值不为false的required属性, 则将其转换为rules规则添加到props中
     if (props.hasOwnProperty('required') && props.required !== false) {
         rules.push({required: true, message: `${label}不能为空`})
     }
     return {
         component: 'el-time-picker',
+        val: defaultVal,
         props: {
             clearable: true,
             'value-format': 'HH:mm:ss',
             class: 'fc-table-inline-edit-component',
             editable: true,
-            defaultVal: null,
             rules: rules
         },
         eventHandlers: {

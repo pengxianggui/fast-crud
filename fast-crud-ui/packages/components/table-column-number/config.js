@@ -25,19 +25,19 @@ const defaultQueryConfig = {
 }
 const defaultEditConfig = (config) => {
     const {props, label} = config;
-    const {rules = []} = props;
+    const {rules = [], 'default-val': defaultVal = undefined} = props;
     // 如果含有值不为false的required属性, 则将其转换为rules规则添加到props中
     if (props.hasOwnProperty('required') && props.required !== false) {
         rules.push({type: 'number', required: true, message: `${label}不能为空`})
     }
     return {
         component: 'el-input-number',
+        val: defaultVal,
         props: {
             clearable: true,
             'controls-position': "right",
             class: 'fc-table-inline-edit-component',
             editable: true,
-            defaultVal: undefined,
             rules: rules
         },
         eventHandlers: {
