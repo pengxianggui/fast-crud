@@ -268,7 +268,7 @@ class FastTableOption {
     deleteUrl = '';
     batchDeleteUrl = '';
     uploadUrl = ''; // 文件上传接口
-    exportUrl = ''; // 数据导出接口
+    exportUrl = ''; // 数据导出接口 TODO 2.0 兑现
     enableDblClickEdit = true;
     enableMulti = true; // 启用多选
     enableColumnFilter = true; // 启用列过滤：即动筛
@@ -321,18 +321,33 @@ class FastTableOption {
         }
         return new Promise((resolve, reject) => {
             const {context, beforeInsert} = this;
-            beforeInsert.call(context, {fatRows: fatRows}).then(() => {
-                const toBeInsertRows = fatRows.map(r => r.editRow);
+            const rows = fatRows.map(r => r.row);
+            const editRows = fatRows.map(r => r.editRow);
+            beforeInsert.call(context, {
+                fatRows: fatRows,
+                rows: rows,
+                editRows: editRows
+            }).then(() => {
                 const {insertUrl, batchInsertUrl, insertSuccess, insertFail} = this;
-                const postPromise = (toBeInsertRows.length === 1 ? FastTableOption.$http.post(insertUrl, toBeInsertRows[0]) : FastTableOption.$http.post(batchInsertUrl, toBeInsertRows))
+                const postPromise = (editRows.length === 1 ? FastTableOption.$http.post(insertUrl, editRows[0]) : FastTableOption.$http.post(batchInsertUrl, editRows))
                 postPromise.then(res => {
                     resolve();
-                    insertSuccess.call(context, {fatRows: fatRows, rows: toBeInsertRows, res: res}).then(() => {
-                        Message.success(`成功新增${toBeInsertRows.length}条记录`);
+                    insertSuccess.call(context, {
+                        fatRows: fatRows,
+                        rows: rows,
+                        editRows: editRows,
+                        res: res
+                    }).then(() => {
+                        Message.success(`成功新增${editRows.length}条记录`);
                     });
                 }).catch(err => {
                     reject(err);
-                    insertFail.call(context, {fatRows: fatRows, rows: toBeInsertRows, error: err}).then(() => {
+                    insertFail.call(context, {
+                        fatRows: fatRows,
+                        rows: rows,
+                        editRows: editRows,
+                        error: err
+                    }).then(() => {
                         Message.success('新增失败:' + JSON.stringify(err));
                     });
                 })
@@ -355,22 +370,32 @@ class FastTableOption {
         }
 
         return new Promise((resolve, reject) => {
-            const rows = fatRows.map(r => r.row)
+            const rows = fatRows.map(r => r.row);
+            const editRows = fatRows.map(r => r.editRow);
             const {context, beforeDeleteTip} = this;
-            beforeDeleteTip.call(context, {rows: rows}).then(() => {
+            beforeDeleteTip.call(context, {
+                fatRows: fatRows,
+                rows: rows,
+                editRows: editRows
+            }).then(() => {
                 MessageBox.confirm(`确定删除这${rows.length}条记录吗？`, '删除确认', {}).then(() => {
                     const {beforeDelete} = this;
-                    beforeDelete.call(context, {rows: rows}).then(() => {
+                    beforeDelete.call(context, {fatRows: fatRows, rows: rows, editRows: editRows}).then(() => {
                         const {deleteUrl, batchDeleteUrl, deleteSuccess, deleteFail} = this;
                         const postPromise = (rows.length === 1 ? FastTableOption.$http.post(deleteUrl, rows[0]) : FastTableOption.$http.post(batchDeleteUrl, rows))
                         postPromise.then(res => {
                             resolve(); // 始终刷新
-                            deleteSuccess.call(context, {rows: rows, res: res}).then(() => {
+                            deleteSuccess.call(context, {
+                                fatRows: fatRows,
+                                rows: rows,
+                                editRows: editRows,
+                                res: res
+                            }).then(() => {
                                 Message.success('删除成功');
                             })
                         }).catch(err => {
                             reject(err);
-                            deleteFail.call(context, {rows: rows, error: err}).then(() => {
+                            deleteFail.call(context, {fatRows, rows: rows, editRows: editRows, error: err}).then(() => {
                                 Message.success('删除失败:' + JSON.stringify(err));
                             })
                         })
@@ -397,18 +422,33 @@ class FastTableOption {
         }
         return new Promise((resolve, reject) => {
             const {context, beforeUpdate} = this;
-            beforeUpdate.call(context, {fatRows: fatRows}).then(() => {
-                const toBeUpdateRows = fatRows.map(r => r.editRow);
+            const rows = fatRows.map(r => r.row);
+            const editRows = fatRows.map(r => r.editRow);
+            beforeUpdate.call(context, {
+                fatRows: fatRows,
+                rows: rows,
+                editRows: editRows
+            }).then(() => {
                 const {updateUrl, batchUpdateUrl, updateSuccess, updateFail} = this;
-                const postPromise = (toBeUpdateRows.length === 1 ? FastTableOption.$http.post(updateUrl, toBeUpdateRows[0]) : FastTableOption.$http.post(batchUpdateUrl, toBeUpdateRows))
+                const postPromise = (editRows.length === 1 ? FastTableOption.$http.post(updateUrl, editRows[0]) : FastTableOption.$http.post(batchUpdateUrl, editRows))
                 postPromise.then(res => {
                     resolve();
-                    updateSuccess.call(context, {fatRows: fatRows, rows: toBeUpdateRows, res: res}).then(() => {
-                        Message.success(`成功更新${toBeUpdateRows.length}条记录`);
+                    updateSuccess.call(context, {
+                        fatRows: fatRows,
+                        rows: rows,
+                        editRows: editRows,
+                        res: res
+                    }).then(() => {
+                        Message.success(`成功更新${editRows.length}条记录`);
                     });
                 }).catch(err => {
                     reject(err);
-                    updateFail.call(context, {fatRows: fatRows, rows: toBeUpdateRows, error: err}).then(() => {
+                    updateFail.call(context, {
+                        fatRows: fatRows,
+                        rows: rows,
+                        editRows: editRows,
+                        error: err
+                    }).then(() => {
                         Message.success('更新失败:' + JSON.stringify(err));
                     });
                 })
@@ -456,20 +496,20 @@ class FastTableOption {
                     beforeLoad = ({query}) => Promise.resolve(),
                     loadSuccess = ({query, data, res}) => Promise.resolve(data),
                     loadFail = ({query, error}) => Promise.resolve(),
-                    beforeInsert = ({fatRows}) => Promise.resolve(fatRows),
-                    insertSuccess = ({fatRows, rows, res}) => Promise.resolve(),
-                    insertFail = ({fatRows, rows, error}) => Promise.resolve(),
-                    beforeUpdate = ({fatRows}) => Promise.resolve(fatRows),
-                    updateSuccess = ({fatRows, rows, res}) => Promise.resolve(),
-                    updateFail = ({fatRows, rows, error}) => Promise.resolve(),
-                    beforeDelete = ({rows}) => Promise.resolve(rows),
-                    deleteSuccess = ({rows, res}) => Promise.resolve(),
-                    deleteFail = ({rows, error}) => Promise.resolve(),
+                    beforeToInsert = () => Promise.resolve(),
+                    beforeInsert = ({fatRows, rows, editRows}) => Promise.resolve(fatRows),
+                    insertSuccess = ({fatRows, rows, editRows, res}) => Promise.resolve(),
+                    insertFail = ({fatRows, rows, editRows, error}) => Promise.resolve(),
+                    beforeToUpdate = ({fatRows, rows}) => Promise.resolve(),
+                    beforeUpdate = ({fatRows, rows, editRows}) => Promise.resolve(fatRows),
+                    updateSuccess = ({fatRows, rows, editRows, res}) => Promise.resolve(),
+                    updateFail = ({fatRows, rows, editRows, error}) => Promise.resolve(),
+                    beforeDeleteTip = ({fatRows, rows}) => Promise.resolve(),
+                    beforeDelete = ({fatRows, rows}) => Promise.resolve(rows),
+                    deleteSuccess = ({fatRows, rows, res}) => Promise.resolve(),
+                    deleteFail = ({fatRows, rows, error}) => Promise.resolve(),
                     click = (scope) => Promise.resolve(),
                     dblclick = (scope) => Promise.resolve(),
-                    beforeToInsert = () => Promise.resolve(),
-                    beforeToUpdate = ({fatRows, rows}) => Promise.resolve(),
-                    beforeDeleteTip = ({rows}) => Promise.resolve(),
                     beforeCancel = (scope) => Promise.resolve(),
                 }) {
         this.context = context;

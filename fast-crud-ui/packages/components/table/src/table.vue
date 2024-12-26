@@ -238,7 +238,7 @@ export default {
           this.$http.post(this.option.pageUrl, this.pageQuery.toJson()).then(res => {
             this.cancelEditStatus();
             const loadSuccess = this.option.loadSuccess;
-            loadSuccess.call(context, {query: this.pageQuery, data: res.data, res}).then(({records, total}) => {
+            loadSuccess.call(context, {query: this.pageQuery, data: res.data, res: res}).then(({records, total}) => {
               this.list = records.map(r => toTableRow(r, this.columnConfig, 'normal', 'inline'));
               this.total = total;
             }).finally(() => {
@@ -267,51 +267,58 @@ export default {
         console.warn(`当前FastTable处于${this.status}状态, 不允许新增`);
         return;
       }
-
-      const {context, beforeToInsert} = this.option;
-      beforeToInsert.call(context).then(() => {
-        if (editType === 'form') {
-          this.addForm();
-        } else {
-          this.addRow();
-        }
-      }).catch(() => {
-        console.debug('你已取消新建')
-      })
+      if (editType === 'form') {
+        this.addForm();
+      } else {
+        this.addRow();
+      }
     },
     /**
      * 激活行内新增
      */
     addForm() {
-      const fatRow = toTableRow({}, this.columnConfig, 'insert', 'form');
-      openDialog({
-        component: RowForm,
-        props: {
-          option: this.option,
-          config: fatRow.config,
-          row: fatRow,
-          type: 'insert',
-          layout: this.option.style.formLayout
-        },
-        dialogProps: {
-          width: '50%',
-          title: '新增',
-          'close-on-click-modal': false
-        }
-      }).then(() => {
-        this.pageLoad();
+      const {context, beforeToInsert} = this.option;
+      beforeToInsert.call(context).then(() => {
+        const fatRow = toTableRow({}, this.columnConfig, 'insert', 'form');
+        openDialog({
+          component: RowForm,
+          props: {
+            option: this.option,
+            config: fatRow.config,
+            row: fatRow,
+            type: 'insert',
+            layout: this.option.style.formLayout
+          },
+          dialogProps: {
+            width: '50%',
+            title: '新增',
+            'close-on-click-modal': false
+          }
+        }).then(() => {
+          this.pageLoad();
+        })
+      }).catch(() => {
+        console.debug('你已取消新建')
       })
     },
     /**
      * 激活表单新增
      */
     addRow() {
-      // 行内编辑: 增加一个编辑状态的空行, status为insert, 属性和值取自columnConfig.inlineItemConfig(col和defaultVal)
-      const newRow = toTableRow({}, this.columnConfig, 'insert', 'inline');
-      this.list.unshift(newRow);
-      this.editRows.push(newRow);
-      rowValid(this.editRows).catch((errors) => {
-      }); // 立即校验一下以便标识出必填等字段
+      if (this.status !== 'normal' && this.status !== 'insert') {
+        Message.warning(`当前FastTable处于${this.status}状态, 不允许新增`);
+        return;
+      }
+      const {context, beforeToInsert} = this.option;
+      beforeToInsert.call(context).then(() => {
+        const newRow = toTableRow({}, this.columnConfig, 'insert', 'inline');
+        this.list.unshift(newRow);
+        this.editRows.push(newRow);
+        rowValid(this.editRows).catch((errors) => {
+        }); // 立即校验一下以便标识出必填等字段
+      }).catch(() => {
+        console.debug('你已取消新建')
+      })
     },
     /**
      * 删除: 删除当前选中行记录
@@ -389,49 +396,58 @@ export default {
         return;
       }
 
-      // opt1: 当前存在编辑行时，不允许再新增编辑行
+      // 当前存在编辑行时，不允许再新增编辑行
       if (this.status !== 'normal') {
         this.$emit('row-dblclick', row, column, event);
         return;
       }
 
-      const {context, beforeToUpdate} = this.option;
-      beforeToUpdate.call(context, {fatRows: [row], rows: [row.row]}).then(() => {
-        if (this.option.editType === 'form') {
-          this.updateForm(row);
-        } else {
-          this.updateRow(row);
-        }
-      }).catch(() => {
-        console.debug('你已取消编辑')
-      })
+      if (this.option.editType === 'form') {
+        this.updateForm(row);
+      } else {
+        this.updateRow(row);
+      }
     },
     /**
      * 表单更新一行
      * @param row
      */
     updateForm(row) {
-      openDialog({
-        component: RowForm,
-        props: {
-          option: this.option,
-          config: getEditConfig(this.columnConfig, 'form'),
-          row: row,
-          type: 'update',
-          layout: this.option.style.formLayout
-        },
-        dialogProps: {
-          width: '50%',
-          title: '编辑',
-          'close-on-click-modal': false
-        }
-      }).then(() => {
-        this.pageLoad();
+      const {context, beforeToUpdate} = this.option;
+      beforeToUpdate.call(context, {fatRows: [row], rows: [row.row]}).then(() => {
+        openDialog({
+          component: RowForm,
+          props: {
+            option: this.option,
+            config: getEditConfig(this.columnConfig, 'form'),
+            row: row,
+            type: 'update',
+            layout: this.option.style.formLayout
+          },
+          dialogProps: {
+            width: '50%',
+            title: '编辑',
+            'close-on-click-modal': false
+          }
+        }).then(() => {
+          this.pageLoad();
+        })
+      }).catch(() => {
+        console.debug('你已取消编辑')
       })
     },
     updateRow(row) {
-      row.status = 'update';
-      this.editRows.push(row);
+      if (this.status !== 'normal' && this.status !== 'update') {
+        Message.warning(`当前FastTable处于${this.status}状态, 不允许更新`);
+        return;
+      }
+      const {context, beforeToUpdate} = this.option;
+      beforeToUpdate.call(context, {fatRows: [row], rows: [row.row]}).then(() => {
+        row.status = 'update';
+        this.editRows.push(row);
+      }).catch(() => {
+        console.debug('你已取消编辑')
+      })
     },
     /**
      * 激活批量编辑
@@ -442,7 +458,11 @@ export default {
         return;
       }
       const {context, beforeToUpdate} = this.option;
-      beforeToUpdate.call(context, {fatRows: this.list, rows: this.list.map(r => r.row)}).then(() => {
+      beforeToUpdate.call(context, {
+        fatRows: this.list,
+        rows: this.list.map(r => r.row),
+        editRows: this.list.map(r => r.editRow)
+      }).then(() => {
         this.list.forEach(r => r.status = 'update');
         this.editRows.push(...this.list);
       }).catch(() => {
@@ -477,24 +497,23 @@ export default {
       if (this.status !== 'insert' && this.status !== 'update') {
         throw new Error(`当前FastTable状态异常:${this.status}, 无法保存编辑记录`);
       }
-      return new Promise((resolve, reject) => {
-        rowValid(this.editRows).then(() => {
-          // 保存编辑的行: 包括新增、更新状态的行
-          let promise;
-          if (this.status === 'insert') {
-            promise = this.option._insertRows(this.editRows);
-          } else {
-            promise = this.option._updateRows(this.editRows);
-          }
-          promise.then(() => {
-            this.cancelEditStatus();
-            this.pageLoad().then(() => resolve()).catch(() => reject());
-          }).catch(() => reject());
-        }).catch((errors) => {
-          const firstError = errors[0];
-          Message.error(firstError.message);
-        })
-      });
+      rowValid(this.editRows).then(() => {
+        // 保存编辑的行: 包括新增、更新状态的行
+        let promise;
+        if (this.status === 'insert') {
+          promise = this.option._insertRows(this.editRows);
+        } else {
+          promise = this.option._updateRows(this.editRows);
+        }
+        promise.then(() => {
+          this.cancelEditStatus();
+          this.pageLoad();
+        }).catch(() => {
+        });
+      }).catch((errors) => {
+        const firstError = errors[0];
+        Message.error(firstError.message);
+      })
     },
     /**
      * 批量更新记录
@@ -524,7 +543,6 @@ export default {
 
   .fc-fast-table-title {
     font-weight: bold;
-
   }
 
   .fc-quick-filter-wrapper {
@@ -556,11 +574,79 @@ export default {
 
   .fc-fast-table-wrapper {
     ::v-deep {
-      th {
+      .el-table__cell {
         padding: 0;
+      }
 
-        & > .cell {
-          padding: 0 !important;
+      .fc-table-column-head-cell {
+        text-align: center;
+        height: 38px;
+        line-height: 38px;
+        margin: 0 10px;
+      }
+
+      .fc-table-column-head-cell.filter {
+        cursor: pointer;
+      }
+
+      td.fc-table-column > .cell {
+        padding: 0 3px;
+
+        .fc-table-inline-edit-component {
+          width: 100%;
+
+          .el-input__inner {
+            padding: 0 4px;
+          }
+
+          .el-input-number__decrease, .el-input-number__increase {
+            width: 15px;
+          }
+
+          .el-input__prefix {
+            display: none;
+          }
+
+          input {
+            text-align: left;
+          }
+
+
+          .el-upload-list--picture-card .el-upload-list__item, .el-upload--picture-card {
+            width: auto;
+            height: 100%;
+            aspect-ratio: 1 / 1;
+            line-height: 100%;
+            margin: 0;
+
+            & .el-icon-plus {
+              $uploadIconSize: 18px;
+              font-size: $uploadIconSize;
+              width: $uploadIconSize;
+              height: $uploadIconSize;
+              margin-top: calc(50% - $uploadIconSize / 2);
+            }
+          }
+
+          .el-upload-list--text {
+            .el-upload-list__item {
+              //word-break: normal;
+              margin: 0;
+              line-height: 1;
+
+              & > * {
+                display: inline;
+              }
+            }
+          }
+
+          .el-link {
+            //word-break: normal;
+          }
+        }
+
+        .fc-table-inline-edit-component.valid-error {
+          border: 1px solid #F56C6C;
         }
       }
     }

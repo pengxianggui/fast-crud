@@ -237,4 +237,12 @@ export default {
     object-fit: cover;
   }
 }
+
+.fc-fast-upload.__hide {
+  ::v-deep {
+    .el-upload {
+      display: none;
+    }
+  }
+}
 </style>

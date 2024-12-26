@@ -1,5 +1,5 @@
 import {buildFinalComponentConfig} from "../../mapping";
-import {deepClone, defaultIfBlank, defaultIfEmpty, isArray, isEmpty, merge} from "../../../util/util";
+import {deepClone, defaultIfBlank, defaultIfEmpty, isArray, isEmpty, isUndefined, merge} from "../../../util/util";
 
 import Schema from 'async-validator'
 
@@ -119,6 +119,9 @@ export function iterBuildComponentConfig(vnodes, tableOption, callback) {
         const param = {};
 
         const {label, prop: col} = props;
+        if (isUndefined(col)) {
+            continue;
+        }
         const customConfig = {
             label: label,
             col: col,

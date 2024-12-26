@@ -1,5 +1,6 @@
 <template>
-  <el-table-column :prop="prop"
+  <el-table-column class-name="fc-table-column"
+                   :prop="prop"
                    :label="label"
                    :min-width="minWidth"
                    :show-overflow-tooltip="showOverflowToolTip"
