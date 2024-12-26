@@ -177,6 +177,7 @@ export default {
     },
     handleChange(file, fileList) {
       // debugger
+      this.$emit('change', this.modelValue);
     },
     handleExceed(files, fileList) {
       Message.warning('文件数量超过限制');
@@ -224,6 +225,7 @@ export default {
         font-size: 14px;
       }
     }
+
     &::after {
       display: none;
     }

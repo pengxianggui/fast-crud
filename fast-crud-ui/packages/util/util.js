@@ -1,3 +1,5 @@
+import {cloneDeep} from 'lodash-es'
+
 export function addStartWith(str, startWith) {
     return str.startsWith(startWith) ? str : startWith + str;
 }
@@ -158,10 +160,12 @@ export function parse(str) {
 
 export function deepClone(obj) {
     if (isObject(obj)) {
-        return Object.assign({}, obj)
+        // return Object.assign({}, obj)
+        return cloneDeep(obj)
     }
     if (isArray(obj)) {
-        return Object.assign([], obj)
+        // return Object.assign([], obj)
+        return cloneDeep(obj)
     }
     return obj;
 }

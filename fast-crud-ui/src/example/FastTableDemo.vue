@@ -4,7 +4,7 @@
 
     <fast-table ref="fastTable" class="el-card" :option="tableOption" :key="tableKey">
       <fast-table-column label="ID" prop="id"/>
-      <fast-table-column-img label="头像" prop="avatarUrl"/>
+      <fast-table-column-img label="头像" prop="avatarUrl" required/>
       <fast-table-column-input label="姓名" prop="name" first-filter :quick-filter="true" required/>
       <fast-table-column-number label="年龄" prop="age" required/>
       <fast-table-column-select label="性别" prop="sex" :options="sexOptions" :quick-filter="true" required/>
@@ -14,9 +14,9 @@
                                 :default-val__q="['1', '2', '3', '4', '5']"
                                 :disable-val="['6']"
                                 required/>
-      <fast-table-column-textarea label="地址" prop="address" required/>
-      <fast-table-column-switch label="已毕业" prop="graduated" :quick-filter="true" :default-val__e="true"/>
-      <fast-table-column-time-picker label="幸运时刻" prop="luckTime" required/>
+      <fast-table-column-textarea label="地址" prop="address"/>
+      <fast-table-column-switch label="已毕业" prop="graduated" :quick-filter="true" :default-val="false"/>
+      <fast-table-column-time-picker label="幸运时刻" prop="luckTime"/>
       <fast-table-column-date-picker label="生日" prop="birthday" :picker-options="pickerOptionsE" required/>
       <fast-table-column-file label="简历" prop="resumeUrl" :show-overflow-tool-tip="false"/>
       <fast-table-column-date-picker label="创建时间" prop="createTime" :picker-options__q="pickerOptionsQ"

@@ -1,4 +1,4 @@
-import {isArray, isEmpty, merge, ternary} from "../../util/util";
+import {isUndefined, merge, ternary} from "../../util/util";
 import {Cond, Opt} from "../../model";
 import {colValid} from "../table/src/util";
 
@@ -24,50 +24,56 @@ const defaultQueryConfig = {
     }
 
 }
-const defaultEditConfig = (config) => {
-    const {props, label} = config;
-    const {rules = [], 'default-val': defaultVal = null} = props;
-    // 如果含有值不为false的required属性, 则将其转换为rules规则添加到props中
-    if (props.hasOwnProperty('required') && props.required !== false) {
-        rules.push({required: true, message: `${label}不能为空`})
-    }
-    return {
-        component: 'el-date-picker',
-        opt: Opt.BTW,
-        val: defaultVal, // 默认值
-        props: {
-            type: "date",
-            clearable: true,
-            'value-format': 'yyyy-MM-dd',
-            class: 'fc-table-inline-edit-component',
-            editable: true,
-            rules: rules
-        },
-        eventHandlers: {
-            //  绑定一个change事件, 完成校验逻辑，如果校验不通过，则追加class: valid-error以便显示出来
-            change: (val) => {
-                colValid(val, config).catch(errors => {
-                });
-                return val
-            }
-        }
+const defaultEditConfig = {
+    component: 'el-date-picker',
+    opt: Opt.BTW,
+    val: null, // 默认值
+    props: {
+        type: "date",
+        clearable: true,
+        'value-format': 'yyyy-MM-dd',
+        class: 'fc-table-inline-edit-component',
+        editable: true,
+        rules: []
     }
 }
 
 export default {
     query: (config, type) => {
-        let val = [];
-        const {props = {}} = config;
-        const {type: propType = 'date'} = props;
+        let val = defaultQueryConfig.val;
+        const {'default-val': defaultVal, ...validProps} = config.props;
+        const {type: dateType = 'date'} = validProps;
         if (type === 'quick') {
-            const {'default-val': defaultVal} = props;
-            val = ternary(isArray(defaultVal) && !isEmpty(defaultVal), defaultVal, val);
+            val = ternary(isUndefined(defaultVal), val, defaultVal);
         }
         config.val = val;
-        config.props.type = `${propType}range`;
+        config.props = {
+            ...validProps,
+            type: `${dateType}range`
+        }
         return merge(config, defaultQueryConfig, true, false)
     },
     edit: (config, type) => {
-        return merge(config, defaultEditConfig(config), true, false)
+        const {label, props: {'default-val': defaultVal, ...validProps}} = config;
+        const {rules = []} = validProps;
+        // 如果含有值不为false的required属性, 则将其转换为rules规则添加到props中
+        if (validProps.hasOwnProperty('required') && validProps.required !== false) {
+            rules.push({required: true, message: `${label}不能为空`})
+        }
+        config.val = ternary(isUndefined(defaultVal), defaultEditConfig.val, defaultVal);
+        config.props = {
+            ...validProps,
+            rules: rules
+        }
+        const finalConfig = merge(config, defaultEditConfig, true, false)
+        finalConfig.eventHandlers = {
+            //  绑定一个change事件, 完成校验逻辑，如果校验不通过，则追加class: valid-error以便显示出来
+            change: (val) => {
+                colValid(val, finalConfig).catch(errors => {
+                });
+                return val
+            }
+        }
+        return finalConfig;
     }
 }

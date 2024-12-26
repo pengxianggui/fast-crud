@@ -1,10 +1,10 @@
-import {easyOptParse, isEmpty, isString, merge, ternary} from "../../util/util";
+import {easyOptParse, isUndefined, merge, ternary} from "../../util/util";
 import {Opt} from "../../model";
 
 const defaultQueryConfig = {
     component: 'el-input',
     opt: Opt.LIKE,
-    val: '', // 默认值
+    val: null, // 默认值
     props: {
         clearable: true,
         // placeholder: `请输入${config.label}`
@@ -19,30 +19,30 @@ const defaultQueryConfig = {
         return [cond]
     }
 }
-const defaultEditConfig = (config) => {
-    const {props: {'default-val': defaultVal = null} = {}} = config;
-    return {
-        component: 'el-input',
-        val: defaultVal,
-        props: {
-            clearable: false,
-            class: 'fc-table-inline-edit-component',
-            editable: false
-        }
+const defaultEditConfig = {
+    component: 'el-input',
+    val: null,
+    props: {
+        clearable: false,
+        class: 'fc-table-inline-edit-component',
+        editable: false // fast-table-column不允许编辑
     }
 }
 export default {
     query: (config, type) => {
-        let val = '';
-        const {props} = config
+        let val = defaultQueryConfig.val;
+        const {'default-val': defaultVal, ...validProps} = config.props;
         if (type === 'quick') {
-            const {'default-val': defaultVal} = props;
-            val = ternary(isString(defaultVal) && !isEmpty(defaultVal), defaultVal, val);
+            val = (isUndefined(defaultVal), val, defaultVal);
         }
         config.val = val;
+        config.props = validProps;
         return merge(config, defaultQueryConfig, true, false)
     },
     edit: (config, type) => {
-        return merge(config, defaultEditConfig(config), true, false)
+        const {'default-val': defaultVal, ...validProps} = config.props;
+        config.val = ternary(isUndefined(defaultVal), defaultEditConfig.val, defaultVal);
+        config.props = validProps;
+        return merge(config, defaultEditConfig, true, false)
     }
 }

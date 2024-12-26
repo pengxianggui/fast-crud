@@ -56,7 +56,7 @@ export const getEditConfig = function (columnConfig, editType) {
         for (let i = 0; i < keys.length; i++) {
             const col = keys[i];
             const {inlineItemConfig, formItemConfig} = columnConfig[col]
-            config[col] = (editType === 'form' ? formItemConfig : inlineItemConfig)
+            config[col] = (editType === 'form' ? deepClone(formItemConfig) : deepClone(inlineItemConfig))
         }
     } catch (err) {
         console.error(err);
@@ -80,7 +80,6 @@ export function toTableRow(row, columnConfig, status = 'normal', editType) {
         const newRow = {};
         cols.forEach(col => {
             const {val} = config[col];
-            debugger
             newRow[col] = deepClone(val);
         })
         merge(row, newRow, true, false)
@@ -154,20 +153,20 @@ function buildFilterComponentConfig(param, tableColumnComponentName, customConfi
         try {
             param.quickFilter = buildFinalComponentConfig(customConfig, tableColumnComponentName, 'query', 'quick');
         } catch (e) {
-            console.error(e.message)
+            console.error(e)
         }
     }
     // build easy filters
     try {
         param.easyFilter = buildFinalComponentConfig(customConfig, tableColumnComponentName, 'query', 'easy');
     } catch (e) {
-        console.error(e.message)
+        console.error(e)
     }
     // build easy filters
     try {
         param.dynamicFilter = buildFinalComponentConfig(customConfig, tableColumnComponentName, 'query', 'dynamic')
     } catch (e) {
-        console.error(e.message)
+        console.error(e)
     }
 
 }
@@ -184,13 +183,13 @@ function buildEditComponentConfig(param, tableColumnComponentName, customConfig,
     try {
         param.formItemConfig = buildFinalComponentConfig(customConfig, tableColumnComponentName, 'edit', 'form', tableOption);
     } catch (e) {
-        console.error(e.message)
+        console.error(e)
     }
     // 行内表单组件配置
     try {
         param.inlineItemConfig = buildFinalComponentConfig(customConfig, tableColumnComponentName, 'edit', 'inline', tableOption);
     } catch (e) {
-        console.error(e.message)
+        console.error(e)
     }
 }
 

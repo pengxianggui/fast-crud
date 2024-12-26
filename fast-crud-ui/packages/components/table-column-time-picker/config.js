@@ -1,4 +1,4 @@
-import {isArray, isEmpty, merge, ternary} from "../../util/util";
+import {isUndefined, merge, ternary} from "../../util/util";
 import {Cond, Opt} from "../../model";
 import {colValid} from "../table/src/util";
 
@@ -23,45 +23,48 @@ const defaultQueryConfig = {
         return conds
     }
 }
-const defaultEditConfig = (config) => {
-    const {props, label} = config;
-    const {rules = [], 'default-val': defaultVal = null} = props;
-    // 如果含有值不为false的required属性, 则将其转换为rules规则添加到props中
-    if (props.hasOwnProperty('required') && props.required !== false) {
-        rules.push({required: true, message: `${label}不能为空`})
-    }
-    return {
-        component: 'el-time-picker',
-        val: defaultVal,
-        props: {
-            clearable: true,
-            'value-format': 'HH:mm:ss',
-            class: 'fc-table-inline-edit-component',
-            editable: true,
-            rules: rules
-        },
-        eventHandlers: {
-            //  绑定一个change事件, 完成校验逻辑，如果校验不通过，则追加class: valid-error以便显示出来
-            change: (val) => {
-                colValid(val, config).catch(errors => {
-                });
-                return val
-            }
+const defaultEditConfig = {
+    component: 'el-time-picker',
+    val: null,
+    props: {
+        clearable: true,
+        'value-format': 'HH:mm:ss',
+        class: 'fc-table-inline-edit-component',
+        editable: true,
+        rules: []
+    },
+    eventHandlers: {
+        //  绑定一个change事件, 完成校验逻辑，如果校验不通过，则追加class: valid-error以便显示出来
+        change: (val) => {
+            colValid(val, config).catch(errors => {
+            });
+            return val
         }
     }
 }
 export default {
     query: (config, type) => {
-        let val = [];
-        const {props = {}} = config;
+        let val = defaultQueryConfig.val;
+        const {'default-val': defaultVal, ...validProps} = config.props;
         if (type === 'quick') {
-            const {'default-val': defaultVal} = props;
-            val = ternary(isArray(defaultVal) && !isEmpty(defaultVal), defaultVal, val);
+            val = ternary(isUndefined(defaultVal), val, defaultVal);
         }
         config.val = val;
+        config.props = validProps;
         return merge(config, defaultQueryConfig, true, false);
     },
     edit: (config, type) => {
-        return merge(config, defaultEditConfig(config), true, false)
+        const {label, props: {'default-val': defaultVal, ...validProps}} = config;
+        const {rules = []} = validProps;
+        // 如果含有值不为false的required属性, 则将其转换为rules规则添加到props中
+        if (validProps.hasOwnProperty('required') && validProps.required !== false) {
+            rules.push({required: true, message: `${label}不能为空`})
+        }
+        config.val = ternary(isUndefined(defaultVal), defaultEditConfig.val, defaultVal);
+        config.props = {
+            ...validProps,
+            rules: rules
+        }
+        return merge(config, defaultEditConfig, true, false)
     }
 }

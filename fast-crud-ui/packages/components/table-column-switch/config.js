@@ -1,5 +1,6 @@
-import {isUndefined, merge, ternary} from "../../util/util";
+import {merge, ternary} from "../../util/util";
 import {Opt} from "../../model";
+import {colValid} from "../table/src/util";
 
 const defaultQueryConfig = {
     component: 'fast-select',
@@ -19,17 +20,15 @@ const defaultEditConfig = {
         options: [],
         class: 'fc-table-inline-edit-component',
         editable: true,
-        defaultVal: null
         // placeholder: `请输入${config.label}`
     }
 }
 export default {
     query: (config, type) => {
-        const {props} = config;
-        const {activeValue, inactiveValue, activeText, inactiveText} = props;
-        let val = '';
+        const {'default-val': defaultVal, ...validProps} = config.props;
+        const {activeValue, inactiveValue, activeText, inactiveText} = validProps;
+        let val = defaultQueryConfig.val;
         if (type === 'quick') {
-            const {'default-val': defaultVal} = props;
             val = ternary(defaultVal === inactiveValue || defaultVal === activeValue, defaultVal, val);
         }
         const options = [
@@ -37,18 +36,34 @@ export default {
             {label: activeText, value: activeValue}
         ]
         config.val = val;
-        config.props.options = options;
+        config.props = {
+            ...validProps,
+            options: options
+        }
         return merge(config, defaultQueryConfig, true, false)
     },
     edit: (config, type) => {
-        const {props: {activeValue, inactiveValue, activeText, inactiveText, 'default-val': defaultVal}} = config
+        const {'default-val': defaultVal, ...validProps} = config.props
+        const {activeValue, inactiveValue, activeText, inactiveText} = validProps
         const options = [
             {label: inactiveText, value: inactiveValue},
             {label: activeText, value: activeValue}
         ]
-        config.val = ternary(isUndefined(defaultVal), inactiveValue, defaultVal);
-        config.props.options = options;
-        return merge(config, defaultEditConfig, true, false)
+        config.val = ternary(defaultVal === inactiveValue || defaultVal === activeValue, defaultVal, inactiveValue);
+        config.props = {
+            ...validProps,
+            options: options
+        };
+        const finalConfig = merge(config, defaultEditConfig, true, false)
+        finalConfig.eventHandlers = {
+            //  绑定一个change事件, 完成校验逻辑，如果校验不通过，则追加class: valid-error以便显示出来
+            change: (val) => {
+                colValid(val, finalConfig).catch(errors => {
+                });
+                return val
+            }
+        }
+        return finalConfig;
     }
 
 }
