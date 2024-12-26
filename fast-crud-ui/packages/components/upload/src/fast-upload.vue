@@ -176,8 +176,9 @@ export default {
       // debugger
     },
     handleChange(file, fileList) {
-      // debugger
-      this.$emit('change', this.modelValue);
+      this.$nextTick(() => { // 延迟执行, 等待modelValue更新
+        this.$emit('change', this.modelValue);
+      })
     },
     handleExceed(files, fileList) {
       Message.warning('文件数量超过限制');

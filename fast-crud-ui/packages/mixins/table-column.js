@@ -28,6 +28,17 @@ export default {
             if (this.filter) {
                 this.openDynamicFilterForm(this.columnProp)
             }
+        },
+        // change事件上抛并触发验证
+        handleChange(val, scope) {
+            this.$emit('change', val, scope);
+            const {column, $index, config} = scope;
+            const {property} = column;
+            const ref = this.$refs[property + $index];
+            const {eventHandlers: {valid} = {}} = config[property]
+            if (valid) {
+                valid(val, ref);
+            }
         }
     }
 }

@@ -1,6 +1,5 @@
 import {isUndefined, merge, ternary} from "../../util/util";
 import {Cond, Opt} from "../../model";
-import {colValid} from "../table/src/util";
 
 const defaultQueryConfig = {
     component: 'el-time-picker',
@@ -32,14 +31,6 @@ const defaultEditConfig = {
         class: 'fc-table-inline-edit-component',
         editable: true,
         rules: []
-    },
-    eventHandlers: {
-        //  绑定一个change事件, 完成校验逻辑，如果校验不通过，则追加class: valid-error以便显示出来
-        change: (val) => {
-            colValid(val, config).catch(errors => {
-            });
-            return val
-        }
     }
 }
 export default {

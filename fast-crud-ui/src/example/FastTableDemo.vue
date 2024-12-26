@@ -1,12 +1,54 @@
 <template>
   <div class="demo">
-    <param-config :params="params" :option="tableOption" @refresh="refreshTable"></param-config>
+    <el-form class="param" label-position="left" label-width="40px">
+      <h3>行为配置</h3>
+      <el-switch size="mini" v-model="params.editType" @change="(val) => updateOption('editType', val)"
+                 inactive-value="inline" inactive-color="#13ce66" inactive-text="行内编辑"
+                 active-value="form" active-color="#ff4949" active-text="表单编辑"></el-switch>
+      <el-checkbox v-model="params.pageLoadable">允许加载分页</el-checkbox>
+      <el-checkbox v-model="params.insertable" @change="(val) => updateOption('insertable', val)">允许新增</el-checkbox>
+      <el-checkbox v-model="params.updatable" @change="(val) => updateOption('updatable', val)">允许更新</el-checkbox>
+      <el-checkbox v-model="params.deletable" @change="(val) => updateOption('deletable', val)">允许删除</el-checkbox>
+      <el-checkbox v-model="params.enableColumnFilter" @change="(val) => updateOption('enableColumnFilter', val)">
+        允许表头动态筛选
+      </el-checkbox>
+      <el-checkbox v-model="params.enableMulti" @change="(val) => updateOption('enableMulti', val)">启用多选
+      </el-checkbox>
+      <el-checkbox v-model="params.enableDblClickEdit" @change="(val) => updateOption('enableDblClickEdit', val)">
+        启用双击编辑
+      </el-checkbox>
 
-    <fast-table ref="fastTable" class="el-card" :option="tableOption" :key="tableKey">
+      <h3>外观配置</h3>
+      <el-form-item label="尺寸">
+        <fast-select size="mini" v-model="params.size" @change="(val) => updateOptionStyle('size', val)"
+                     :options="[{label:'超小',value: 'mini'}, {label:'小',value: 'small'}, {label:'中等',value: 'medium'}, {label:'大', value: 'default'}]"></fast-select>
+      </el-form-item>
+      <el-form-item label="行高">
+        <el-slider v-model="params.bodyRowHeight" :min="40" :max="100"
+                   @change="(val) => updateOptionStyle('bodyRowHeight', val + 'px')"></el-slider>
+      </el-form-item>
+
+      <h3>钩子函数应用</h3>
+      <el-checkbox v-model="params.loadSuccessTip">分页加载成功提示</el-checkbox>
+      <el-checkbox v-model="params.customLoadFailTip">自定义加载失败提示</el-checkbox>
+      <el-checkbox v-model="params.notDeleteLWL">不能删除利威尔(不弹窗)</el-checkbox>
+      <el-checkbox v-model="params.notDeleteSS">不允许删除珊莎(弹窗后)</el-checkbox>
+      <el-checkbox v-model="params.disableDefultDeleteSuccessWhenAL">删除艾伦时庆祝</el-checkbox>
+      <el-checkbox v-model="params.customDeleteFailTip">自定义删除失败提示</el-checkbox>
+      <el-checkbox v-model="params.disableUpdateAM">阿明不允许编辑</el-checkbox>
+      <h3>方法</h3>
+      <div>
+        <el-button size="mini" @click="$refs['fastTable'].addRow()">插入一行</el-button>
+        <el-button size="mini" @click="$refs['fastTable'].addForm()">弹窗新增</el-button>
+      </div>
+    </el-form>
+
+    <fast-table ref="fastTable" class="el-card" :option="tableOption">
       <fast-table-column label="ID" prop="id"/>
       <fast-table-column-img label="头像" prop="avatarUrl" required/>
       <fast-table-column-input label="姓名" prop="name" first-filter :quick-filter="true" required/>
-      <fast-table-column-number label="年龄" prop="age" required/>
+      <fast-table-column-number label="年龄" prop="age" required
+                                :rules="[{type: 'number', min: 18, max: 60, message: '年龄必须在[18,60]之间'}]"/>
       <fast-table-column-select label="性别" prop="sex" :options="sexOptions" :quick-filter="true" required/>
       <fast-table-column-select label="爱好" prop="hobby" :options="hobbyOptions"
                                 :quick-filter="true" quick-filter-block quick-filter-checkbox
@@ -14,9 +56,9 @@
                                 :default-val__q="['1', '2', '3', '4', '5']"
                                 :disable-val="['6']"
                                 required/>
-      <fast-table-column-textarea label="地址" prop="address"/>
-      <fast-table-column-switch label="已毕业" prop="graduated" :quick-filter="true" :default-val="false"/>
-      <fast-table-column-time-picker label="幸运时刻" prop="luckTime"/>
+      <fast-table-column-textarea label="地址" prop="address" required/>
+      <fast-table-column-switch label="已毕业" prop="graduated" :quick-filter="true" :default-val="false" required/>
+      <fast-table-column-time-picker label="幸运时刻" prop="luckTime" required/>
       <fast-table-column-date-picker label="生日" prop="birthday" :picker-options="pickerOptionsE" required/>
       <fast-table-column-file label="简历" prop="resumeUrl" :show-overflow-tool-tip="false"/>
       <fast-table-column-date-picker label="创建时间" prop="createTime" :picker-options__q="pickerOptionsQ"
@@ -33,12 +75,10 @@
 <script>
 import FastTableOption from "../../packages/model";
 import {Message} from 'element-ui';
-import ParamConfig from "@/example/ParamConfig.vue";
 import staticDict from './dict'
 
 export default {
   name: "FastTableDemo",
-  components: {ParamConfig},
   data() {
     const now = new Date();
     const monthAgo = new Date();
@@ -132,7 +172,6 @@ export default {
         }
       }),
 
-      tableKey: 0,
       defaultQueryOfCreatedTime: [monthAgo, now],
       params: {
         editType: defaultEditType,
@@ -153,12 +192,17 @@ export default {
         disableDefultDeleteSuccessWhenAL: true, // 当删除对象包含艾伦时, 禁用默认删除成功提示
         disableUpdateAM: true, // 阿明不允许编辑
       },
-      ...staticDict,
+      ...staticDict
     }
   },
   methods: {
-    refreshTable() {
-      this.tableKey += 1; // 强刷
+    updateOption(key, val) {
+      this.tableOption[key] = val;
+      this.$refs['fastTable'].reRender()
+    },
+    updateOptionStyle(key, val) {
+      this.tableOption.style[key] = val;
+      this.$refs['fastTable'].reRender()
     }
   }
 }

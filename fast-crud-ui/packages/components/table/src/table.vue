@@ -1,5 +1,5 @@
 <template>
-  <div class="fc-fast-table">
+  <div class="fc-fast-table" :key="tableKey">
     <div class="fc-fast-table-title" v-if="option.title">{{ option.title }}</div>
     <div class="fc-quick-filter-wrapper" v-if="quickFilters.length > 0">
       <!-- 快筛 -->
@@ -63,8 +63,7 @@
                 @current-change="handleChosedChange"
                 @selection-change="handleCheckedChange"
                 @row-dblclick="handleRowDblclick"
-                v-loading="loading"
-                :key="tableKey">
+                v-loading="loading">
         <el-table-column type="selection" width="55" v-if="option.enableMulti"></el-table-column>
         <slot></slot>
       </el-table>
@@ -161,6 +160,9 @@ export default {
     }
   },
   methods: {
+    reRender() {
+      this.tableKey++;
+    },
     buildComponentConfig() {
       const children = this.$slots.default ? this.$slots.default : [];
       iterBuildComponentConfig(children, this.option, ({
@@ -456,10 +458,13 @@ export default {
       }
       // 移除列表中可能存在的insert状态记录
       remove(this.list, item => item.status === 'insert');
-      // 将编辑的行状态改为normal, 并清空editRows
-      this.editRows.forEach(r => r.status = 'normal');
+      // 将编辑的行状态改为normal, 并清空editRows,因为editRows是list中的引用，所以不能光清空数组
+      this.editRows.forEach(r => {
+        r.status = 'normal';
+        r.editRow = {...r.row} // 重置editRow
+      });
       this.editRows.length = 0;
-      this.tableKey++; // 控制表格重新渲染
+      this.reRender(); // 控制表格重新渲染
     },
     /**
      * 保存编辑的行: 包括新增或更新状态的行。内部会将保存成功的记录的行状态置为normal
@@ -508,68 +513,7 @@ export default {
      */
     customTable() {
       // TODO 2.0 自定义表格: 可自定义——表格标题、默认简筛字段、默认排序字段和排序方式、各列宽、冻结哪些列等
-    },
-    // /**
-    //  * 新增行, 返回promise
-    //  * @param rows
-    //  */
-    // _insertRows(rows) {
-    //   if (rows.length === 0) {
-    //     return Promise.resolve();
-    //   }
-    //   return new Promise((resolve, reject) => {
-    //     const {context, beforeInsert} = this.option;
-    //     beforeInsert.call(context, {fatRows: rows}).then(() => {
-    //       const toBeInsertRows = rows.map(r => r.editRow);
-    //       const {insertUrl, batchInsertUrl, insertSuccess, insertFail} = this.option;
-    //       const postPromise = (toBeInsertRows.length === 1 ? this.$http.post(insertUrl, toBeInsertRows[0]) : this.$http.post(batchInsertUrl, toBeInsertRows))
-    //       postPromise.then(res => {
-    //         resolve();
-    //         insertSuccess.call(context, {fatRows: rows, rows: toBeInsertRows, res: res}).then(() => {
-    //           Message.success(`成功新增${toBeInsertRows.length}条记录`);
-    //         });
-    //       }).catch(err => {
-    //         reject(err);
-    //         insertFail.call(context, {fatRows: rows, rows: toBeInsertRows, error: err}).then(() => {
-    //           Message.success('新增失败:' + JSON.stringify(err));
-    //         });
-    //       })
-    //     }).catch(err => {
-    //       reject(err);
-    //     })
-    //   });
-    // },
-    // /**
-    //  * 更新行
-    //  * @param rows
-    //  * @return 返回promise, 若成功更新则resolve; 若失败或取消, 则返回reject err或用户自定义的内容
-    //  */
-    // _updateRows(rows) {
-    //   if (rows.length === 0) {
-    //     return Promise.resolve();
-    //   }
-    //   return new Promise((resolve, reject) => {
-    //     const {context, beforeUpdate} = this.option;
-    //     beforeUpdate.call(context, {fatRows: rows}).then(() => {
-    //       const toBeUpdateRows = rows.map(r => r.editRow);
-    //       const {updateUrl, batchUpdateUrl, updateSuccess, updateFail} = this.option;
-    //       const postPromise = (toBeUpdateRows.length === 1 ? this.$http.post(updateUrl, toBeUpdateRows[0]) : this.$http.post(batchUpdateUrl, toBeUpdateRows))
-    //       postPromise.then(res => {
-    //         resolve();
-    //         updateSuccess.call(context, {fatRows: rows, rows: toBeUpdateRows, res: res}).then(() => {
-    //           Message.success(`成功更新${toBeUpdateRows.length}条记录`);
-    //         });
-    //       }).catch(err => {
-    //         reject(err);
-    //         updateFail.call(context, {fatRows: rows, rows: toBeUpdateRows, error: err}).then(() => {
-    //           Message.success('更新失败:' + JSON.stringify(err));
-    //         });
-    //       })
-    //     }).catch(err => {
-    //       reject(err);
-    //     })
-    //   });
-    // }
+    }
   }
 }
 </script>

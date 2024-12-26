@@ -26,7 +26,8 @@
                      :is="config[column.property]['component']"
                      :row="editRow" :col="column.property"
                      v-bind="config[column.property]['props']"
-                     v-on="config[column.property]['eventHandlers']"></component>
+                     :ref="column.property + $index"
+                     @change="(val) => handleChange(val, {row, editRow, status, column, config, $index})"></component>
         </slot>
       </slot>
     </template>

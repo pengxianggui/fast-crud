@@ -177,6 +177,7 @@ export class FilterComponentConfig {
     props; // 组件对应的props
     defaultVal; // 默认值
     disabled; // 是否禁用
+    type; // quick, easy, dynamic
     condMapFn = (cond) => [cond];
 
     /**
@@ -189,7 +190,7 @@ export class FilterComponentConfig {
      * @param props 组件对应的props
      * @param condMapFn 条件获取过滤函数
      */
-    constructor({component, col, opt = Opt.LIKE, val, label, props, condMapFn = (cond) => [cond]}) {
+    constructor({component, col, opt = Opt.LIKE, val, label, props, condMapFn = (cond) => [cond], type}) {
         this.component = component;
         this.col = col;
         this.opt = opt;
@@ -202,6 +203,7 @@ export class FilterComponentConfig {
 
         this.defaultVal = val;
         this.disabled = false;
+        this.type = type;
     }
 
     /**
@@ -238,8 +240,9 @@ export class EditComponentConfig {
     val;
     disabled;
     eventHandlers;
+    type; // inline, form
 
-    constructor({component, col, label, props, val, disabled, eventHandlers}) {
+    constructor({component, col, label, props, val, disabled, eventHandlers, type}) {
         this.component = component;
         this.col = col;
         this.label = label;
@@ -247,6 +250,7 @@ export class EditComponentConfig {
         this.val = val;
         this.disabled = disabled;
         this.eventHandlers = eventHandlers;
+        this.type = type;
     }
 }
 

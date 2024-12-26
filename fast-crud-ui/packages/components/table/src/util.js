@@ -17,7 +17,6 @@ export function colValid(val, config) {
         });
         validator.validate({[col]: val}, (errors, fields) => {
             if (isEmpty(errors)) {
-                // TODO 1.0 效果不太好，优化
                 props.class = defaultIfBlank(props.class, '').replace('valid-error', '');
                 resolve();
             } else {
@@ -35,10 +34,9 @@ export function colValid(val, config) {
 export function rowValid(fatRows) {
     const validPromises = [];
     for (let i = 0; i < fatRows.length; i++) {
-        const fatRow = fatRows[i];
-        Object.keys(fatRow.config).map(col => {
-            const colValidPromise = colValid(fatRow.editRow[col], fatRow.config[col]);
-            validPromises.push(colValidPromise);
+        const {editRow, config} = fatRows[i];
+        Object.keys(config).map(col => {
+            validPromises.push(colValid(editRow[col], config[col]));
         });
     }
     return Promise.all(validPromises);
@@ -189,6 +187,17 @@ function buildEditComponentConfig(param, tableColumnComponentName, customConfig,
     // 行内表单组件配置
     try {
         param.inlineItemConfig = buildFinalComponentConfig(customConfig, tableColumnComponentName, 'edit', 'inline', tableOption);
+        param.inlineItemConfig.eventHandlers = {
+            //  绑定一个valid事件, 完成校验逻辑，如果校验不通过，则追加class: valid-error以便显示出来
+            valid: (val, ref) => {
+                colValid(val, param.inlineItemConfig).then(() => {
+                    ref.$el.classList.remove('valid-error')
+                }).catch(errors => {
+                    ref.$el.classList.add('valid-error');
+                });
+                return val
+            }
+        }
     } catch (e) {
         console.error(e)
     }

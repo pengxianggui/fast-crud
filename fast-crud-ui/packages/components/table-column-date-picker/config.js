@@ -1,6 +1,5 @@
 import {isUndefined, merge, ternary} from "../../util/util";
 import {Cond, Opt} from "../../model";
-import {colValid} from "../table/src/util";
 
 const defaultQueryConfig = {
     component: 'el-date-picker',
@@ -65,15 +64,6 @@ export default {
             ...validProps,
             rules: rules
         }
-        const finalConfig = merge(config, defaultEditConfig, true, false)
-        finalConfig.eventHandlers = {
-            //  绑定一个change事件, 完成校验逻辑，如果校验不通过，则追加class: valid-error以便显示出来
-            change: (val) => {
-                colValid(val, finalConfig).catch(errors => {
-                });
-                return val
-            }
-        }
-        return finalConfig;
+        return merge(config, defaultEditConfig, true, false)
     }
 }

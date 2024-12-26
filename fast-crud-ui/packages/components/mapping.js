@@ -60,5 +60,6 @@ export const buildFinalComponentConfig = function (customConfig, tableColumnComp
         throw new Error(`未定义针对${tableColumnComponentName}的${action}控件`)
     }
     const finalConfig = finalConfigFn(customFilterConfig, type, tableOption);
+    finalConfig.type = type;
     return action === 'query' ? new FilterComponentConfig(finalConfig) : new EditComponentConfig(finalConfig); // 创建Filter对象
 }

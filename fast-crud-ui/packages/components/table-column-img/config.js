@@ -6,7 +6,6 @@ import {
     ternary
 } from "../../util/util";
 import {Opt} from "../../model";
-import {colValid} from "../table/src/util";
 
 const defaultQueryConfig = {
     component: 'el-input',
@@ -61,15 +60,6 @@ export default {
         const finalConfig = merge(config, defaultEditConfig, true, false);
         finalConfig.props.action = addStartWith(tableOption.uploadUrl, '/');
         finalConfig.props['list-type'] = 'picture-card'; // 固定避免被自定义覆盖
-        finalConfig.eventHandlers = {
-            //  绑定一个change事件, 完成校验逻辑，如果校验不通过，则追加class: valid-error以便显示出来
-            change: (val) => {
-                // TODO 1.0 无效
-                colValid(val, finalConfig).catch(errors => {
-                });
-                return val
-            }
-        }
         return finalConfig;
     }
 }
