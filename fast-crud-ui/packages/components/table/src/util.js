@@ -17,6 +17,7 @@ export function colValid(val, config) {
         });
         validator.validate({[col]: val}, (errors, fields) => {
             if (isEmpty(errors)) {
+                // TODO 1.0 效果不太好，优化
                 props.class = defaultIfBlank(props.class, '').replace('valid-error', '');
                 resolve();
             } else {
