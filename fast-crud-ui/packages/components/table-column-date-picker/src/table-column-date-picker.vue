@@ -23,8 +23,8 @@
                           v-bind="config[column.property]['props']"
                           :ref="column.property + $index"
                           @change="(val) => handleChange(val, {row, editRow, status, column, config, $index})"
-                          @blur="(event) => changeBlur(event, {row, editRow, status, column, config, $index})"
-                          @focus="(event) => changeFocus(event, {row, editRow, status, column, config, $index})"></el-date-picker>
+                          @blur="(event) => handleBlur(event, {row, editRow, status, column, config, $index})"
+                          @focus="(event) => handleFocus(event, {row, editRow, status, column, config, $index})"></el-date-picker>
         </slot>
       </slot>
     </template>

@@ -192,11 +192,13 @@ function buildEditComponentConfig(param, tableColumnComponentName, customConfig,
         param.inlineItemConfig = buildFinalComponentConfig(customConfig, tableColumnComponentName, 'edit', 'inline', tableOption);
         param.inlineItemConfig.eventHandlers = {
             //  绑定一个valid事件, 完成校验逻辑，如果校验不通过，则追加class: valid-error以便显示出来
-            valid: (val, ref) => {
+            valid: (val, ref, props) => {
                 colValid(val, param.inlineItemConfig).then(() => {
-                    ref.$el.classList.remove('valid-error')
+                    // ref.$el.classList.remove('valid-error') // !!! 这里不用ref是因为当el-table中存在fixed的列时,会渲染两个表格, 然后这个ref拿到的是另一个fixed的那个，导致无法正确显示/移除valid-error
+                    props.class = defaultIfBlank(props.class, '').replace('valid-error', '');
                 }).catch(errors => {
-                    ref.$el.classList.add('valid-error');
+                    // ref.$el.classList.add('valid-error');
+                    props.class = defaultIfBlank(props.class, '') + ' valid-error';
                 });
                 return val
             }

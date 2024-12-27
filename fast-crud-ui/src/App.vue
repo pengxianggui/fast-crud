@@ -1,6 +1,8 @@
 <template>
-<!--  <valid-demo></valid-demo>-->
-  <fast-table-demo></fast-table-demo>
+  <div class="demos">
+    <!--  <valid-demo></valid-demo>-->
+    <fast-table-demo></fast-table-demo>
+  </div>
 </template>
 
 <script>
@@ -17,4 +19,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
+  .demos {
+    height: 100%;
+  }
 </style>

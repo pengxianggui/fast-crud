@@ -12,7 +12,7 @@
              :on-change="handleChange"
              :on-exceed="handleExceed"
              class="fc-fast-upload"
-             :class="{'__hide': hideUploadButton}">
+             :class="{'fc-fast-upload__hidden': hideUploadButton, 'fc-fast-upload__disable': disabled}">
     <template #default>
       <i class="el-icon-plus"></i>
     </template>
@@ -245,11 +245,14 @@ export default {
   }
 }
 
-.fc-fast-upload.__hide {
+.fc-fast-upload.fc-fast-upload__hidden {
   ::v-deep {
     .el-upload {
       display: none;
     }
   }
+}
+.fc-fast-upload.fc-fast-upload__disable {
+  border: none !important;
 }
 </style>

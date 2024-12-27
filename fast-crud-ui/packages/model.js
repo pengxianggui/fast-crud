@@ -1,5 +1,5 @@
 import {Message, MessageBox} from 'element-ui';
-import {caseToCamel, coverMerge, defaultIfBlank, isEmpty, isUndefined} from "./util/util.js";
+import {assert, caseToCamel, coverMerge, defaultIfBlank, isEmpty, isUndefined} from "./util/util.js";
 
 export const Opt = Object.freeze({
     EQ: "=",
@@ -283,6 +283,7 @@ class FastTableOption {
         layout: 'total, sizes, prev, pager, next, jumper', 'page-sizes': [10, 20, 50, 100, 200], size: 10
     };
     style = {
+        flexHeight: false, // 表格是否使用弹性高度: 自适应高度, 撑满全屏
         bodyRowHeight: '50px', // 行高
         size: 'medium',  // 尺寸
         formLabelWidth: 'auto', // 表单标签宽度:
@@ -486,6 +487,7 @@ class FastTableOption {
                         size: 10
                     },
                     style = {
+                        flexHeight: false,
                         bodyRowHeight: '50px',
                         size: 'medium',
                         formLabelWidth: 'auto',

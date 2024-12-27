@@ -1,5 +1,11 @@
 import {cloneDeep} from 'lodash-es'
 
+export function assert(cond, msg) {
+    if (!cond) {
+        throw new Error(msg);
+    }
+}
+
 export function addStartWith(str, startWith) {
     return str.startsWith(startWith) ? str : startWith + str;
 }
@@ -107,6 +113,7 @@ export function isUndefined(val) {
 export function typeOf(value) {
     return Object.prototype.toString.call(value);
 }
+
 
 /**
  * 判断一个值是否为空.
@@ -307,4 +314,33 @@ export function getNameFromUrl(url) {
         return decodeUrl;
     }
     return decodeUrl.substring(lastIndex + 1);
+}
+
+/**
+ * 获取元素的完整高度, 包括offsetHeight + 上下margin值
+ * @param ele
+ */
+export function getFullHeight(ele) {
+    if (isUndefined(ele)) {
+        return 0;
+    }
+    const style = window.getComputedStyle(ele);
+    const marginTop = parseFloat(style.marginTop) || 0;
+    const marginBottom = parseFloat(style.marginBottom) || 0;
+    return ele.offsetHeight + marginTop + marginBottom;
+}
+
+/**
+ * 获取元素内部高度, 内高
+ * @param ele
+ * @returns {number}
+ */
+export function getInnerHeight(ele) {
+    if (isUndefined(ele)) {
+        return 0;
+    }
+    const style = window.getComputedStyle(ele);
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const paddingBottom = parseFloat(style.paddingBottom) || 0;
+    return ele.clientHeight - (paddingTop + paddingBottom);
 }

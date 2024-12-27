@@ -35,16 +35,16 @@ export default {
             const {column, $index, config} = scope;
             const {property} = column;
             const ref = this.$refs[property + $index];
-            const {eventHandlers: {valid} = {}} = config[property]
+            const {eventHandlers: {valid} = {}, props} = config[property]
             if (valid) {
-                valid(val, ref);
+                valid(val, ref, props);
             }
         },
-        changeBlur(event, scope) {
-            this.$emit('blur', event, scope);
-        },
-        changeFocus(event, scope) {
+        handleFocus(event, scope) {
             this.$emit('focus', event, scope)
+        },
+        handleBlur(event, scope) {
+            this.$emit('blur', event, scope)
         },
         handleInput(val, scope) {
             this.$emit('input', val, scope);

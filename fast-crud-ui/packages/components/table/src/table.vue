@@ -1,15 +1,14 @@
 <template>
-  <div class="fc-fast-table" :key="tableKey">
-    <div class="fc-fast-table-title" v-if="option.title">{{ option.title }}</div>
-    <div class="fc-quick-filter-wrapper" v-if="quickFilters.length > 0">
+  <div class="fc-fast-table">
+    <div ref="title" class="fc-fast-table-title" v-if="option.title">{{ option.title }}</div>
+    <div ref="quick" class="fc-quick-filter-wrapper" v-if="quickFilters.length > 0">
       <!-- 快筛 -->
       <quick-filter-form :filters="quickFilters"
                          :form-label-width="option.style.formLabelWidth"
                          :size="option.style.size"
                          @search="pageLoad"/>
     </div>
-    <el-divider class="fc-fast-table-divider"></el-divider>
-    <div class="fc-fast-table-operation-bar">
+    <div ref="operation" class="fc-fast-table-operation-bar">
       <div class="fc-operation-filter">
         <!-- 简筛区 -->
         <easy-filter :filters="easyFilters" :size="option.style.size" @search="pageLoad"
@@ -51,13 +50,15 @@
         </el-dropdown>
       </div>
     </div>
-    <div class="fc-dynamic-filter-wrapper">
+    <div ref="dynamic" class="fc-dynamic-filter-wrapper">
       <!-- 动筛列表 -->
       <dynamic-filter-list :filters="dynamicFilters" :size="option.style.size"
                            @search="pageLoad"></dynamic-filter-list>
     </div>
     <div class="fc-fast-table-wrapper">
-      <el-table border :data="list"
+      <el-table v-bind="$attrs"
+                :data="list"
+                ref="table"
                 :row-style="rowStyle"
                 highlight-current-row
                 @current-change="handleCurrentChange"
@@ -66,12 +67,15 @@
                 @select="handleSelect"
                 @selection-change="handleSelectionChange"
                 @select-all="handleSelectAll"
-                v-loading="loading">
+                v-loading="loading"
+                :key="tableKey"
+                :height="heightTable"
+                border>
         <el-table-column type="selection" width="55" v-if="option.enableMulti"></el-table-column>
         <slot></slot>
       </el-table>
     </div>
-    <div class="fc-pagination-wrapper">
+    <div ref="pagination" class="fc-pagination-wrapper">
       <el-pagination :page-size.sync="pageQuery.size"
                      :current-page.sync="pageQuery.current"
                      :page-sizes="option.pagination['page-sizes']"
@@ -92,7 +96,14 @@ import DynamicFilterForm from "./dynamic-filter-form.vue";
 import DynamicFilterList from "./dynamic-filter-list.vue";
 import {Order, PageQuery} from '../../../model';
 import FastTableOption from "../../../model";
-import {ifBlank, isBoolean, isEmpty, noRepeatAdd} from "../../../util/util";
+import {
+  getFullHeight, getInnerHeight,
+  ifBlank,
+  isBoolean,
+  isEmpty,
+  isNull,
+  noRepeatAdd
+} from "../../../util/util";
 import {getEditConfig, iterBuildComponentConfig, rowValid, toTableRow} from "./util";
 import {openDialog} from "../../../util/dialog";
 import {buildFinalComponentConfig} from "../../mapping";
@@ -126,6 +137,12 @@ export default {
       return {
         height: this.option.style.bodyRowHeight
       }
+    },
+    heightTable() {
+      if (this.$attrs.hasOwnProperty('height')) { // 自定义最高优先级
+        return this.$attrs.height;
+      }
+      return this.tableFlexHeight;
     }
   },
   data() {
@@ -147,7 +164,8 @@ export default {
       easyFilters: [], // 简筛配置
       dynamicFilters: [], // 动筛配置
       list: [], // 表格当前页的数据, 不单纯有业务数据, 还有配置数据(用于实现行内、弹窗表单)
-      total: 0 // 表格总数
+      total: 0, // 表格总数
+      tableFlexHeight: null, //表格的弹性高度(动态计算值), 初始值是null非常重要, 如果内部计算出现问题外部又没自定义高度,相当于没有设置height值, 默认展示效果
     }
   },
   provide() {
@@ -161,8 +179,29 @@ export default {
     if (!this.option.lazyLoad) {
       this.pageLoad();
     }
+    if (this.option.style.flexHeight) {
+      this.$nextTick(() => {
+        this.calTableHeight();
+        window.addEventListener('resize', this.calTableHeight);
+        this.$watch('dynamicFilters.length', () => { // 动态过滤器变化时可能高度改变, 重新计算高度
+          this.calTableHeight();
+        })
+      });
+    }
   },
   methods: {
+    /**
+     * 添加到编辑行
+     * @param rows
+     */
+    addToEditRows(rows) {
+      this.editRows.push(...rows);
+      rowValid(this.editRows).catch((errors) => {
+      }); // 立即校验一下以便标识出必填等字段
+    },
+    /**
+     * 重新渲染table，提供给外部是用
+     */
     reRender() {
       this.tableKey++;
     },
@@ -239,11 +278,14 @@ export default {
         beforeLoad.call(context, {query: this.pageQuery}).then(() => {
           this.loading = true;
           this.$http.post(this.option.pageUrl, this.pageQuery.toJson()).then(res => {
-            this.cancelEditStatus();
+            this.exitEditStatus();
             const loadSuccess = this.option.loadSuccess;
             loadSuccess.call(context, {query: this.pageQuery, data: res.data, res: res}).then(({records, total}) => {
               this.list = records.map(r => toTableRow(r, this.columnConfig, 'normal', 'inline'));
               this.total = total;
+              this.$nextTick(() => {
+                this.setChoseRow(0); // 默认选中第一行
+              })
             }).finally(() => {
               resolve();
             })
@@ -262,10 +304,7 @@ export default {
       })
     },
     toInsert() {
-      const {insertable, editType} = this.option;
-      if (insertable === false) {
-        return;
-      }
+      const {editType} = this.option;
       if (this.status !== 'normal' && this.status !== 'insert') {
         console.warn(`当前FastTable处于${this.status}状态, 不允许新增`);
         return;
@@ -280,6 +319,9 @@ export default {
      * 激活行内新增
      */
     addForm() {
+      if (this.option.insertable === false) {
+        return;
+      }
       const {context, beforeToInsert} = this.option;
       beforeToInsert.call(context).then(() => {
         const fatRow = toTableRow({}, this.columnConfig, 'insert', 'form');
@@ -308,6 +350,9 @@ export default {
      * 激活表单新增
      */
     addRow() {
+      if (this.option.insertable === false) {
+        return;
+      }
       if (this.status !== 'normal' && this.status !== 'insert') {
         Message.warning(`当前FastTable处于${this.status}状态, 不允许新增`);
         return;
@@ -316,9 +361,7 @@ export default {
       beforeToInsert.call(context).then(() => {
         const newRow = toTableRow({}, this.columnConfig, 'insert', 'inline');
         this.list.unshift(newRow);
-        this.editRows.push(newRow);
-        rowValid(this.editRows).catch((errors) => {
-        }); // 立即校验一下以便标识出必填等字段
+        this.addToEditRows([newRow]);
       }).catch(() => {
         console.debug('你已取消新建')
       })
@@ -327,6 +370,9 @@ export default {
      * 删除: 删除当前选中行记录
      */
     deleteRow() {
+      if (this.option.deletable === false) {
+        return;
+      }
       const {choseRow} = this;
       const rows = [];
       if (!isEmpty(choseRow)) {
@@ -335,6 +381,9 @@ export default {
       this.option._deleteRows(rows).then(() => this.pageLoad());
     },
     deleteRows() {
+      if (this.option.deletable === false) {
+        return;
+      }
       this.option._deleteRows(this.checkedRows).then(() => this.pageLoad());
     },
     /**
@@ -380,7 +429,20 @@ export default {
     },
     handleCurrentChange(row) {
       this.choseRow = row;
-      this.$emit('current-change', {fatRow: row, row: row.row})
+      this.$emit('current-change', {fatRow: row, row: isNull(row) ? null : row.row});
+    },
+    /**
+     * 选中指定行
+     * @param index 不传默认是0
+     */
+    setChoseRow(index = 0) {
+      if (this.list.length === 0) {
+        this.choseRow = null;
+        this.$refs['table'].setCurrentRow(); // 清除选中高亮
+        return;
+      }
+      this.choseRow = this.list[index];
+      this.$refs['table'].setCurrentRow(this.choseRow);
     },
     handleSelect(rows, row) {
       this.$emit('select', {fatRows: rows, rows: rows.map(r => r.row), fatRow: row, row: row.row});
@@ -399,9 +461,6 @@ export default {
       this.$emit('row-dblclick', {fatRow: row, column, event, row: row.row});
       const {enableDblClickEdit} = this.option;
       if (!enableDblClickEdit) {
-        return;
-      }
-      if (this.option.updatable === false) {
         return;
       }
       // 若当前编辑行已经处于编辑状态, 则直接emit并返回;
@@ -423,6 +482,9 @@ export default {
      * @param row
      */
     updateForm(row) {
+      if (this.option.updatable === false) {
+        return;
+      }
       const {context, beforeToUpdate} = this.option;
       beforeToUpdate.call(context, {fatRows: [row], rows: [row.row]}).then(() => {
         openDialog({
@@ -447,6 +509,9 @@ export default {
       })
     },
     updateRow(row) {
+      if (this.option.updatable === false) {
+        return;
+      }
       if (this.status !== 'normal' && this.status !== 'update') {
         Message.warning(`当前FastTable处于${this.status}状态, 不允许更新`);
         return;
@@ -454,7 +519,7 @@ export default {
       const {context, beforeToUpdate} = this.option;
       beforeToUpdate.call(context, {fatRows: [row], rows: [row.row]}).then(() => {
         row.status = 'update';
-        this.editRows.push(row);
+        this.addToEditRows([row]);
       }).catch(() => {
         console.debug('你已取消编辑')
       })
@@ -474,7 +539,7 @@ export default {
         editRows: this.list.map(r => r.editRow)
       }).then(() => {
         this.list.forEach(r => r.status = 'update');
-        this.editRows.push(...this.list);
+        this.addToEditRows(this.list);
       }).catch(() => {
         console.debug('你已取消编辑')
       })
@@ -497,13 +562,16 @@ export default {
     exitEditStatus() {
       // 移除列表中可能存在的insert状态记录
       remove(this.list, item => item.status === 'insert');
+      const isNormal = (this.status === 'normal'); // 非编辑状态
       // 将编辑的行状态改为normal, 并清空editRows,因为editRows是list中的引用，所以不能光清空数组
       this.editRows.forEach(r => {
         r.status = 'normal';
         r.editRow = {...r.row} // 重置editRow
       });
       this.editRows.length = 0;
-      this.reRender(); // 控制表格重新渲染
+      if (isNormal === false) { // 编辑状态时(尤其新建状态), 控制表格重新渲染, 避免一些“残留”
+        this.reRender();
+      }
     },
     /**
      * 保存编辑的行: 包括新增或更新状态的行。内部会将保存成功的记录的行状态置为normal
@@ -551,14 +619,33 @@ export default {
      */
     customTable() {
       // TODO 2.0 自定义表格: 可自定义——表格标题、默认简筛字段、默认排序字段和排序方式、各列宽、冻结哪些列等
+    },
+    /**
+     * 计算表格自适高度: tableFlexHeight
+     */
+    calTableHeight() {
+      const totalHeight = getInnerHeight(this.$el);
+      const titleHeight = getFullHeight(this.$refs.title);
+      const quickHeight = getFullHeight(this.$refs.quick);
+      const operationHeight = getFullHeight(this.$refs.operation);
+      const dynamicHeight = getFullHeight(this.$refs.dynamic);
+      const paginationHeight = getFullHeight(this.$refs.pagination);
+      this.tableFlexHeight = totalHeight - titleHeight - quickHeight - operationHeight - dynamicHeight - paginationHeight - 2;
     }
+  },
+  beforeDestroy() {
+    // 清理事件监听
+    window.removeEventListener('resize', this.calTableHeight);
   }
 }
 </script>
 
 <style scoped lang="scss">
 .fc-fast-table {
+  height: 100%;
+  box-sizing: border-box;
   padding: 10px;
+  overflow: auto;
 
   .fc-fast-table-title {
     font-weight: bold;
@@ -566,6 +653,9 @@ export default {
 
   .fc-quick-filter-wrapper {
     padding: 10px 0;
+    box-sizing: border-box;
+    border-bottom: 1px solid #dfdfdf;
+    margin-bottom: 10px;
 
     .fc-quick-filter-form {
       display: flex;
@@ -592,6 +682,7 @@ export default {
   }
 
   .fc-fast-table-wrapper {
+    //height: auto;
     ::v-deep {
       .el-table__cell {
         padding: 0;
