@@ -1,5 +1,6 @@
 <template>
-  <el-table-column class-name="fc-table-column" :prop="prop" :label="label" :min-width="minWidth" :show-overflow-tooltip="showOverflowToolTip" v-bind="$attrs">
+  <el-table-column class-name="fc-table-column" :prop="prop" :label="label" :min-width="minWidth"
+                   :show-overflow-tooltip="showOverflowToolTip" v-bind="$attrs">
     <template v-slot:header="{column, $index}">
       <fast-table-head-cell class="fc-table-column-head-cell" :class="{'filter': filter}" :column="columnProp"
                             @click.native="headCellClick(column)">
@@ -17,11 +18,10 @@
           </slot>
         </div>
         <slot v-bind:edit="{row, editRow, status, config, column, $index}" v-else>
-          <component :is="config[column.property]['component']"
-                     v-model="editRow[column.property]"
+          <el-switch v-model="editRow[column.property]"
                      v-bind="config[column.property]['props']"
                      :ref="column.property + $index"
-                     @change="(val) => handleChange(val, {row, editRow, status, column, config, $index})"></component>
+                     @change="(val) => handleChange(val, {row, editRow, status, column, config, $index})"></el-switch>
         </slot>
       </slot>
     </template>

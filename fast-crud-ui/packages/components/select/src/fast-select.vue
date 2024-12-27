@@ -1,5 +1,12 @@
 <template>
-  <el-select v-model="modelValue" v-bind="$attrs" :size="size" :multiple="multiple" @input="handleInput" @change="handleChange">
+  <el-select v-model="modelValue" v-bind="$attrs" :size="size" :multiple="multiple"
+             @input="handleInput"
+             @change="handleChange"
+             @clear="() => $emit('clear')"
+             @focus="(event) => $emit('focus', event)"
+             @blur="(event) => $emit('blur', event)"
+             @visible-change="(visible) => $emit('visible-change', visible)"
+             @remove-tag="(tagVal) => $emit('remove-tag', tagVal)">
     <el-option v-for="item in options" :key="item.value" :label="item[labelKey]" :value="item[valKey]"
                :disabled="disableVal.indexOf(item[valKey]) > -1"></el-option>
   </el-select>

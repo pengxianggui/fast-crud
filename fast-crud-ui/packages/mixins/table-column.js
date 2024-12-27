@@ -39,6 +39,18 @@ export default {
             if (valid) {
                 valid(val, ref);
             }
+        },
+        changeBlur(event, scope) {
+            this.$emit('blur', event, scope);
+        },
+        changeFocus(event, scope) {
+            this.$emit('focus', event, scope)
+        },
+        handleInput(val, scope) {
+            this.$emit('input', val, scope);
+        },
+        handleClear(scope) {
+            this.$emit('input', scope);
         }
     }
 }

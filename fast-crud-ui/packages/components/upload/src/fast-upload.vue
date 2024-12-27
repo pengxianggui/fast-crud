@@ -165,15 +165,21 @@ export default {
       } else {
         this.modelValue = this.modelValue.push(url);
       }
-      if (this.$attrs.hasOwnProperty('on-success')) {
-        const customOnSuccess = this.$attrs['on-success'];
-        if (isFunction(customOnSuccess)) {
-          customOnSuccess(response, file, fileList);
+      try {
+        if (this.$attrs.hasOwnProperty('on-success')) {
+          const customOnSuccess = this.$attrs['on-success'];
+          if (isFunction(customOnSuccess)) {
+            customOnSuccess(response, file, fileList);
+          }
         }
+      } catch (err) {
+        log.error(err);
       }
+      this.$emit('success', {response, file, fileList})
     },
     handleError(err, file, fileList) {
       // debugger
+      this.$emit('fail', {err, file, fileList})
     },
     handleChange(file, fileList) {
       this.$nextTick(() => { // 延迟执行, 等待modelValue更新
@@ -182,6 +188,7 @@ export default {
     },
     handleExceed(files, fileList) {
       Message.warning('文件数量超过限制');
+      this.$emit('exceed', {files, fileList})
     },
     handleRemove(file) {
       const index = this.files.findIndex(f => f.url === file.url);

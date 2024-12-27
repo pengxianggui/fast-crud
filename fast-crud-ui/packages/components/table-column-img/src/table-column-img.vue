@@ -21,13 +21,15 @@
           </slot>
         </template>
         <slot v-bind:edit="{row, editRow, status, config, column, $index}" v-else>
-          <component :style="{'height': tableStyle.bodyRowHeight}"
-                     v-model="editRow[column.property]"
-                     :is="config[column.property]['component']"
-                     :row="editRow" :col="column.property"
-                     v-bind="config[column.property]['props']"
-                     :ref="column.property + $index"
-                     @change="(val) => handleChange(val, {row, editRow, status, column, config, $index})"></component>
+          <fast-upload :style="{'height': tableStyle.bodyRowHeight}"
+                       v-model="editRow[column.property]"
+                       :row="editRow" :col="column.property"
+                       v-bind="config[column.property]['props']"
+                       :ref="column.property + $index"
+                       @change="(val) => handleChange(val, {row, editRow, status, column, config, $index})"
+                       @success="(componentScope) => $emit('success', componentScope, {row, editRow, status, column, config, $index})"
+                       @fail="(componentScope) => $emit('fail', componentScope, {row, editRow, status, column, config, $index})"
+                       @exceed="(componentScope) => $emit('exceed', componentScope, {row, editRow, status, column, config, $index})"></fast-upload>
         </slot>
       </slot>
     </template>
@@ -36,13 +38,12 @@
 
 <script>
 import FastTableHeadCell from "../../table-head-cell/src/table-head-cell.vue";
+import FastUpload from "../../upload/src/fast-upload.vue";
 import tableColumn from "../../../mixins/table-column";
-import {isArray} from "../../../util/util";
 
 export default {
   name: "FastTableColumnImg",
-  methods: {isArray},
-  components: {FastTableHeadCell},
+  components: {FastTableHeadCell, FastUpload},
   mixins: [tableColumn],
   props: {
     minWidth: {

@@ -42,6 +42,9 @@
         <el-checkbox v-model="params.disableUpdateAM">阿明不允许编辑</el-checkbox>
         <el-checkbox v-model="params.disableUpdateToZs">名字不允许改为张三</el-checkbox>
         <el-checkbox v-model="params.disableInsertLs">不允许添加李四</el-checkbox>
+        <el-checkbox v-model="params.disableCancelWhenUpdate">更新时不允许取消</el-checkbox>
+        <h3>事件</h3>
+        <el-checkbox v-model="params.autoSetGraduatedWhenAgeChange">年龄大于50自动毕业</el-checkbox>
         <h3>方法</h3>
         <div>
           <el-button size="mini" @click="$refs['fastTable'].addRow()">插入一行</el-button>
@@ -50,12 +53,19 @@
       </el-form>
     </div>
 
-    <fast-table ref="fastTable" class="el-card" :option="tableOption">
+    <fast-table ref="fastTable" class="el-card" :option="tableOption"
+                @current-change="handleCurrentChange"
+                @row-click="handleRowClick"
+                @row-dblclick="handleRowDblClick"
+                @select="handleSelect"
+                @selection-change="handleSelectionChange"
+                @select-all="handleSelectAll">
       <fast-table-column label="ID" prop="id"/>
       <fast-table-column-img label="头像" prop="avatarUrl" required/>
       <fast-table-column-input label="姓名" prop="name" first-filter :quick-filter="true" required/>
       <fast-table-column-number label="年龄" prop="age" required
-                                :rules="[{type: 'number', min: 18, max: 60, message: '年龄必须在[18,60]之间'}]"/>
+                                :rules="[{type: 'number', min: 18, max: 60, message: '年龄必须在[18,60]之间'}]"
+                                @change="handleAgeChange"/>
       <fast-table-column-select label="性别" prop="sex" :options="sexOptions" :quick-filter="true" required/>
       <fast-table-column-select label="爱好" prop="hobby" :options="hobbyOptions"
                                 :quick-filter="true" quick-filter-block quick-filter-checkbox
@@ -88,6 +98,7 @@
 import FastTableOption from "../../packages/model";
 import {Message} from 'element-ui';
 import staticDict from './dict'
+import {isNull, isNumber} from "../../packages/util/util";
 
 export default {
   name: "FastTableDemo",
@@ -213,6 +224,13 @@ export default {
             return Promise.reject(); // 通过reject覆盖默认的删除失败提示
           }
           return Promise.resolve();
+        },
+        beforeCancel({fatRows, rows, status}) {
+          if (status === 'update' && this.params.disableCancelWhenUpdate) {
+            Message.warning('你已经勾选更新时不允许取消')
+            return Promise.reject();
+          }
+          return Promise.resolve();
         }
       }),
 
@@ -239,6 +257,8 @@ export default {
         disableUpdateAM: true, // 阿明不允许编辑
         disableUpdateToZs: true, // 名字不允许改为张三
         disableInsertLs: true, // 不允许添加李四
+        disableCancelWhenUpdate: true, // 更新行时不允许取消
+        autoSetGraduatedWhenAgeChange: true, // 年龄大于50自动毕业
       },
       ...staticDict
     }
@@ -255,6 +275,58 @@ export default {
     edit({row: fatRow, column, $index}) {
       const {row, editRow, config, status} = fatRow
       this.$refs['fastTable'].updateForm(fatRow)
+    },
+    handleAgeChange(age, {row, editRow, status, column, config, $index}) {
+      console.log('index:', $index);
+      console.log('status:', status);
+      console.log('editRow:', editRow);
+      console.log('row:', row);
+      console.log('config:', config);
+      console.log('column:', column);
+      if (this.params.autoSetGraduatedWhenAgeChange === false) {
+        return;
+      }
+      if (isNumber(age) && age > 50) {
+        editRow.graduated = true;
+      } else {
+        editRow.graduated = false;
+      }
+    },
+    handleCurrentChange({fatRow, row}) {
+      console.log('current-change..........................................................')
+      console.log('fatRow:', fatRow);
+      console.log('row:', row);
+    },
+    handleSelect({fatRows, rows, fatRow, row}) {
+      console.log('select..........................................................')
+      console.log('fatRows:', fatRows);
+      console.log('rows:', rows);
+      console.log('fatRow:', fatRow);
+      console.log('row:', row);
+    },
+    handleSelectionChange({fatRows, rows}) {
+      console.log('selection-change..........................................................')
+      console.log('fatRows:', fatRows);
+      console.log('rows:', rows);
+    },
+    handleSelectAll({fatRows, rows}) {
+      console.log('select-all..........................................................')
+      console.log('fatRows:', fatRows)
+      console.log('rows:', rows)
+    },
+    handleRowClick({fatRow, row, column, event}) {
+      console.log('row-click..........................................................')
+      console.log('fatRow:', fatRow);
+      console.log('row:', row);
+      console.log('column:', column);
+      console.log('event:', event);
+    },
+    handleRowDblClick({fatRow, row, column, event}) {
+      console.log('row-dblclick..........................................................')
+      console.log('fatRow:', fatRow);
+      console.log('row:', row);
+      console.log('column:', column);
+      console.log('event:', event);
     }
   }
 }

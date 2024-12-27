@@ -60,9 +60,12 @@
       <el-table border :data="list"
                 :row-style="rowStyle"
                 highlight-current-row
-                @current-change="handleChosedChange"
-                @selection-change="handleCheckedChange"
+                @current-change="handleCurrentChange"
+                @row-click="handleRowClick"
                 @row-dblclick="handleRowDblclick"
+                @select="handleSelect"
+                @selection-change="handleSelectionChange"
+                @select-all="handleSelectAll"
                 v-loading="loading">
         <el-table-column type="selection" width="55" v-if="option.enableMulti"></el-table-column>
         <slot></slot>
@@ -375,16 +378,27 @@ export default {
         console.log(msg)
       })
     },
-    handleChosedChange(row) {
+    handleCurrentChange(row) {
       this.choseRow = row;
+      this.$emit('current-change', {fatRow: row, row: row.row})
     },
-    handleCheckedChange(rows) {
+    handleSelect(rows, row) {
+      this.$emit('select', {fatRows: rows, rows: rows.map(r => r.row), fatRow: row, row: row.row});
+    },
+    handleSelectionChange(rows) {
       this.checkedRows = rows;
+      this.$emit('@selection-change', {fatRows: rows, rows: rows.map(r => r.row)})
+    },
+    handleSelectAll(rows) {
+      this.$emit('select-all', {fatRows: rows, rows: rows.map(r => r.row)});
+    },
+    handleRowClick(row, column, event) {
+      this.$emit('row-click', {fatRow: row, column, event, row: row.row});
     },
     handleRowDblclick(row, column, event) {
+      this.$emit('row-dblclick', {fatRow: row, column, event, row: row.row});
       const {enableDblClickEdit} = this.option;
       if (!enableDblClickEdit) {
-        this.$emit('row-dblclick', row, column, event);
         return;
       }
       if (this.option.updatable === false) {
@@ -392,16 +406,12 @@ export default {
       }
       // 若当前编辑行已经处于编辑状态, 则直接emit并返回;
       if (row.status === 'update' || row.status === 'insert') {
-        this.$emit('row-dblclick', row, column, event);
         return;
       }
-
       // 当前存在编辑行时，不允许再新增编辑行
       if (this.status !== 'normal') {
-        this.$emit('row-dblclick', row, column, event);
         return;
       }
-
       if (this.option.editType === 'form') {
         this.updateForm(row);
       } else {
@@ -473,9 +483,18 @@ export default {
      * 取消编辑状态: 包括新增、更新状态。会将编辑状态的行状态重置为'normal', 并清空编辑行数组editRows, 同时将表格状态重置为'normal'
      */
     cancelEditStatus() {
-      if (this.editRows.length === 0) {
-        return;
-      }
+      const {context, beforeCancel} = this.option;
+      beforeCancel.call(context, {
+        fatRows: this.editRows,
+        rows: this.editRows.map(r => r.row),
+        status: this.status
+      }).then(() => {
+        this.exitEditStatus();
+      }).catch(() => {
+        // 不允许取消
+      })
+    },
+    exitEditStatus() {
       // 移除列表中可能存在的insert状态记录
       remove(this.list, item => item.status === 'insert');
       // 将编辑的行状态改为normal, 并清空editRows,因为editRows是list中的引用，所以不能光清空数组
@@ -506,7 +525,7 @@ export default {
           promise = this.option._updateRows(this.editRows);
         }
         promise.then(() => {
-          this.cancelEditStatus();
+          this.exitEditStatus(); // 退出编辑状态
           this.pageLoad();
         }).catch(() => {
         });

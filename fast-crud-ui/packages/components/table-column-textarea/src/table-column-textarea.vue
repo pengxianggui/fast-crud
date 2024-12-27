@@ -22,11 +22,14 @@
           </slot>
         </div>
         <slot v-bind:edit="{row, editRow, status, config, column, $index}" v-else>
-          <component :is="config[column.property]['component']"
-                     v-model="editRow[column.property]"
-                     v-bind="config[column.property]['props']"
-                     :ref="column.property + $index"
-                     @change="(val) => handleChange(val, {row, editRow, status, column, config, $index})"></component>
+          <el-input v-model="editRow[column.property]"
+                    v-bind="config[column.property]['props']"
+                    :ref="column.property + $index"
+                    @change="(val) => handleChange(val, {row, editRow, status, column, config, $index})"
+                    @blur="(event) => changeBlur(event, {row, editRow, status, column, config, $index})"
+                    @focus="(event) => changeFocus(event, {row, editRow, status, column, config, $index})"
+                    @input="(val) => handleInput(val, {row, editRow, status, column, config, $index})"
+                    @clear="() => handleClear({row, editRow, status, column, config, $index})"></el-input>
         </slot>
       </slot>
     </template>

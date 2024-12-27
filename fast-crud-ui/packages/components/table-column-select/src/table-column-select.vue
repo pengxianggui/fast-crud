@@ -1,5 +1,6 @@
 <template>
-  <el-table-column class-name="fc-table-column" :prop="prop" :label="label" :min-width="minWidth" :show-overflow-tooltip="showOverflowToolTip"
+  <el-table-column class-name="fc-table-column" :prop="prop" :label="label" :min-width="minWidth"
+                   :show-overflow-tooltip="showOverflowToolTip"
                    v-bind="$attrs">
     <template v-slot:header="{column, $index}">
       <fast-table-head-cell class="fc-table-column-head-cell" :class="{'filter': filter}" :column="columnProp"
@@ -18,11 +19,15 @@
           </slot>
         </div>
         <slot v-bind:edit="{row, editRow, status, config, column, $index}" v-else>
-          <component :is="config[column.property]['component']"
-                     v-model="editRow[column.property]"
-                     v-bind="config[column.property]['props']"
-                     :ref="column.property + $index"
-                     @change="(val) => handleChange(val, {row, editRow, status, column, config, $index})"></component>
+          <fast-select v-model="editRow[column.property]"
+                       v-bind="config[column.property]['props']"
+                       :ref="column.property + $index"
+                       @change="(val) => handleChange(val, {row, editRow, status, column, config, $index})"
+                       @blur="(event) => changeBlur(event, {row, editRow, status, column, config, $index})"
+                       @focus="(event) => changeFocus(event, {row, editRow, status, column, config, $index})"
+                       @clear="() => handleClear({row, editRow, status, column, config, $index})"
+                       @visible-change="(visible) => $emit('visible-change', visible, {row, editRow, status, column, config, $index})"
+                       @remove-tag="(tagVal) => $emit('remove-tag', tagVal, {row, editRow, status, column, config, $index})"></fast-select>
         </slot>
       </slot>
     </template>
@@ -33,10 +38,11 @@
 
 import FastTableHeadCell from "../../table-head-cell/src/table-head-cell.vue";
 import tableColumn from "../../../mixins/table-column";
+import FastSelect from "../../select/src/fast-select.vue";
 
 export default {
   name: "FastTableColumnSelect",
-  components: {FastTableHeadCell},
+  components: {FastTableHeadCell, FastSelect},
   mixins: [tableColumn],
   props: {
     options: {

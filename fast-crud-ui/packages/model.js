@@ -300,12 +300,10 @@ class FastTableOption {
     beforeDelete;
     deleteSuccess;
     deleteFail;
-    click;
-    dblclick;
     beforeToInsert; // 进入新建前(行内编辑新建前，或新建表单弹窗前)
     beforeToUpdate; // 进入更新前(行内编辑更新前，或更新表单弹窗前)
     beforeDeleteTip;
-    beforeCancel;
+    beforeCancel; // 工能区中取消按钮点击前
 
     static $http;
 
@@ -508,10 +506,9 @@ class FastTableOption {
                     beforeDelete = ({fatRows, rows}) => Promise.resolve(rows),
                     deleteSuccess = ({fatRows, rows, res}) => Promise.resolve(),
                     deleteFail = ({fatRows, rows, error}) => Promise.resolve(),
-                    click = (scope) => Promise.resolve(),
-                    dblclick = (scope) => Promise.resolve(),
-                    beforeCancel = (scope) => Promise.resolve(),
+                    beforeCancel = ({fatRows, rows, status}) => Promise.resolve(),
                 }) {
+        // TODO 1.0 入参校验
         this.context = context;
         this.title = title;
         this.module = module;
@@ -553,9 +550,6 @@ class FastTableOption {
         this.beforeDelete = beforeDelete;
         this.deleteSuccess = deleteSuccess;
         this.deleteFail = deleteFail;
-
-        this.click = click;
-        this.dblclick = dblclick;
 
         this.beforeToInsert = beforeToInsert;
         this.beforeToUpdate = beforeToUpdate;
