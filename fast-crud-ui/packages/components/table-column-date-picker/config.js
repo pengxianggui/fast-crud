@@ -45,6 +45,10 @@ export default {
         if (type === 'quick') {
             val = ternary(isUndefined(defaultVal), val, defaultVal);
         }
+        const {'value-format': valueFormat} = validProps;
+        if (config.props.type === 'datetime' && isUndefined(valueFormat)) {
+            validProps['value-format'] = 'yyyy-MM-dd HH:mm:ss';
+        }
         config.val = val;
         config.props = {
             ...validProps,
@@ -60,6 +64,10 @@ export default {
             rules.push({required: true, message: `${label}不能为空`})
         }
         config.val = ternary(isUndefined(defaultVal), defaultEditConfig.val, defaultVal);
+        const {'value-format': valueFormat} = validProps;
+        if (config.props.type === 'datetime' && isUndefined(valueFormat)) {
+            validProps['value-format'] = 'yyyy-MM-dd HH:mm:ss';
+        }
         config.props = {
             ...validProps,
             rules: rules

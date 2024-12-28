@@ -85,7 +85,6 @@
       <fast-table-column-date-picker label="创建时间" prop="createTime" :picker-options__q="pickerOptionsQ"
                                      type="datetime"
                                      :quick-filter="false" :default-val__q="defaultQueryOfCreatedTime"
-                                     value-format__q="yyyy-MM-dd HH:mm:ss"
                                      value-format__e="yyyy-MM-ddTHH:mm:ss"
                                      :default-time="['00:00:00', '23:59:59']"
                                      :editable="false"/>
@@ -99,10 +98,10 @@
 </template>
 
 <script>
-import FastTableOption from "../../packages/model";
+import FastTableOption from "../../../packages/model";
 import {Message} from 'element-ui';
 import staticDict from './dict'
-import {isNumber} from "../../packages/util/util";
+import {isNumber} from "../../../packages/util/util";
 
 export default {
   name: "FastTableDemo",

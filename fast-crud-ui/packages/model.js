@@ -1,5 +1,5 @@
 import {Message, MessageBox} from 'element-ui';
-import {assert, caseToCamel, coverMerge, defaultIfBlank, isEmpty, isUndefined} from "./util/util.js";
+import {caseToCamel, coverMerge, defaultIfBlank, isBoolean, isEmpty, isUndefined} from "./util/util.js";
 
 export const Opt = Object.freeze({
     EQ: "=",
@@ -99,6 +99,9 @@ export class Query {
     }
 
     addOrder(col, asc) {
+        if (isEmpty(col) || !isBoolean(asc)) {
+            return;
+        }
         this.removeOrder(col)
         this.orders.push(new Order(col, asc));
         return this;
@@ -114,11 +117,6 @@ export class Query {
 
     getOrder(col) {
         return this.orders.find(order => order.col === col);
-    }
-
-    setOrders(orders) {
-        this.orders = orders;
-        return this;
     }
 
     toJson() {

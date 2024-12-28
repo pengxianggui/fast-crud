@@ -1,17 +1,17 @@
 <template>
   <div class="demos">
-    <!--  <valid-demo></valid-demo>-->
-    <fast-table-demo></fast-table-demo>
+    <easy-demo></easy-demo>
+<!--    <full-demo></full-demo>-->
   </div>
 </template>
 
 <script>
-import FastTableDemo from "./example/FastTableDemo.vue";
-import ValidDemo from "@/example/ValidDemo.vue";
+import EasyDemo from "@/example/easy/EasyDemo.vue";
+import FullDemo from "./example/full/FullDemo.vue";
 
 export default {
   name: "App",
-  components: {ValidDemo, FastTableDemo},
+  components: {EasyDemo, FullDemo},
   data() {
     return {}
   }

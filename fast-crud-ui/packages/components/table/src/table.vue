@@ -149,7 +149,7 @@ export default {
     const size = this.option.pagination.size;
     const pageQuery = new PageQuery(1, size);
     if (!ifBlank(this.option.sortField)) {
-      pageQuery.setOrders([new Order(this.option.sortField, !this.option.sortDesc)])
+      pageQuery.addOrder(this.option.sortField, !this.option.sortDesc);
     }
 
     return {
@@ -242,6 +242,9 @@ export default {
      * @param asc
      */
     buildOrder(col, asc) {
+      if (isEmpty(col)) {
+        return;
+      }
       if (isBoolean(asc)) {
         // 用户指定排序前, 当只有默认排序时, 移除默认排序
         if (!isEmpty(this.option.sortField) && this.pageQuery.orders.length === 1 && this.pageQuery.orders[0].col === this.option.sortField) {
