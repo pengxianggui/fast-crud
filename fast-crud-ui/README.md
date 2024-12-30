@@ -1,40 +1,18 @@
 # fast-crud-ui
 
-This template should help get you started developing with Vue 3 in Vite.
+> 一套组件库, 快速实现表格CRUD, 支持强大、灵活的筛选、排序、新增和数据编辑功能。
+> 并且扩展性高、配置灵活。
 
-## Recommended IDE Setup
+## 组件列表
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
-
-## Type Support for `.vue` Imports in TS
-
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin) to make the TypeScript language service aware of `.vue` types.
-
-If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has also implemented a [Take Over Mode](https://github.com/johnsoncodehk/volar/discussions/471#discussioncomment-1361669) that is more performant. You can enable it by the following steps:
-
-1. Disable the built-in TypeScript Extension
-    1) Run `Extensions: Show Built-in Extensions` from VSCode's command palette
-    2) Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
-2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vitejs.dev/config/).
-
-## Project Setup
-
-```sh
-npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
-npm run dev
-```
-
-### Type-Check, Compile and Minify for Production
-
-```sh
-npm run build
-```
+- FastTable: 核心组件
+- FastTableColumn: 只读列组件
+- FastTableColumnInput: 文本输入框列组件
+- FastTableColumnNumber: 数字输入框列组件
+- FastTableColumnTextarea: 文本域输入框列组件
+- FastTableColumnSelect: 下拉框列组件
+- FastTableColumnSwitch: switch列组件
+- FastTableColumnDatePicker: 日期选择列组件
+- FastTableColumnTimePicker: 时间选择列组件
+- FastTableColumnImg: 图片列组件
+- FastTableColumnFile: 文件列组件
