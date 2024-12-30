@@ -10,10 +10,11 @@
           <el-form-item :prop="col"
                         :label="config[col].label"
                         :key="col"
-                        v-if="config.hasOwnProperty(col) && config[col].props.editable !== false">
+                        v-if="config.hasOwnProperty(col)">
             <component :is="config[col].component"
                        v-bind="config[col].props"
                        v-model="formData[col]"
+                       :disabled="!canEdit(col, config)"
                        style="width: 100%"></component>
           </el-form-item>
           <span v-else>&nbsp;</span>
@@ -30,7 +31,7 @@
 <script>
 import {Message} from 'element-ui';
 import FastTableOption, {EditComponentConfig} from "../../../model";
-import {isEmpty} from "../../../util/util";
+import {isBoolean, isEmpty} from "../../../util/util";
 
 export default {
   name: "row-form",
@@ -76,6 +77,25 @@ export default {
     }
   },
   methods: {
+    /**
+     * 是否展示编辑模式
+     * @param col 列
+     * @param config 列配置
+     * @returns {boolean}
+     */
+    canEdit(col, config) {
+      const {editable} = config[col];
+      if (isBoolean(editable)) {
+        return editable;
+      }
+      if (this.type === 'insert') {
+        return editable === 'insert';
+      }
+      if (this.type === 'update') {
+        return editable === 'update';
+      }
+      return false;
+    },
     cancel() {
       this.$emit('cancel')
     },
