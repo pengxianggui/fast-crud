@@ -1,5 +1,14 @@
 import {Message, MessageBox} from 'element-ui';
-import {caseToCamel, coverMerge, defaultIfBlank, isBoolean, isEmpty, isUndefined} from "./util/util.js";
+import {
+    assert,
+    caseToCamel,
+    coverMerge,
+    defaultIfBlank,
+    isBoolean,
+    isEmpty, isFunction,
+    isString,
+    isUndefined
+} from "./util/util.js";
 
 export const Opt = Object.freeze({
     EQ: "=",
@@ -510,7 +519,35 @@ class FastTableOption {
                     deleteFail = ({fatRows, rows, error}) => Promise.resolve(),
                     beforeCancel = ({fatRows, rows, status}) => Promise.resolve(),
                 }) {
-        // TODO 1.0 入参校验
+        assert(isString(title), 'title必须为字符串')
+        assert(isString(module), 'module必须为字符串')
+        assert(isBoolean(enableDblClickEdit), 'enableDblClickEdit必须为布尔值')
+        assert(isBoolean(enableMulti), 'enableMulti必须为布尔值')
+        assert(isBoolean(enableColumnFilter), 'enableColumnFilter必须为布尔值')
+        assert(isBoolean(lazyLoad), 'lazyLoad必须为布尔值')
+        assert(['inline', 'form'].includes(editType), 'editType必须为inline或form')
+        assert(isBoolean(insertable), 'insertable必须为布尔值')
+        assert(isBoolean(updatable), 'updatable必须为布尔值')
+        assert(isBoolean(deletable), 'deletable必须为布尔值')
+        assert(isString(sortField), 'sortField必须为字符串')
+        assert(isBoolean(sortDesc), 'sortDesc必须为布尔值')
+        assert(isFunction(beforeLoad), 'beforeLoad必须为函数')
+        assert(isFunction(loadSuccess), 'loadSuccess必须为函数')
+        assert(isFunction(loadFail), 'loadFail必须为函数')
+        assert(isFunction(beforeToInsert), 'beforeToInsert必须为函数')
+        assert(isFunction(beforeInsert), 'beforeInsert必须为函数')
+        assert(isFunction(insertSuccess), 'insertSuccess必须为函数')
+        assert(isFunction(insertFail), 'insertFail必须为函数')
+        assert(isFunction(beforeToUpdate), 'beforeToUpdate必须为函数')
+        assert(isFunction(beforeUpdate), 'beforeUpdate必须为函数')
+        assert(isFunction(updateSuccess), 'updateSuccess必须为函数')
+        assert(isFunction(updateFail), 'updateFail必须为函数')
+        assert(isFunction(beforeDeleteTip), 'beforeDeleteTip必须为函数')
+        assert(isFunction(beforeDelete), 'beforeDelete必须为函数')
+        assert(isFunction(deleteSuccess), 'deleteSuccess必须为函数')
+        assert(isFunction(deleteFail), 'deleteFail必须为函数')
+        assert(isFunction(beforeCancel), 'beforeCancel必须为函数')
+
         this.context = context;
         this.title = title;
         this.module = module;
@@ -541,21 +578,21 @@ class FastTableOption {
         this.loadSuccess = loadSuccess;
         this.loadFail = loadFail;
 
+        this.beforeToInsert = beforeToInsert;
         this.beforeInsert = beforeInsert;
         this.insertSuccess = insertSuccess;
         this.insertFail = insertFail;
 
+        this.beforeToUpdate = beforeToUpdate;
         this.beforeUpdate = beforeUpdate;
         this.updateSuccess = updateSuccess;
         this.updateFail = updateFail;
 
+        this.beforeDeleteTip = beforeDeleteTip;
         this.beforeDelete = beforeDelete;
         this.deleteSuccess = deleteSuccess;
         this.deleteFail = deleteFail;
 
-        this.beforeToInsert = beforeToInsert;
-        this.beforeToUpdate = beforeToUpdate;
-        this.beforeDeleteTip = beforeDeleteTip;
         this.beforeCancel = beforeCancel;
     }
 }
