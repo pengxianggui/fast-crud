@@ -344,3 +344,34 @@ export function getInnerHeight(ele) {
     const paddingBottom = parseFloat(style.paddingBottom) || 0;
     return ele.clientHeight - (paddingTop + paddingBottom);
 }
+
+/**
+ * 按前匹配或后匹配替换对象键
+ * @param obj 对象
+ * @param str 前缀或后缀
+ * @param position 匹配位置. start: 前缀, end: 后缀。不传默认是end
+ * @returns {{}}
+ */
+export function replaceKey(obj, str, position = 'end') {
+    if (!isObject(obj)) {
+        throw new Error("replaceKey: obj is not an object");
+    }
+    if (!isString(str)) {
+        throw new Error("replaceKey: str is not a string");
+    }
+    const result = {};
+
+    Object.keys(obj).forEach((key) => {
+        let newKey = key;
+
+        if (position === "start" && key.startsWith(str)) {
+            newKey = key.slice(str.length); // 去掉开头的字符串
+        } else if (position === "end" && key.endsWith(str)) {
+            newKey = key.slice(0, -str.length); // 去掉末尾的字符串
+        }
+
+        result[newKey] = obj[key];
+    });
+
+    return result;
+}

@@ -11,7 +11,7 @@
 
     <template v-slot:default="{row: {row, editRow, status, config}, column, $index}">
       <slot v-bind:default="{row, editRow, status, config, column, $index}">
-        <template v-if="status === 'normal' || config[column.property]['props']['editable'] === false">
+        <template v-if="!canEdit(status, config, column)">
           <slot v-bind:normal="{row, editRow, status, config, column, $index}">
             <fast-upload :style="{'height': tableStyle.bodyRowHeight}"
                          v-model="row[column.property]"

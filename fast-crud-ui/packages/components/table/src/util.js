@@ -190,7 +190,7 @@ function buildEditComponentConfig(param, tableColumnComponentName, customConfig,
     // 行内表单组件配置
     try {
         param.inlineItemConfig = buildFinalComponentConfig(customConfig, tableColumnComponentName, 'edit', 'inline', tableOption);
-        param.inlineItemConfig.eventHandlers = {
+        param.inlineItemConfig.eventMethods = {
             //  绑定一个valid事件, 完成校验逻辑，如果校验不通过，则追加class: valid-error以便显示出来
             valid: (val, ref, props) => {
                 colValid(val, param.inlineItemConfig).then(() => {

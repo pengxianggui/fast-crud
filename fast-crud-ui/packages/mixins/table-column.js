@@ -1,3 +1,5 @@
+import {isBoolean} from "../util/util";
+
 export default {
     inject: ['openDynamicFilterForm', 'tableStyle'],
     props: {
@@ -24,6 +26,30 @@ export default {
         }
     },
     methods: {
+        /**
+         * 是否展示编辑模式
+         * @param status 表格状态
+         * @param config 列配置
+         * @param column element原生列配置
+         * @returns {boolean}
+         */
+        canEdit(status, config, column) {
+            if (status === 'normal') {
+                return false;
+            }
+            const {property} = column;
+            const {editable} = config[property];
+            if (isBoolean(editable)) {
+                return editable;
+            }
+            if (status === 'insert') {
+                return editable === 'insert';
+            }
+            if (status === 'update') {
+                return editable === 'update';
+            }
+            return false;
+        },
         headCellClick(column) {
             if (this.filter) {
                 this.openDynamicFilterForm(this.columnProp)
@@ -35,7 +61,7 @@ export default {
             const {column, $index, config} = scope;
             const {property} = column;
             const ref = this.$refs[property + $index];
-            const {eventHandlers: {valid} = {}, props} = config[property]
+            const {eventMethods: {valid} = {}, props} = config[property]
             if (valid) {
                 valid(val, ref, props);
             }

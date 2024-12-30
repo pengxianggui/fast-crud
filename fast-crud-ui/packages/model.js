@@ -174,7 +174,7 @@ export class FilterComponentConfig {
     label; // 显示中文名
     props; // 组件对应的props
     defaultVal; // 默认值
-    disabled; // 是否禁用
+    disabled; // 是否禁用: 表示该筛选项是否可用
     type; // quick, easy, dynamic
     condMapFn = (cond) => [cond];
 
@@ -194,7 +194,8 @@ export class FilterComponentConfig {
         this.opt = opt;
         this.val = val;
         this.label = label;
-        this.props = props;
+        const {disabled, ...validProps} = props; // 移除props中的disabled属性,disabled属性对查询时无效
+        this.props = validProps;
         if (!isUndefined(condMapFn)) {
             this.condMapFn = condMapFn;
         }
@@ -236,18 +237,19 @@ export class EditComponentConfig {
     label;
     props;
     val;
-    disabled;
-    eventHandlers;
+    editable; // 是否可编辑, true 表示可编辑, false表示不可编辑, insert-表示新增时可编辑, update-表示更新时可编辑. 默认为true. TODO 1.0兑现: 从prop中移出来
     type; // inline, form
+    eventMethods; // 组件事件触发时调用其中的方法，例如参数验证
 
-    constructor({component, col, label, props, val, disabled, eventHandlers, type}) {
+    constructor({component, col, label, props, val, eventMethods, type}) {
         this.component = component;
         this.col = col;
         this.label = label;
-        this.props = props;
+        const {editable, ...validProps} = props; // 移除props中的editable属性,避免editable对组件影响
+        this.props = validProps;
         this.val = val;
-        this.disabled = disabled;
-        this.eventHandlers = eventHandlers;
+        this.editable = editable;
+        this.eventMethods = eventMethods;
         this.type = type;
     }
 }

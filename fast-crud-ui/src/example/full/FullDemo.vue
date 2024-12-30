@@ -74,7 +74,7 @@
       <fast-table-column-select label="爱好" prop="hobby" :options="hobbyOptions"
                                 :quick-filter="true" quick-filter-block quick-filter-checkbox
                                 val-key="code" label-key="name"
-                                :default-val__q="['1', '2', '3', '4', '5']"
+                                :default-val_q="['1', '2', '3', '4', '5']"
                                 :disable-val="['6']"
                                 required/>
       <fast-table-column-textarea label="地址" prop="address" required/>
@@ -82,10 +82,10 @@
       <fast-table-column-time-picker label="幸运时刻" prop="luckTime" required/>
       <fast-table-column-date-picker label="生日" prop="birthday" :picker-options="pickerOptionsE" required/>
       <fast-table-column-file label="简历" prop="resumeUrl" :show-overflow-tool-tip="false"/>
-      <fast-table-column-date-picker label="创建时间" prop="createTime" :picker-options__q="pickerOptionsQ"
+      <fast-table-column-date-picker label="创建时间" prop="createTime" :picker-options_q="pickerOptionsQ"
                                      type="datetime"
-                                     :quick-filter="false" :default-val__q="defaultQueryOfCreatedTime"
-                                     value-format__e="yyyy-MM-ddTHH:mm:ss"
+                                     :quick-filter="false" :default-val_q="defaultQueryOfCreatedTime"
+                                     value-format_e="yyyy-MM-ddTHH:mm:ss"
                                      :default-time="['00:00:00', '23:59:59']"
                                      :editable="false"/>
       <el-table-column label="操作" width="60px" >

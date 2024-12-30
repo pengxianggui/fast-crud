@@ -1,5 +1,5 @@
 import {EditComponentConfig, FilterComponentConfig} from "../model";
-import {isFunction} from "../util/util.js";
+import {isFunction, replaceKey} from "../util/util.js";
 import FastTableColumnConfig from './table-column/config';
 import FastTableColumnDatePickerConfig from './table-column-date-picker/config';
 import FastTableColumnFileConfig from './table-column-file/config';
@@ -43,16 +43,12 @@ export const getConfigFn = function (tableColumnComponentName, type) {
  * @param type 类型, 当action为query时, 可选: quick, easy, dynamic; 当action为edit时, 可选: inline, form
  */
 export const buildFinalComponentConfig = function (customConfig, tableColumnComponentName, action, type, tableOption) {
-    // 排除props中后缀为__e的属性, 因为这些配置项仅用于编辑控件, 并将__q后缀的属性名移除此后缀
-    const filteredProps = Object.keys(customConfig.props).filter(key => !key.endsWith(action === 'query' ? '__e' : '__q'))
-        .reduce((obj, key) => {
-            obj[key.replace(action === 'query' ? /__q$/ : /__e$/, '')] = customConfig.props[key];
-            return obj;
-        }, {});
+    // 排除props中后缀为_e的属性, 因为这些配置项仅用于编辑控件, 并将_q后缀的属性名移除此后缀
+    const customProps = replaceKey(customConfig.props, action === 'query' ? '_q' : '_e');
     const customFilterConfig = {
         label: customConfig.label,
         col: customConfig.col,
-        props: {...filteredProps}
+        props: {...customProps}
     }
 
     const finalConfigFn = getConfigFn(tableColumnComponentName, action);

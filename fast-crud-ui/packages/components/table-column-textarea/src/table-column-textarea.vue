@@ -16,7 +16,7 @@
 
     <template v-slot:default="{row: {row, editRow, status, config}, column, $index}">
       <slot v-bind:default="{row, editRow, status, config, column, $index}">
-        <div v-if="status === 'normal' || config[column.property]['props']['editable'] === false">
+        <div v-if="!canEdit(status, config, column)">
           <slot v-bind:normal="{row, editRow, status, config, column, $index}">
             <span>{{ row[column.property] }}</span>
           </slot>
