@@ -10,11 +10,10 @@
           <el-form-item :prop="col"
                         :label="config[col].label"
                         :key="col"
-                        v-if="config.hasOwnProperty(col)">
+                        v-if="canEdit(col, config)">
             <component :is="config[col].component"
                        v-bind="config[col].props"
                        v-model="formData[col]"
-                       :disabled="!canEdit(col, config)"
                        style="width: 100%"></component>
           </el-form-item>
           <span v-else>&nbsp;</span>
@@ -68,10 +67,15 @@ export default {
       return layout.split(",").map(row => {
         const rowObj = {};
         const cols = row.split("|");
-        cols.forEach(col => {
-          const key = col.trim();
-          rowObj[key] = 24 / cols.length
-        });
+        const perSpan = Math.floor(24/cols.length);
+        for (let i = 0; i < cols.length; i++) {
+          const key = cols[i].trim();
+          if (rowObj.hasOwnProperty(key)) {
+            rowObj[key] += perSpan;
+          } else {
+            rowObj[key] = perSpan;
+          }
+        }
         return rowObj;
       })
     }
@@ -84,6 +88,9 @@ export default {
      * @returns {boolean}
      */
     canEdit(col, config) {
+      if (!config.hasOwnProperty(col)) {
+        return false;
+      }
       const {editable} = config[col];
       if (isBoolean(editable)) {
         return editable;
