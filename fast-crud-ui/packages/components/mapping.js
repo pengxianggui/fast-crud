@@ -11,8 +11,6 @@ import FastTableColumnSwitchConfig from './table-column-switch/config';
 import FastTableColumnTextareaConfig from './table-column-textarea/config';
 import FastTableColumnTimePickerConfig from './table-column-time-picker/config';
 
-// TODO 支持:
-//  1. props过滤: 限定查询时只支持的props属性, 以及必要的属性名转换
 const MAPPING = {
     'fast-table-column': FastTableColumnConfig,
     'fast-table-column-date-picker': FastTableColumnDatePickerConfig,

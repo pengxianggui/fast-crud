@@ -13,7 +13,10 @@
     </div>
     <div class="fc-dynamic-filter-distinct-wrapper">
       <div class="title">
-        <span>DISTINCT：</span>
+        <div>
+          <span>DISTINCT：</span>
+          <el-checkbox v-model="reuseCond" @change="distinctLoad">复用已生效的条件</el-checkbox>
+        </div>
         <el-button type="text"
                    :style="{'color': distinctOptionAsc === '' ? 'gray': '#409EFF', 'padding': 0}"
                    :icon="distinctOptionsAscIcon"
@@ -83,7 +86,7 @@ export default {
     return {
       localFilter: localFilter,
       asc: this.order === 'asc' ? true : (this.order === 'desc' ? false : ''),
-      distinctQuery: new Query().setDistinct().setCols([col]), //.setConds(this.conds), 表格上的筛选条件不用上来
+      reuseCond: true, // 复用已生效的条件
       distinctLoaded: false, // 是否distinct query loaded
       distinctLoading: false, // 是否distinct query loading中
       distinctOptions: [], // 检索出的distinct选项
@@ -98,7 +101,12 @@ export default {
       this.distinctLoading = true;
       this.distinctAbortCtrl = new AbortController();
       const {col, component, props} = this.localFilter;
-      this.$http.post(this.listUrl, this.distinctQuery.toJson(), {signal: this.distinctAbortCtrl.signal}).then(({data = []}) => {
+
+      const distinctQuery = new Query().setDistinct().setCols([col]);
+      if (this.reuseCond) {
+        distinctQuery.setConds(this.conds);
+      }
+      this.$http.post(this.listUrl, distinctQuery.toJson(), {signal: this.distinctAbortCtrl.signal}).then(({data = []}) => {
         if (data.length > 10000) { // 为防止页面卡死, 最多显示10000个
           data.splice(10001);
         }
@@ -204,6 +212,7 @@ export default {
     border: 1px solid #e1e1e1;
     padding: 10px;
     overflow: auto;
+    max-height: 300px;
 
     .fc-dynamic-filter-distinct-options {
       margin-top: 10px;
