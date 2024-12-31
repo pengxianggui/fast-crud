@@ -3,19 +3,14 @@
   "version": "1.0.0",
   "main": "dist/fast-crud-ui.cjs.js",
   "module": "dist/fast-crud-ui.es.js",
-  "exports": {
-    ".": {
-      "import": "./dist/fast-crud-ui.es.js",
-      "require": "./dist/fast-crud-ui.cjs.js"
-    }
-  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:lib": "vite build --mode lib",
     "preview": "vite preview --port 4173",
     "type-check": "vue-tsc --noEmit",
     "pub": "npm publish --access public --registry https://registry.npmjs.org",
-    "release": "npm run build && npm run pub",
+    "release": "npm run build:lib && npm run pub",
     "patch": "npm version patch",
     "minor": "npm version minor",
     "major": "npm version major"
