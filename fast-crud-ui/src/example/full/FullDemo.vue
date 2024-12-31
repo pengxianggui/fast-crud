@@ -98,10 +98,9 @@
 </template>
 
 <script>
-import FastTableOption from "../../../packages/model";
+import {FastTableOption, util} from "../../../packages";
 import {Message} from 'element-ui';
 import staticDict from './dict'
-import {isNumber} from "../../../packages/util/util";
 
 export default {
   name: "FastTableDemo",
@@ -289,7 +288,7 @@ export default {
       if (this.params.autoSetGraduatedWhenAgeChange === false) {
         return;
       }
-      if (isNumber(age) && age > 50) {
+      if (util.isNumber(age) && age > 50) {
         editRow.graduated = true;
       } else {
         editRow.graduated = false;

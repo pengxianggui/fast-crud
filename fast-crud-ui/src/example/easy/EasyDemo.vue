@@ -9,7 +9,7 @@
 </template>
 
 <script>
-import FastTableOption from "../../../packages/model";
+import {FastTableOption} from "../../../packages";
 
 export default {
   name: "EasyDemo",
@@ -24,5 +24,4 @@ export default {
 </script>
 
 <style scoped lang="scss">
-
 </style>

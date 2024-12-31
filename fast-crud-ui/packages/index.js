@@ -17,6 +17,7 @@ import {openDialog} from "./util/dialog";
 import "element-ui/lib/theme-chalk/index.css";
 import "./style.scss"
 import FastTableOption from "./model";
+import {PageQuery, Query, Order, Cond, Opt} from "./model";
 import {ellipsis} from "./filters";
 import {
     isEmpty,
@@ -87,7 +88,7 @@ if (typeof window !== 'undefined' && window.Vue) {
     install(window.Vue);
 }
 
-export const util = {
+const util = {
     isEmpty,
     isString,
     isNumber,
@@ -109,8 +110,19 @@ export const util = {
     openDialog
 }
 
-export const filters = {
+const filters = {
     ellipsis
+}
+
+export {
+    FastTableOption,
+    Opt,
+    PageQuery,
+    Query,
+    Order,
+    Cond,
+    filters,
+    util
 }
 
 export default {
