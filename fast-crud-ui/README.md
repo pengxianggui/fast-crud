@@ -73,3 +73,5 @@ new Vue({
   }
 </script>
 ```
+
+更多使用文档参见: [这里](http://pengxg.cc/tags/fast-crud)

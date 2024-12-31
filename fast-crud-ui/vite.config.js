@@ -36,7 +36,7 @@ export default defineConfig({
     build: {
         // build.lib 配置为库模式, 用以描述打包组件
         lib: {
-            entry: path.resolve(__dirname, 'src/index.js'), // 组件库入口
+            entry: path.resolve(__dirname, 'packages/index.js'), // 组件库入口
             name: 'FastCrudUI', // 全局访问库时的名称
             fileName: (format) => `fast-crud-ui.${format}.js`,
             formats: ['es', 'cjs', 'umd']  // 输出 ESM, CJS 和 UMD 格式
