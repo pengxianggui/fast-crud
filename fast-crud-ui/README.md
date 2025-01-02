@@ -5,13 +5,15 @@
 
 ## 说明:
 
-**fast-crud-ui基于vue@2.7.16 + element-ui@2.5.14， fast-cruid-ui打包不会包含这两个组件，你必须在项目里单独安装并正确注册。**
+**fast-crud基于vue@2.7.16 + element-ui@2.5.14， fast-crud-ui打包不会包含这两个组件，你必须在项目里单独安装并正确注册。
+**
 
 针对兼容性, 理论上vue2.x和element-ui较高版本应该都支持。
 
 如果针对element-ui你采用的是按需部分引入，请确保以下element-ui组件正确注册, 否则fast-crud-ui中部分内容将无法正常展示：
 
-Table, TableColumn, Input, InputNumber, Checkbox, CheckboxGroup, Select, Option, DatePicker, Switch, TimePicker, Radio, Upload, Row, Col, Button, Empty, Popover, Form, FormItem, Dropdown, DropdownMenu, DropdownItem, Pagination, Link
+Table, TableColumn, Input, InputNumber, Checkbox, CheckboxGroup, Select, Option, DatePicker, Switch, TimePicker, Radio,
+Upload, Row, Col, Button, Empty, Popover, Form, FormItem, Dropdown, DropdownMenu, DropdownItem, Pagination, Link
 
 ## 组件列表
 

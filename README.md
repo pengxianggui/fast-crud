@@ -8,8 +8,8 @@
 
 - **fast-crud-spring-boot-starter**: 主要引入此依赖
 - **fast-crud-auto-generator**: 基于mybatis-plus-generator封装的controller、service、serviceImpl、mapper、entity代码生成包，非必须。
-- **demo**: 示例项目
-- **[fast-crud-ui](./fast-crud-ui/README.md)**: 前端组件库
+- **fast-crud-ui**: 前端组件库, 文档详见: [这里](./fast-crud-ui/README.md)
+- **demo**: 后端示例项目
 
 ## 版本
 
@@ -19,6 +19,48 @@
 - **hutool-core**: 5.8.8
 - **hutool-extra**: 5.8.8
 - **freemarker**: 2.3.31
+
+## 使用方式
+### 后端集成
+#### 引入maven依赖
+```xml
+<dependencies>
+    <dependency>
+        <groupId>io.github.pengxianggui</groupId>
+        <artifactId>fast-crud-spring-boot-starter</artifactId>
+        <version>${version}</version>
+    </dependency>
+    <dependency>
+        <groupId>io.github.pengxianggui</groupId>
+        <artifactId>fast-crud-auto-generator</artifactId>
+        <version>${version}</version>
+    </dependency>
+</dependencies>
+```
+> 具体版本号请查看pom.xml
+
+#### 代码生成准备
+手撸一个main方法
+```java
+public class CodeGenerator {
+    public static void main(String[] args) {
+        CodeAutoGenerator.builder()
+                .author("pengxg") // 替换为你的名称
+                .module("demo") // maven多模块时配置模块名,表名要生成的代码文件存放的模块
+                .url("jdbc:mysql://127.0.0.1:3306/fast-crud") // 替换成你的数据库连接地址
+                .username("root") // 替换成你的数据库用户名
+                .password("123456") // 替换成你的数据库密码
+                .parentPkg("io.github.pengxianggui.crud.demo") // 替换成你的包根目录
+                .build()
+                .generate();
+    }
+}
+```
+> 运行这个main方法，会交互式询问要针对哪个表生成代码文件，可选择性生成对应的controller、service、serviceImpl、mapper以及mapper.xml。
+> 且生成的controller方法已具备crud相关接口(由于几个标准接口是动态注册的, 所以controller类里不会体现, 可在swagger中查看)
+
+### 前端引入(可选)
+详见[这里](./fast-crud-ui/README.md)
 
 ## Roadmap
 
