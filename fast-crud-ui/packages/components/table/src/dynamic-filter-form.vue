@@ -51,7 +51,7 @@
 </template>
 
 <script>
-import {FilterComponentConfig, Query, Opt} from "../../../model";
+import FastTableOption, {FilterComponentConfig, Query, Opt} from "../../../model";
 import {escapeValToLabel} from "./util";
 import {isEmpty, isObject, toStr} from "../../../util/util";
 
@@ -106,7 +106,7 @@ export default {
       if (this.reuseCond) {
         distinctQuery.setConds(this.conds);
       }
-      this.$http.post(this.listUrl, distinctQuery.toJson(), {signal: this.distinctAbortCtrl.signal}).then(({data = []}) => {
+      FastTableOption.$http.post(this.listUrl, distinctQuery.toJson(), {signal: this.distinctAbortCtrl.signal}).then(({data = []}) => {
         if (data.length > 10000) { // 为防止页面卡死, 最多显示10000个
           data.splice(10001);
         }

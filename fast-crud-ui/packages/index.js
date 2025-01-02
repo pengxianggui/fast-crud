@@ -1,4 +1,4 @@
-import {Input, InputNumber, DatePicker, Switch, TimePicker, Upload, Loading, Row, Col} from 'element-ui'
+import {Loading} from 'element-ui'
 import FastCheckboxGroup from "./components/checkbox-group";
 import FastSelect from "./components/select";
 import FastUpload from "./components/upload";
@@ -14,7 +14,6 @@ import FastTableColumnSwitch from './components/table-column-switch'
 import FastTableColumnTextarea from './components/table-column-textarea'
 import FastTableColumnTimePicker from './components/table-column-time-picker'
 import {openDialog} from "./util/dialog";
-import "element-ui/lib/theme-chalk/index.css";
 import "./style.scss"
 import FastTableOption from "./model";
 import {PageQuery, Query, Order, Cond, Opt} from "./model";
@@ -41,14 +40,6 @@ import {
 } from "./util/util";
 
 const components = [
-    Input,
-    InputNumber,
-    DatePicker,
-    Switch,
-    TimePicker,
-    Upload,
-    Row,
-    Col,
     FastCheckboxGroup,
     FastSelect,
     FastUpload,
@@ -69,23 +60,29 @@ const directives = [
     Loading
 ]
 
+const filters = [
+    ellipsis
+]
+
 const install = function (Vue, opts = {}) {
     if (opts.hasOwnProperty('$http')) {
-        Vue.prototype.$http = opts.$http;
         FastTableOption.$http = opts.$http;
+        Vue.prototype.$openDialog = openDialog;
     }
-
     components.forEach(component => {
         Vue.component(component.name, component);
-    });
 
+    });
     directives.forEach(directive => {
         Vue.use(directive)
     })
+    filters.forEach(filter => {
+        Vue.filter(`fc${filter.name.charAt(0).toUpperCase() + filter.name.slice(1)}`, filter);
+    })
 };
-
 if (typeof window !== 'undefined' && window.Vue) {
     install(window.Vue);
+
 }
 
 const util = {
@@ -110,10 +107,6 @@ const util = {
     openDialog
 }
 
-const filters = {
-    ellipsis
-}
-
 export {
     FastTableOption,
     Opt,
@@ -121,7 +114,6 @@ export {
     Query,
     Order,
     Cond,
-    filters,
     util
 }
 

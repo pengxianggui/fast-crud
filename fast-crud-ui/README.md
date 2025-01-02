@@ -1,7 +1,17 @@
 # fast-crud-ui
 
-> 一套组件库, 快速实现表格CRUD, 支持强大、灵活的筛选、排序、新增和数据编辑功能。
+> 一个简单的组件库, 快速实现表格CRUD, 支持强大、灵活的筛选、排序、新增和数据编辑功能。
 > 并且扩展性高、配置灵活。
+
+## 说明:
+
+**fast-crud-ui基于vue@2.7.16 + element-ui@2.5.14， fast-cruid-ui打包不会包含这两个组件，你必须在项目里单独安装并正确注册。**
+
+针对兼容性, 理论上vue2.x和element-ui较高版本应该都支持。
+
+如果针对element-ui你采用的是按需部分引入，请确保以下element-ui组件正确注册, 否则fast-crud-ui中部分内容将无法正常展示：
+
+Table, TableColumn, Input, InputNumber, Checkbox, CheckboxGroup, Select, Option, DatePicker, Switch, TimePicker, Radio, Upload, Row, Col, Button, Empty, Popover, Form, FormItem, Dropdown, DropdownMenu, DropdownItem, Pagination, Link
 
 ## 组件列表
 
@@ -30,9 +40,13 @@ npm install fast-crud-ui
 ```js
 import Vue from 'vue'
 import App from './App.vue'
+import ElementUI from 'element-ui'
+import "element-ui/lib/theme-chalk/index.css"
 import FastCrudUI from 'fast-crud-ui'
-import http from "@/http";
+import 'fast-crud-ui/lib/style.css'
+import http from "@/http" // 假设这里可导入你的axios实例
 
+Vue.use(ElementUI)
 Vue.use(FastCrudUI, {
     $http: http // axios实例, 必须提供!
 })
@@ -44,6 +58,7 @@ new Vue({
 ```
 
 使用
+
 ```vue
 
 <template>
@@ -74,4 +89,4 @@ new Vue({
 </script>
 ```
 
-更多使用文档参见: [这里](http://pengxg.cc/tags/fast-crud)
+更多使用文档参见: [这里](http://pengxg.cc/tags/fast-crud-ui)

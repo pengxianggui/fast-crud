@@ -2,7 +2,7 @@
 
 > 基于spring-boot、spring-mvc、mybatis-plus的代码生成式 + 动态crud注册的快速开发框架。
 
-应用本框架的前提是你的项目必须使用以上三个框架。
+应用本框架的前提是你的项目必须使用以上三个框架。文档参考[这里](http://pengxg.cc/tags/fast-crud)
 
 ## 模块介绍
 
