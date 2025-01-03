@@ -125,3 +125,7 @@ public class CodeGenerator {
 - [ ] 支持"更多"里扩展增加新功能按钮
 - [ ] 支持针对mapping.js进行扩展，以便自定义增加新的FastTableColumn*组件
 - [ ] **高级筛选**: 支持类似jira中jql的使用方式。 
+
+
+## ChangeLog
+参考[这里](https://github.com/pengxianggui/fast-crud/blob/main/CHANGELOG.md)
