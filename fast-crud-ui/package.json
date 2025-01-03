@@ -1,6 +1,6 @@
 {
   "name": "fast-crud-ui",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "main": "lib/fast-crud-ui.cjs.js",
   "module": "lib/fast-crud-ui.es.js",
   "scripts": {
