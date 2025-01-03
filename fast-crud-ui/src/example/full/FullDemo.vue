@@ -68,6 +68,7 @@
       <fast-table-column-img label="头像" prop="avatarUrl" :fixed="params.fixedAvatar" required/>
       <fast-table-column-input label="姓名" prop="name" first-filter :quick-filter="true" required/>
       <fast-table-column-number label="年龄" prop="age" required
+                                :min="18" :max="60" :step="5"
                                 :rules="[{type: 'number', min: 18, max: 60, message: '年龄必须在[18,60]之间'}]"
                                 @change="handleAgeChange"/>
       <fast-table-column-select label="性别" prop="sex" :options="sexOptions" :quick-filter="true" required/>
@@ -93,6 +94,15 @@
           <el-button type="text" size="small" @click="edit(scope)">编辑</el-button>
         </template>
       </el-table-column>
+      <template #button="scope">
+        <el-button :size="scope.size" slot="button" @click="expandButton(scope)">扩展按钮</el-button>
+      </template>
+      <template #moreButton="scope">
+        <el-dropdown-item :size="scope.size"  @click.native="expandMoreButton(scope)">扩展按钮</el-dropdown-item>
+      </template>
+      <template #foot="scope">
+        <el-button size="mini" @click="expandFoot(scope)">扩展按钮</el-button>
+      </template>
     </fast-table>
   </div>
 </template>
@@ -329,6 +339,21 @@ export default {
       console.log('row:', row);
       console.log('column:', column);
       console.log('event:', event);
+    },
+    expandButton({choseRow, checkedRows, editRows}) {
+      console.log('choseRow', choseRow)
+      console.log('checkedRows', checkedRows)
+      console.log('editRows', editRows)
+    },
+    expandMoreButton({choseRow, checkedRows, editRows}) {
+      console.log('choseRow', choseRow)
+      console.log('checkedRows', checkedRows)
+      console.log('editRows', editRows)
+    },
+    expandFoot({choseRow, checkedRows, editRows}) {
+      console.log('choseRow', choseRow)
+      console.log('checkedRows', checkedRows)
+      console.log('editRows', editRows)
     }
   }
 }

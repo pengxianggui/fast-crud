@@ -104,7 +104,16 @@ export default {
       return false;
     },
     cancel() {
-      this.$emit('cancel')
+      const {context, beforeCancel} = this.option;
+      beforeCancel.call(context, {
+        fatRows: [this.row],
+        rows: [this.row.row],
+        status: this.type
+      }).then(() => {
+        this.$emit('cancel')
+      }).catch(() => {
+        // 不允许取消
+      })
     },
     submit() {
       this.$refs['editForm'].validate().then((valid) => {

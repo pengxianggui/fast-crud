@@ -36,7 +36,7 @@ const defaultEditConfig = {
 export default {
     query: (config, type) => {
         let val = defaultQueryConfig.val;
-        const {'default-val': defaultVal, ...validProps} = config.props;
+        const {'default-val': defaultVal, 'is-range': isRange, ...validProps} = config.props;
         if (type === 'quick') {
             val = ternary(isUndefined(defaultVal), val, defaultVal);
         }

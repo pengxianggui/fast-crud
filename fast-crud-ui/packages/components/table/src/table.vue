@@ -17,6 +17,8 @@
       </div>
       <!-- 按钮功能区 -->
       <div class="fc-fast-table-operation-btn">
+        <slot name="button"
+              v-bind="{size: option.style.size, choseRow: choseRow, checkedRows: checkedRows, editRows: editRows}"></slot>
         <template v-if="status === 'normal'">
           <el-button :size="option.style.size" icon="el-icon-plus" @click="toInsert"
                      v-if="option.insertable">新建
@@ -46,6 +48,8 @@
             <!--            <el-dropdown-item @click.native="activeBatchUpdate">批量修改</el-dropdown-item>-->
             <!--            <el-dropdown-item @click.native="exportData">导出</el-dropdown-item>-->
             <!--            <el-dropdown-item @click.native="customTable">自定义表格</el-dropdown-item>-->
+            <slot name="moreButton"
+                  v-bind="{size: option.style.size, choseRow: choseRow, checkedRows: checkedRows, editRows: editRows}"></slot>
           </el-dropdown-menu>
         </el-dropdown>
       </div>
@@ -76,6 +80,7 @@
       </el-table>
     </div>
     <div ref="pagination" class="fc-pagination-wrapper">
+      <slot name="foot" v-bind="{size: option.style.size, choseRow: choseRow, checkedRows: checkedRows, editRows: editRows}"><span></span></slot>
       <el-pagination :page-size.sync="pageQuery.size"
                      :current-page.sync="pageQuery.current"
                      :page-sizes="option.pagination['page-sizes']"
@@ -452,7 +457,7 @@ export default {
     },
     handleSelectionChange(rows) {
       this.checkedRows = rows;
-      this.$emit('@selection-change', {fatRows: rows, rows: rows.map(r => r.row)})
+      this.$emit('selection-change', {fatRows: rows, rows: rows.map(r => r.row)})
     },
     handleSelectAll(rows) {
       this.$emit('select-all', {fatRows: rows, rows: rows.map(r => r.row)});
@@ -767,8 +772,8 @@ export default {
 
   .fc-pagination-wrapper {
     display: flex;
-    flex-direction: row-reverse;
     margin-top: 3px;
+    justify-content: space-between;
   }
 }
 </style>
