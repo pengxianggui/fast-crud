@@ -128,4 +128,4 @@ public class CodeGenerator {
 
 
 ## ChangeLog
-参考[这里](https://github.com/pengxianggui/fast-crud/blob/main/CHANGELOG.md)
+参考[这里](https://github.com/pengxianggui/fast-crud/blob/main/ChangeLog.md)
