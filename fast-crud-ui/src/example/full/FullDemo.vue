@@ -31,7 +31,9 @@
                    @change="(val) => updateOptionStyle('bodyRowHeight', val + 'px')"></el-slider>
       </div>
       <el-checkbox v-model="params.fixedAvatar">固定头像列</el-checkbox>
-      <el-checkbox v-model="params.flexHeight" @change="(val) => updateOptionStyle('flexHeight', val)">表格高度弹性自适应</el-checkbox>
+      <el-checkbox v-model="params.flexHeight" @change="(val) => updateOptionStyle('flexHeight', val)">
+        表格高度弹性自适应
+      </el-checkbox>
 
       <h5>钩子函数应用</h5>
       <el-checkbox v-model="params.loadSuccessTip">分页加载成功提示</el-checkbox>
@@ -51,8 +53,9 @@
       <el-checkbox v-model="params.autoSetGraduatedWhenAgeChange">年龄大于50自动毕业</el-checkbox>
 
       <h5>方法</h5>
-      <div>
+      <div class="methods">
         <el-button size="mini" @click="$refs['fastTable'].addRow()">插入一行</el-button>
+        <el-button size="mini" @click="$refs['fastTable'].addRows([{name: '刘亦菲', age: 18},{}])">插入多行</el-button>
         <el-button size="mini" @click="$refs['fastTable'].addForm()">弹窗新增</el-button>
       </div>
     </div>
@@ -89,7 +92,7 @@
                                      value-format_e="yyyy-MM-ddTHH:mm:ss"
                                      :default-time="['00:00:00', '23:59:59']"
                                      :editable="false"/>
-      <el-table-column label="操作" width="60px" >
+      <el-table-column label="操作" width="60px">
         <template slot-scope="scope">
           <el-button type="text" size="small" @click="edit(scope)">编辑</el-button>
         </template>
@@ -98,7 +101,7 @@
         <el-button :size="scope.size" slot="button" @click="expandButton(scope)">扩展按钮</el-button>
       </template>
       <template #moreButton="scope">
-        <el-dropdown-item :size="scope.size"  @click.native="expandMoreButton(scope)">扩展按钮</el-dropdown-item>
+        <el-dropdown-item :size="scope.size" @click.native="expandMoreButton(scope)">扩展按钮</el-dropdown-item>
       </template>
       <template #foot="scope">
         <el-button size="mini" @click="expandFoot(scope)">扩展按钮</el-button>
@@ -373,6 +376,16 @@ export default {
     & > * {
       display: block;
       margin-bottom: 5px;
+    }
+
+    .methods {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-gap: 5px;
+    }
+
+    .el-button {
+      margin: 0;
     }
 
     h5 {

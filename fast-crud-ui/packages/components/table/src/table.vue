@@ -80,7 +80,9 @@
       </el-table>
     </div>
     <div ref="pagination" class="fc-pagination-wrapper">
-      <slot name="foot" v-bind="{size: option.style.size, choseRow: choseRow, checkedRows: checkedRows, editRows: editRows}"><span></span></slot>
+      <slot name="foot"
+            v-bind="{size: option.style.size, choseRow: choseRow, checkedRows: checkedRows, editRows: editRows}">
+        <span></span></slot>
       <el-pagination :page-size.sync="pageQuery.size"
                      :current-page.sync="pageQuery.current"
                      :page-sizes="option.pagination['page-sizes']"
@@ -197,10 +199,10 @@ export default {
   methods: {
     /**
      * 添加到编辑行
-     * @param rows
+     * @param fatRow
      */
-    addToEditRows(rows) {
-      this.editRows.push(...rows);
+    addToEditRows(fatRow) {
+      this.editRows.push(...fatRow);
       rowValid(this.editRows).catch((errors) => {
       }); // 立即校验一下以便标识出必填等字段
     },
@@ -355,9 +357,16 @@ export default {
       })
     },
     /**
-     * 激活表单新增
+     * 增加一个新增编辑状态的行
      */
-    addRow() {
+    addRow(row = {}) {
+      this.addRows([row]);
+    },
+    /**
+     * 增加多个新增状态的行
+     * @param rows
+     */
+    addRows(rows = []) {
       if (this.option.insertable === false) {
         return;
       }
@@ -367,9 +376,9 @@ export default {
       }
       const {context, beforeToInsert} = this.option;
       beforeToInsert.call(context).then(() => {
-        const newRow = toTableRow({}, this.columnConfig, 'insert', 'inline');
-        this.list.unshift(newRow);
-        this.addToEditRows([newRow]);
+        const newRows = rows.map(r => toTableRow(r, this.columnConfig, 'insert', 'inline'));
+        this.list.unshift(...newRows);
+        this.addToEditRows(newRows);
       }).catch(() => {
         console.debug('你已取消新建')
       })
@@ -516,7 +525,7 @@ export default {
         console.debug('你已取消编辑')
       })
     },
-    updateRow(row) {
+    updateRow(fatRow) {
       if (this.option.updatable === false) {
         return;
       }
@@ -525,9 +534,9 @@ export default {
         return;
       }
       const {context, beforeToUpdate} = this.option;
-      beforeToUpdate.call(context, {fatRows: [row], rows: [row.row]}).then(() => {
-        row.status = 'update';
-        this.addToEditRows([row]);
+      beforeToUpdate.call(context, {fatRows: [fatRow], rows: [fatRow.row]}).then(() => {
+        fatRow.status = 'update';
+        this.addToEditRows([fatRow]);
       }).catch(() => {
         console.debug('你已取消编辑')
       })
