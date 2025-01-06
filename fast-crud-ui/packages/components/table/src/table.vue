@@ -328,13 +328,13 @@ export default {
     /**
      * 激活行内新增
      */
-    addForm() {
+    addForm(row = {}) {
       if (this.option.insertable === false) {
         return;
       }
       const {context, beforeToInsert} = this.option;
       beforeToInsert.call(context).then(() => {
-        const fatRow = toTableRow({}, this.columnConfig, 'insert', 'form');
+        const fatRow = toTableRow(row, this.columnConfig, 'insert', 'form');
         openDialog({
           component: RowForm,
           props: {
@@ -496,20 +496,20 @@ export default {
     },
     /**
      * 表单更新一行
-     * @param row
+     * @param fatRow
      */
-    updateForm(row) {
+    updateForm(fatRow) {
       if (this.option.updatable === false) {
         return;
       }
       const {context, beforeToUpdate} = this.option;
-      beforeToUpdate.call(context, {fatRows: [row], rows: [row.row]}).then(() => {
+      beforeToUpdate.call(context, {fatRows: [fatRow], rows: [fatRow.row]}).then(() => {
         openDialog({
           component: RowForm,
           props: {
             option: this.option,
             config: getEditConfig(this.columnConfig, 'form'),
-            row: row,
+            row: fatRow,
             type: 'update',
             layout: this.option.style.formLayout
           },
