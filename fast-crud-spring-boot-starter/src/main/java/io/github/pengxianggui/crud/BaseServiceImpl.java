@@ -123,7 +123,7 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
      * @param targetFile
      * @return
      */
-    String buildPreviewFileUrl(File targetFile) {
+    protected String buildPreviewFileUrl(File targetFile) {
         return targetFile.getAbsolutePath();
     }
 
