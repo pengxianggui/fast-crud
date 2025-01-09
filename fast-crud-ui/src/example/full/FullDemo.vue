@@ -99,7 +99,7 @@
         </template>
       </el-table-column>
       <template #button="scope">
-        <el-button :size="scope.size" slot="button" @click="expandButton(scope)">扩展按钮</el-button>
+        <el-button :size="scope.size" @click="expandButton(scope)">扩展按钮</el-button>
       </template>
       <template #moreButton="scope">
         <el-dropdown-item :size="scope.size" @click.native="expandMoreButton(scope)">扩展按钮</el-dropdown-item>
