@@ -246,7 +246,7 @@ export class EditComponentConfig {
     label;
     props;
     val;
-    editable; // 是否可编辑, true 表示可编辑, false表示不可编辑, insert-表示新增时可编辑, update-表示更新时可编辑. 默认为true. TODO 1.0兑现: 从prop中移出来
+    editable; // 是否可编辑, true 表示可编辑, false表示不可编辑, insert-表示新增时可编辑, update-表示更新时可编辑. 默认为true.
     type; // inline, form
     eventMethods; // 组件事件触发时调用其中的方法，例如参数验证
 

@@ -204,7 +204,7 @@ export default {
      */
     addToEditRows(fatRow) {
       this.editRows.push(...fatRow);
-      rowValid(this.editRows).catch((errors) => {
+      rowValid(this.editRows, this.option.context).catch((errors) => {
       }); // 立即校验一下以便标识出必填等字段
     },
     /**
@@ -602,7 +602,7 @@ export default {
       if (this.status !== 'insert' && this.status !== 'update') {
         throw new Error(`当前FastTable状态异常:${this.status}, 无法保存编辑记录`);
       }
-      rowValid(this.editRows).then(() => {
+      rowValid(this.editRows, this.option.context).then(() => {
         // 保存编辑的行: 包括新增、更新状态的行
         let promise;
         if (this.status === 'insert') {

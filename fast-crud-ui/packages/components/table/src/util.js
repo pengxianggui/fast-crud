@@ -1,5 +1,14 @@
 import {buildFinalComponentConfig} from "../../mapping";
-import {deepClone, defaultIfBlank, defaultIfEmpty, isArray, isEmpty, isUndefined, merge} from "../../../util/util";
+import {
+    deepClone,
+    defaultIfBlank,
+    defaultIfEmpty,
+    isArray,
+    isBoolean,
+    isEmpty, isFunction,
+    isUndefined,
+    merge
+} from "../../../util/util";
 
 import Schema from 'async-validator'
 
@@ -30,13 +39,19 @@ export function colValid(val, config) {
 /**
  * 多行(整行)校验, 校验失败会为每个col配置添加class: valid-error并reject(errors), 成功则会移除每个col可能存在的valid-error，并resolve。
  * @param fatRows 完整的行记录
+ * @param context 上下文
  */
-export function rowValid(fatRows) {
+export function rowValid(fatRows, context) {
     const validPromises = [];
     for (let i = 0; i < fatRows.length; i++) {
-        const {editRow, config} = fatRows[i];
+        const fatRow = fatRows[i];
+        const {editRow, status, config} = fatRow;
         Object.keys(config).map(col => {
-            validPromises.push(colValid(editRow[col], config[col]));
+            const {editable} = config[col];
+            const canEdit = cellEditable.call(defaultIfEmpty(context, this), fatRow, col);
+            if (canEdit) {
+                validPromises.push(colValid(editRow[col], config[col]));
+            }
         });
     }
     return Promise.all(validPromises);
@@ -244,4 +259,32 @@ export function escapeValToLabel(component, val, config) {
         console.log(err)
     }
 
+}
+
+/**
+ * 判断单元格是否可编辑
+ * @param editRow 当前编辑行
+ * @param status 当前编辑状态(normal、insert、update)
+ * @param config 当前列的配置
+ * @param col 当前列属性
+ */
+export function cellEditable(fatRow, col) {
+    const {status, config} = fatRow;
+    if (status === 'normal') {
+        return false;
+    }
+
+    const {editable} = config[col];
+    if (isBoolean(editable)) {
+        return editable;
+    } else if (isFunction(editable)) {
+        return editable.call(this, {...fatRow, status, config, col})
+    }
+    if (status === 'insert') {
+        return editable === 'insert';
+    }
+    if (status === 'update') {
+        return editable === 'update';
+    }
+    return false;
 }

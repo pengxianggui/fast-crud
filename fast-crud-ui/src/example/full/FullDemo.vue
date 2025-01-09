@@ -84,7 +84,7 @@
                                 required/>
       <fast-table-column-textarea label="地址" prop="address"/>
       <fast-table-column-switch label="已毕业" prop="graduated" :quick-filter="true" required/>
-      <fast-table-column-time-picker label="幸运时刻" prop="luckTime" :editable="({editRow}) => !(editRow.age > 35)"/>
+      <fast-table-column-time-picker label="幸运时刻" prop="luckTime" required :editable="({editRow}) => !(editRow.age > 35)"/>
       <fast-table-column-date-picker label="生日" prop="birthday" :picker-options="pickerOptionsE" required/>
       <fast-table-column-file label="简历" prop="resumeUrl" :show-overflow-tool-tip="false"/>
       <fast-table-column-date-picker label="创建时间" prop="createTime" :picker-options_q="pickerOptionsQ"

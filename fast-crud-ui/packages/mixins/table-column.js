@@ -1,4 +1,5 @@
 import {defaultIfEmpty, isBoolean, isFunction} from "../util/util";
+import {cellEditable} from "../components/table/src/util";
 
 export default {
     inject: ['openDynamicFilterForm', 'tableStyle', 'context'],
@@ -34,24 +35,7 @@ export default {
          * @returns {boolean}
          */
         canEdit(fatRow, column, $index) {
-            const {row, editRow, status, config} = fatRow;
-            if (status === 'normal') {
-                return false;
-            }
-            const {property} = column;
-            const {editable} = config[property];
-            if (isBoolean(editable)) {
-                return editable;
-            } else if (isFunction(editable)) {
-                return editable.call(defaultIfEmpty(this.context, this), {row, editRow, status, config, column, $index})
-            }
-            if (status === 'insert') {
-                return editable === 'insert';
-            }
-            if (status === 'update') {
-                return editable === 'update';
-            }
-            return false;
+            return cellEditable.call(defaultIfEmpty(this.context, this), fatRow, column.property);
         },
         headCellClick(column) {
             if (this.filter) {
