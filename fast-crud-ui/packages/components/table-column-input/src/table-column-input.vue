@@ -11,22 +11,22 @@
       </fast-table-head-cell>
     </template>
 
-    <template v-slot:default="{row: {row, editRow, status, config}, column, $index}">
-      <slot v-bind:default="{row, editRow, status, config, column, $index}">
-        <div v-if="!canEdit(status, config, column)">
-          <slot v-bind:normal="{row, editRow, status, config, column, $index}">
-            <span>{{ row[column.property] }}</span>
+    <template v-slot:default="{row:fatRow, column, $index}">
+      <slot v-bind:default="{...fatRow, column, $index}">
+        <div v-if="!canEdit(fatRow, column, $index)">
+          <slot v-bind:normal="{...fatRow, column, $index}">
+            <span>{{ fatRow['row'][column.property] }}</span>
           </slot>
         </div>
-        <slot v-bind:edit="{row, editRow, status, config, column, $index}" v-else>
-          <el-input v-model="editRow[column.property]"
-                    v-bind="config[column.property]['props']"
+        <slot v-bind:edit="{...fatRow, column, $index}" v-else>
+          <el-input v-model="fatRow['editRow'][column.property]"
+                    v-bind="fatRow['config'][column.property]['props']"
                     :ref="column.property + $index"
-                    @change="(val) => handleChange(val, {row, editRow, status, column, config, $index})"
-                    @blur="(event) => handleBlur(event, {row, editRow, status, column, config, $index})"
-                    @focus="(event) => handleFocus(event, {row, editRow, status, column, config, $index})"
-                    @input="(val) => handleInput(val, {row, editRow, status, column, config, $index})"
-                    @clear="() => handleClear({row, editRow, status, column, config, $index})">
+                    @change="(val) => handleChange(val, {...fatRow, column, $index})"
+                    @blur="(event) => handleBlur(event, {...fatRow, column, $index})"
+                    @focus="(event) => handleFocus(event, {...fatRow, column, $index})"
+                    @input="(val) => handleInput(val, {...fatRow, column, $index})"
+                    @clear="() => handleClear({...fatRow, column, $index})">
           </el-input>
         </slot>
       </slot>

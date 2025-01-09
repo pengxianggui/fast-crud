@@ -50,7 +50,8 @@
       <el-checkbox v-model="params.disableCancelWhenUpdate">更新时不允许取消</el-checkbox>
 
       <h5>事件</h5>
-      <el-checkbox v-model="params.autoSetGraduatedWhenAgeChange">年龄大于50自动毕业</el-checkbox>
+      <el-checkbox v-model="params.autoSetGraduatedWhenAgeChange">超50岁自动毕业</el-checkbox>
+      <el-checkbox v-model="params.noEditLuckWhenAgeGT35">超35岁不允许编辑幸运时刻</el-checkbox>
 
       <h5>方法</h5>
       <div class="methods">
@@ -71,7 +72,7 @@
       <fast-table-column-img label="头像" prop="avatarUrl" :fixed="params.fixedAvatar" required/>
       <fast-table-column-input label="姓名" prop="name" first-filter :quick-filter="true" required/>
       <fast-table-column-number label="年龄" prop="age" required
-                                :min="18" :max="60" :step="5"
+                                :min="18" :max="60"
                                 :rules="[{type: 'number', min: 18, max: 60, message: '年龄必须在[18,60]之间'}]"
                                 @change="handleAgeChange"/>
       <fast-table-column-select label="性别" prop="sex" :options="sexOptions" :quick-filter="true" required/>
@@ -81,9 +82,9 @@
                                 :default-val_q="['1', '2', '3', '4', '5']"
                                 :disable-val="['6']"
                                 required/>
-      <fast-table-column-textarea label="地址" prop="address" required/>
+      <fast-table-column-textarea label="地址" prop="address"/>
       <fast-table-column-switch label="已毕业" prop="graduated" :quick-filter="true" required/>
-      <fast-table-column-time-picker label="幸运时刻" prop="luckTime" required/>
+      <fast-table-column-time-picker label="幸运时刻" prop="luckTime" :editable="({editRow}) => !(editRow.age > 35)"/>
       <fast-table-column-date-picker label="生日" prop="birthday" :picker-options="pickerOptionsE" required/>
       <fast-table-column-file label="简历" prop="resumeUrl" :show-overflow-tool-tip="false"/>
       <fast-table-column-date-picker label="创建时间" prop="createTime" :picker-options_q="pickerOptionsQ"
@@ -251,30 +252,54 @@ export default {
       defaultQueryOfCreatedTime: [monthAgo, now],
       params: {
         editType: 'inline',
-        pageLoadable: true, // 允许分页加载
-        insertable: true, // 允许新增
-        updatable: true, // 允许编辑
-        deletable: true, // 允许删除
-        enableColumnFilter: true, // 允许动态筛选
-        enableMulti: true, // 启用多选
-        enableDblClickEdit: true, // 启用双击编辑
-        size: 'medium', // 默认尺寸
+        // 允许分页加载
+        pageLoadable: true,
+        // 允许新增
+        insertable: true,
+        // 允许编辑
+        updatable: true,
+        // 允许删除
+        deletable: true,
+        // 允许动态筛选
+        enableColumnFilter: true,
+        // 启用多选
+        enableMulti: true,
+        // 启用双击编辑
+        enableDblClickEdit: true,
+        // 默认尺寸
+        size: 'medium',
         bodyRowHeight: 45,
-        flexHeight: true, // 表格高度弹性自适应
+        // 表格高度弹性自适应
+        flexHeight: true,
         fixedAvatar: false,
-        loadSuccessTip: false, // 加载成功时提示
-        customLoadFailTip: true, // 自定义加载失败提示
-        customInsertSuccessTip: false, // 自定义插入成功提示
-        customInsertFailTip: false, // 自定义插入失败提示
-        notDeleteLWL: true, // 不允许删除利威尔
-        notDeleteSS: true, // 不允许删除珊莎
-        customDeleteFailTip: true, // 自定义删除失败提示
-        disableDefultDeleteSuccessWhenAL: true, // 当删除对象包含艾伦时, 禁用默认删除成功提示
-        disableUpdateAM: true, // 阿明不允许编辑
-        disableUpdateToZs: true, // 名字不允许改为张三
-        disableInsertLs: true, // 不允许添加李四
-        disableCancelWhenUpdate: true, // 更新行时不允许取消
-        autoSetGraduatedWhenAgeChange: true, // 年龄大于50自动毕业
+        // 加载成功时提示
+        loadSuccessTip: false,
+        // 自定义加载失败提示
+        customLoadFailTip: true,
+        // 自定义插入成功提示
+        customInsertSuccessTip: false,
+        // 自定义插入失败提示
+        customInsertFailTip: false,
+        // 不允许删除利威尔
+        notDeleteLWL: true,
+        // 不允许删除珊莎
+        notDeleteSS: true,
+        // 自定义删除失败提示
+        customDeleteFailTip: true,
+        // 当删除对象包含艾伦时禁用默认删除成功提示
+        disableDefultDeleteSuccessWhenAL: true,
+        // 阿明不允许编辑
+        disableUpdateAM: true,
+        // 名字不允许改为张三
+        disableUpdateToZs: true,
+        // 不允许添加李四
+        disableInsertLs: true,
+        // 更新行时不允许取消
+        disableCancelWhenUpdate: true,
+        // 年龄大于50自动毕业
+        autoSetGraduatedWhenAgeChange: true,
+        // 年龄大于35, 不可编辑幸运时刻
+        noEditLuckWhenAgeGT35: true,
       },
       ...staticDict
     }
@@ -298,13 +323,13 @@ export default {
       console.log('row:', row);
       console.log('config:', config);
       console.log('column:', column);
-      if (this.params.autoSetGraduatedWhenAgeChange === false) {
-        return;
-      }
-      if (util.isNumber(age) && age > 50) {
-        editRow.graduated = true;
-      } else {
-        editRow.graduated = false;
+      if (this.params.autoSetGraduatedWhenAgeChange) {
+        if (util.isNumber(age) && age > 50) {
+          editRow.graduated = true;
+          config['graduated'].props.disabled = true
+        } else {
+          config['graduated'].props.disabled = false
+        }
       }
     },
     handleCurrentChange({fatRow, row}) {

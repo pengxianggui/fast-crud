@@ -10,18 +10,18 @@
       </fast-table-head-cell>
     </template>
 
-    <template v-slot:default="{row: {row, editRow, status, config}, column, $index}">
-      <slot v-bind:default="{row, editRow, status, config, column, $index}">
-        <div v-if="!canEdit(status, config, column)">
-          <slot v-bind:normal="{row, editRow, status, config, column, $index}">
-            <span>{{ showLabel(row[column.property]) }}</span>
+    <template v-slot:default="{row: fatRow, column, $index}">
+      <slot v-bind:default="{...fatRow, column, $index}">
+        <div v-if="!canEdit(fatRow, column, $index)">
+          <slot v-bind:normal="{...fatRow, column, $index}">
+            <span>{{ showLabel(fatRow['row'][column.property]) }}</span>
           </slot>
         </div>
-        <slot v-bind:edit="{row, editRow, status, config, column, $index}" v-else>
-          <el-switch v-model="editRow[column.property]"
-                     v-bind="config[column.property]['props']"
+        <slot v-bind:edit="{...fatRow, column, $index}" v-else>
+          <el-switch v-model="fatRow['editRow'][column.property]"
+                     v-bind="fatRow['config'][column.property]['props']"
                      :ref="column.property + $index"
-                     @change="(val) => handleChange(val, {row, editRow, status, column, config, $index})"></el-switch>
+                     @change="(val) => handleChange(val, {...fatRow, column, $index})"></el-switch>
         </slot>
       </slot>
     </template>

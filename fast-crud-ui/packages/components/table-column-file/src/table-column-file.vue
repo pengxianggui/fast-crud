@@ -14,29 +14,29 @@
       </fast-table-head-cell>
     </template>
 
-    <template v-slot:default="{row: {row, editRow, status, config}, column, $index}">
-      <slot v-bind:default="{row, editRow, status, config, column, $index}">
-        <template v-if="!canEdit(status, config, column)">
-          <slot v-bind:normal="{row, editRow, status, config, column, $index}">
+    <template v-slot:default="{row:fatRow, column, $index}">
+      <slot v-bind:default="{...fatRow, column, $index}">
+        <template v-if="!canEdit(fatRow, column, $index)">
+          <slot v-bind:normal="{...fatRow, column, $index}">
             <fast-upload :style="{'height': tableStyle.bodyRowHeight}"
                          class="fc-fast-upload-file"
-                         v-model="row[column.property]"
-                         v-bind="config[column.property]['props']"
+                         v-model="fatRow['row'][column.property]"
+                         v-bind="fatRow['config'][column.property]['props']"
                          list-type="text"
                          :disabled="true"></fast-upload>
           </slot>
         </template>
-        <slot v-bind="{row, editRow, status, config, column, $index}" v-else>
+        <slot v-bind:edit="{...fatRow, column, $index}" v-else>
           <fast-upload :style="{'height': tableStyle.bodyRowHeight}"
                        class="fc-fast-upload-file"
-                       v-model="editRow[column.property]"
-                       :row="editRow" :col="column.property"
-                       v-bind="config[column.property]['props']"
+                       v-model="fatRow['editRow'][column.property]"
+                       :row="fatRow['editRow']" :col="column.property"
+                       v-bind="fatRow['config'][column.property]['props']"
                        :ref="column.property + $index"
-                       @change="(val) => handleChange(val, {row, editRow, status, column, config, $index})"
-                       @success="(componentScope) => $emit('success', componentScope, {row, editRow, status, column, config, $index})"
-                       @fail="(componentScope) => $emit('fail', componentScope, {row, editRow, status, column, config, $index})"
-                       @exceed="(componentScope) => $emit('exceed', componentScope, {row, editRow, status, column, config, $index})"></fast-upload>
+                       @change="(val) => handleChange(val, {...fatRow, column, $index})"
+                       @success="(componentScope) => $emit('success', componentScope, {...fatRow, column, $index})"
+                       @fail="(componentScope) => $emit('fail', componentScope, {...fatRow, column, $index})"
+                       @exceed="(componentScope) => $emit('exceed', componentScope, {...fatRow, column, $index})"></fast-upload>
         </slot>
       </slot>
     </template>

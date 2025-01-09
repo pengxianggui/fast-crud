@@ -1,7 +1,7 @@
-import {isBoolean} from "../util/util";
+import {defaultIfEmpty, isBoolean, isFunction} from "../util/util";
 
 export default {
-    inject: ['openDynamicFilterForm', 'tableStyle'],
+    inject: ['openDynamicFilterForm', 'tableStyle', 'context'],
     props: {
         prop: String,
         label: String,
@@ -28,12 +28,13 @@ export default {
     methods: {
         /**
          * 是否展示编辑模式
-         * @param status 表格状态
-         * @param config 列配置
+         * @param fatRow
          * @param column element原生列配置
+         * @param $index 当前行索引
          * @returns {boolean}
          */
-        canEdit(status, config, column) {
+        canEdit(fatRow, column, $index) {
+            const {row, editRow, status, config} = fatRow;
             if (status === 'normal') {
                 return false;
             }
@@ -41,6 +42,8 @@ export default {
             const {editable} = config[property];
             if (isBoolean(editable)) {
                 return editable;
+            } else if (isFunction(editable)) {
+                return editable.call(defaultIfEmpty(this.context, this), {row, editRow, status, config, column, $index})
             }
             if (status === 'insert') {
                 return editable === 'insert';

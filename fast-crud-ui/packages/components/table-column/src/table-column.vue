@@ -13,9 +13,9 @@
       </fast-table-head-cell>
     </template>
 
-    <template v-slot:default="{row: {row, editRow, status, config}, column, $index}">
-      <slot v-bind:default="{row, editRow, status, config, column, $index}">
-        <span>{{row[column.property]}}</span>
+    <template v-slot:default="{row: fatRow, column, $index}">
+      <slot v-bind:default="{...fatRow, column, $index}">
+        <span>{{fatRow['row'][column.property]}}</span>
       </slot>
     </template>
   </el-table-column>
