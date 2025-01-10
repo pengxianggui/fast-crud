@@ -28,6 +28,7 @@ Upload, Row, Col, Button, Empty, Popover, Form, FormItem, Dropdown, DropdownMenu
 - FastTableColumnTimePicker: 时间选择列组件
 - FastTableColumnImg: 图片列组件
 - FastTableColumnFile: 文件列组件
+- FastTableColumnObject: 对象选择组件
 
 ## 快速开始
 
