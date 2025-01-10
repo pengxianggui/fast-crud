@@ -95,13 +95,13 @@
 </template>
 
 <script>
-import {MessageBox, Message} from 'element-ui';
+import {Message} from 'element-ui';
 import {remove} from 'lodash-es';
 import QuickFilterForm from "./quick-filter-form.vue";
 import EasyFilter from "./easy-filter.vue";
 import DynamicFilterForm from "./dynamic-filter-form.vue";
 import DynamicFilterList from "./dynamic-filter-list.vue";
-import {Order, PageQuery} from '../../../model';
+import {PageQuery} from '../../../model';
 import FastTableOption from "../../../model";
 import {
   getFullHeight, getInnerHeight,
@@ -228,13 +228,13 @@ export default {
           const {props = {}} = quickFilter;
           noRepeatAdd(this.quickFilters, quickFilter,
               (ele, item) => ele.col === item.col,
-              props.hasOwnProperty('first-filter'))
+              props.firstFilter !== false)
         }
         if (easyFilter) {
           const {props = {}} = easyFilter;
           noRepeatAdd(this.easyFilters, easyFilter,
               (ele, item) => ele.col === item.col,
-              props.hasOwnProperty('first-filter'))
+              props.firstFilter !== false)
         }
         this.columnConfig[col] = {
           tableColumnComponentName: tableColumnComponentName,
@@ -281,7 +281,8 @@ export default {
       // 添加动筛条件
       const dynamicConds = this.dynamicFilters.filter(f => !f.disabled && f.isEffective()).map(f => f.getConds()).flat();
       conds.push(...dynamicConds)
-
+      // 添加固定的预置条件
+      conds.push(...this.option.conds);
       this.pageQuery.setConds(conds);
       const context = this.option.context;
       const beforeLoad = this.option.beforeLoad;
@@ -461,6 +462,12 @@ export default {
       }
       this.choseRow = this.list[index];
       this.$refs['table'].setCurrentRow(this.choseRow);
+    },
+    getChoseRow() {
+      return this.choseRow;
+    },
+    getCheckedRows() {
+      return this.checkedRows;
     },
     handleSelect(rows, row) {
       this.$emit('select', {fatRows: rows, rows: rows.map(r => r.row), fatRow: row, row: row.row});

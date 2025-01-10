@@ -34,7 +34,7 @@ export default {
 
         if (type === 'quick') {
             val = ternary(isUndefined(defaultVal), defaultQueryConfig.val, defaultVal);
-            if (validProps.hasOwnProperty('quick-filter-checkbox')) {
+            if (validProps.hasOwnProperty('quickFilterCheckbox')) {
                 component = 'fast-checkbox-group';
             }
         }

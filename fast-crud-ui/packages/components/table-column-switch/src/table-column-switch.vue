@@ -14,7 +14,7 @@
       <slot v-bind:default="{...fatRow, column, $index}">
         <div v-if="!canEdit(fatRow, column, $index)">
           <slot v-bind:normal="{...fatRow, column, $index}">
-            <span>{{ showLabel(fatRow['row'][column.property]) }}</span>
+            <span>{{ showLabel(fatRow[fatRow.status === 'normal' ? 'row' : 'editRow'][column.property]) }}</span>
           </slot>
         </div>
         <slot v-bind:edit="{...fatRow, column, $index}" v-else>

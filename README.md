@@ -64,7 +64,7 @@ public class CodeGenerator {
 
 ## Roadmap
 
-### 1.0 版本
+### 1.x 版本
 
 #### 后端: 基础功能CRUD接口
 
@@ -109,11 +109,11 @@ public class CodeGenerator {
 ##### 其它
 
 - [x] 增加FastTableColumnFile和FastTableColumnImg，分别文件上传和图片上传功能
+- [x] FastTableColumnObject: 根据另一个tableOption和render来渲染弹窗pick对象，可以回填到当前行
 
-### 2.0 版本：CRUD的外围扩展
+### 2.x 版本：CRUD的外围扩展
 
 - [ ] 批量修改: 选择要修改的行，弹窗输入要修改的字段和值, 批量更新这些行(输入一次值即可作用所有选中行)
-- [ ] FastTableColumnObject: 根据另一个tableOption和render来渲染弹窗pick对象，可以回填到当前行
 - [ ] xlsx数据导出功能: 导出当前筛选条件下的当前页数据/全部数据，可勾选字段
 - [ ] **存筛**：应用已保存的筛选条件进行筛选，下拉按钮菜单，特点：针对已保存的组合筛选条件进行筛选。
     - [ ] 可针对当前搜索条件进行前端保存并加入到快筛菜单按钮里

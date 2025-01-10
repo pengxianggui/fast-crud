@@ -48,7 +48,7 @@ export function rowValid(fatRows, context) {
         const {editRow, status, config} = fatRow;
         Object.keys(config).map(col => {
             const {editable} = config[col];
-            const canEdit = cellEditable.call(defaultIfEmpty(context, this), fatRow, col);
+            const canEdit = colEditable.call(defaultIfEmpty(context, this), fatRow, col);
             if (canEdit) {
                 validPromises.push(colValid(editRow[col], config[col]));
             }
@@ -69,8 +69,11 @@ export const getEditConfig = function (columnConfig, editType) {
         const keys = Object.keys(columnConfig);
         for (let i = 0; i < keys.length; i++) {
             const col = keys[i];
-            const {inlineItemConfig, formItemConfig} = columnConfig[col]
-            config[col] = (editType === 'form' ? deepClone(formItemConfig) : deepClone(inlineItemConfig))
+            const {tableColumnComponentName, inlineItemConfig, formItemConfig} = columnConfig[col];
+            config[col] = (editType === 'form' ? deepClone(formItemConfig) : deepClone(inlineItemConfig));
+            if (tableColumnComponentName === 'fast-table-column') {
+                config[col].props.disabled = true;
+            }
         }
     } catch (err) {
         console.error(err);
@@ -268,7 +271,7 @@ export function escapeValToLabel(component, val, config) {
  * @param config 当前列的配置
  * @param col 当前列属性
  */
-export function cellEditable(fatRow, col) {
+export function colEditable(fatRow, col) {
     const {status, config} = fatRow;
     if (status === 'normal') {
         return false;

@@ -6,6 +6,7 @@ import FastTableColumnFileConfig from './table-column-file/config';
 import FastTableColumnImgConfig from './table-column-img/config';
 import FastTableColumnInputConfig from './table-column-input/config';
 import FastTableColumnNumberConfig from './table-column-number/config';
+import FastTableColumnObjectConfig from './table-column-object/config';
 import FastTableColumnSelectConfig from './table-column-select/config';
 import FastTableColumnSwitchConfig from './table-column-switch/config';
 import FastTableColumnTextareaConfig from './table-column-textarea/config';
@@ -18,6 +19,7 @@ const MAPPING = {
     'fast-table-column-img': FastTableColumnImgConfig,
     'fast-table-column-input': FastTableColumnInputConfig,
     'fast-table-column-number': FastTableColumnNumberConfig,
+    'fast-table-column-object': FastTableColumnObjectConfig,
     'fast-table-column-select': FastTableColumnSelectConfig,
     'fast-table-column-switch': FastTableColumnSwitchConfig,
     'fast-table-column-textarea': FastTableColumnTextareaConfig,

@@ -29,8 +29,11 @@ public class Student {
     // 单选
     private String sex;
 
-    // 多选
     private String hobby;
+
+    private Integer loveId;
+
+    private String loveName;
 
     private String address;
 

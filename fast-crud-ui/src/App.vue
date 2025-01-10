@@ -2,6 +2,7 @@
   <div class="demos">
 <!--    <easy-demo></easy-demo>-->
     <full-demo></full-demo>
+
   </div>
 </template>
 

@@ -14,7 +14,7 @@
         <template v-if="!canEdit(fatRow, column, $index)">
           <slot v-bind:normal="{...fatRow, column, $index}">
             <fast-upload :style="{'height': tableStyle.bodyRowHeight}"
-                         v-model="fatRow['row'][column.property]"
+                         v-model="fatRow[fatRow.status === 'normal' ? 'row' : 'editRow'][column.property]"
                          v-bind="fatRow['config'][column.property]['props']"
                          list-type="picture-card"
                          :disabled="true"></fast-upload>

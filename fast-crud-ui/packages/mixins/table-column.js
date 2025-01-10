@@ -1,5 +1,5 @@
 import {defaultIfEmpty, isBoolean, isFunction} from "../util/util";
-import {cellEditable} from "../components/table/src/util";
+import {colEditable} from "../components/table/src/util";
 
 export default {
     inject: ['openDynamicFilterForm', 'tableStyle', 'context'],
@@ -10,7 +10,15 @@ export default {
             type: Boolean,
             default: () => true
         },
+        firstFilter: {
+            type: Boolean,
+            default: () => false
+        },
         showOverflowToolTip: {
+            type: Boolean,
+            default: () => false
+        },
+        quickFilterBlock: {
             type: Boolean,
             default: () => false
         }
@@ -35,7 +43,7 @@ export default {
          * @returns {boolean}
          */
         canEdit(fatRow, column, $index) {
-            return cellEditable.call(defaultIfEmpty(this.context, this), fatRow, column.property);
+            return colEditable.call(defaultIfEmpty(this.context, this), fatRow, column.property);
         },
         headCellClick(column) {
             if (this.filter) {

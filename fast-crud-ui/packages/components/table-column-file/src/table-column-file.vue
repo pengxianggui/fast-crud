@@ -20,7 +20,7 @@
           <slot v-bind:normal="{...fatRow, column, $index}">
             <fast-upload :style="{'height': tableStyle.bodyRowHeight}"
                          class="fc-fast-upload-file"
-                         v-model="fatRow['row'][column.property]"
+                         v-model="fatRow[fatRow.status === 'normal' ? 'row' : 'editRow'][column.property]"
                          v-bind="fatRow['config'][column.property]['props']"
                          list-type="text"
                          :disabled="true"></fast-upload>

@@ -82,9 +82,13 @@
                                 :default-val_q="['1', '2', '3', '4', '5']"
                                 :disable-val="['6']"
                                 required/>
+      <fast-table-column label="爱慕者Id" prop="loveId"/>
+      <fast-table-column-object label="爱慕者姓名" prop="loveName"
+                                :table-option="loveOption" show-field="lovName" :pick-map="{id: 'loveId', name: 'loveName'}"/>
       <fast-table-column-textarea label="地址" prop="address"/>
       <fast-table-column-switch label="已毕业" prop="graduated" :quick-filter="true" required/>
-      <fast-table-column-time-picker label="幸运时刻" prop="luckTime" required :editable="({editRow}) => !(editRow.age > 35)"/>
+      <fast-table-column-time-picker label="幸运时刻" prop="luckTime" required
+                                     :editable="({editRow}) => !(editRow.age > 35)"/>
       <fast-table-column-date-picker label="生日" prop="birthday" :picker-options="pickerOptionsE" required/>
       <fast-table-column-file label="简历" prop="resumeUrl" :show-overflow-tool-tip="false"/>
       <fast-table-column-date-picker label="创建时间" prop="createTime" :picker-options_q="pickerOptionsQ"
@@ -100,6 +104,8 @@
       </el-table-column>
       <template #button="scope">
         <el-button :size="scope.size" @click="expandButton(scope)">扩展按钮</el-button>
+        <el-button :size="scope.size" @click="tryPick(false)">Try Pick</el-button>
+        <el-button :size="scope.size" @click="tryPick(true)">Try Pick(多选)</el-button>
       </template>
       <template #moreButton="scope">
         <el-dropdown-item :size="scope.size" @click.native="expandMoreButton(scope)">扩展按钮</el-dropdown-item>
@@ -112,9 +118,10 @@
 </template>
 
 <script>
-import {FastTableOption, util} from "../../../packages";
+import {FastTableOption, Cond, util} from "../../../packages";
 import {Message} from 'element-ui';
 import staticDict from './dict'
+import {pick} from "../../../packages/util/pick";
 
 export default {
   name: "FastTableDemo",
@@ -123,6 +130,57 @@ export default {
     const monthAgo = new Date();
     monthAgo.setTime(monthAgo.getTime() - 3600 * 1000 * 24 * 30);
     return {
+      params: {
+        editType: 'inline',
+        // 允许分页加载
+        pageLoadable: true,
+        // 允许新增
+        insertable: true,
+        // 允许编辑
+        updatable: true,
+        // 允许删除
+        deletable: true,
+        // 允许动态筛选
+        enableColumnFilter: true,
+        // 启用多选
+        enableMulti: true,
+        // 启用双击编辑
+        enableDblClickEdit: true,
+        // 默认尺寸
+        size: 'medium',
+        bodyRowHeight: 45,
+        // 表格高度弹性自适应
+        flexHeight: true,
+        fixedAvatar: false,
+        // 加载成功时提示
+        loadSuccessTip: false,
+        // 自定义加载失败提示
+        customLoadFailTip: true,
+        // 自定义插入成功提示
+        customInsertSuccessTip: false,
+        // 自定义插入失败提示
+        customInsertFailTip: false,
+        // 不允许删除利威尔
+        notDeleteLWL: true,
+        // 不允许删除珊莎
+        notDeleteSS: true,
+        // 自定义删除失败提示
+        customDeleteFailTip: true,
+        // 当删除对象包含艾伦时禁用默认删除成功提示
+        disableDefultDeleteSuccessWhenAL: true,
+        // 阿明不允许编辑
+        disableUpdateAM: true,
+        // 名字不允许改为张三
+        disableUpdateToZs: true,
+        // 不允许添加李四
+        disableInsertLs: true,
+        // 更新行时不允许取消
+        disableCancelWhenUpdate: false,
+        // 年龄大于50自动毕业
+        autoSetGraduatedWhenAgeChange: true,
+        // 年龄大于35, 不可编辑幸运时刻
+        noEditLuckWhenAgeGT35: true,
+      },
       tableOption: new FastTableOption({
         context: this, // important! 否则钩子函数里无法获取当当前组件实例上下文
         title: '',
@@ -146,7 +204,7 @@ export default {
           size: 'medium', // mini,small,medium,default
           bodyRowHeight: '45px',
           formLabelWidth: 'auto', // 默认为auto
-          formLayout: 'avatarUrl, name|age|sex, graduated|hobby|hobby, address, birthday|luckTime, resumeUrl, createTime' // 弹窗表单布局设置
+          formLayout: 'id,avatarUrl, name|age|sex, graduated|hobby|hobby, loveId|loveName|loveName, address, birthday|luckTime, resumeUrl, createTime' // 弹窗表单布局设置
         },
         beforeLoad({query}) {
           if (this.params.pageLoadable) {
@@ -247,60 +305,23 @@ export default {
           return Promise.resolve();
         }
       }),
-
+      loveOption: new FastTableOption({
+        module: 'student',
+        conds: [
+          // 预筛
+          // {col: 'name', opt: '=', val: '利威尔'} // 写法一
+          // new Cond('name', 'like', '利威尔') // 写法二
+        ],
+        render(h) {
+          return [
+            h('fast-table-column', {props: {prop: 'id', label: 'id'}}),
+            h('fast-table-column-img', {props: {prop: 'avatarUrl', label: '头像'}}),
+            h('fast-table-column', {props: {prop: 'name', label: '姓名1', firstFilter: true}})
+          ]
+        }
+      }),
       tableKey: 0,
       defaultQueryOfCreatedTime: [monthAgo, now],
-      params: {
-        editType: 'inline',
-        // 允许分页加载
-        pageLoadable: true,
-        // 允许新增
-        insertable: true,
-        // 允许编辑
-        updatable: true,
-        // 允许删除
-        deletable: true,
-        // 允许动态筛选
-        enableColumnFilter: true,
-        // 启用多选
-        enableMulti: true,
-        // 启用双击编辑
-        enableDblClickEdit: true,
-        // 默认尺寸
-        size: 'medium',
-        bodyRowHeight: 45,
-        // 表格高度弹性自适应
-        flexHeight: true,
-        fixedAvatar: false,
-        // 加载成功时提示
-        loadSuccessTip: false,
-        // 自定义加载失败提示
-        customLoadFailTip: true,
-        // 自定义插入成功提示
-        customInsertSuccessTip: false,
-        // 自定义插入失败提示
-        customInsertFailTip: false,
-        // 不允许删除利威尔
-        notDeleteLWL: true,
-        // 不允许删除珊莎
-        notDeleteSS: true,
-        // 自定义删除失败提示
-        customDeleteFailTip: true,
-        // 当删除对象包含艾伦时禁用默认删除成功提示
-        disableDefultDeleteSuccessWhenAL: true,
-        // 阿明不允许编辑
-        disableUpdateAM: true,
-        // 名字不允许改为张三
-        disableUpdateToZs: true,
-        // 不允许添加李四
-        disableInsertLs: true,
-        // 更新行时不允许取消
-        disableCancelWhenUpdate: true,
-        // 年龄大于50自动毕业
-        autoSetGraduatedWhenAgeChange: true,
-        // 年龄大于35, 不可编辑幸运时刻
-        noEditLuckWhenAgeGT35: true,
-      },
       ...staticDict
     }
   },
@@ -372,6 +393,20 @@ export default {
       console.log('choseRow', choseRow)
       console.log('checkedRows', checkedRows)
       console.log('editRows', editRows)
+    },
+    tryPick(multiple) {
+      pick({
+        multiple: multiple,
+        option: this.loveOption,
+        dialog: {
+          width: '80%'
+        }
+      }).then((data) => {
+        Message.success('打开控制台查看你选择的数据!')
+        console.log('你选择数据:', data)
+      }).catch(() => {
+        Message.info('你取消了')
+      })
     },
     expandMoreButton({choseRow, checkedRows, editRows}) {
       console.log('choseRow', choseRow)

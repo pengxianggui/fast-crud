@@ -10,7 +10,7 @@
           <el-form-item :prop="col"
                         :label="config[col].label"
                         :key="col"
-                        v-if="canEdit(col, config)">
+                        v-if="canEdit(col)">
             <component :is="config[col].component"
                        v-bind="config[col].props"
                        v-model="formData[col]"
@@ -30,7 +30,8 @@
 <script>
 import {Message} from 'element-ui';
 import FastTableOption, {EditComponentConfig} from "../../../model";
-import {isBoolean, isEmpty} from "../../../util/util";
+import {isEmpty} from "../../../util/util";
+import {colEditable} from "./util";
 
 export default {
   name: "row-form",
@@ -42,19 +43,20 @@ export default {
     layout: String
   },
   data() {
+    const formData = this.row.editRow
     const ruleMap = {};
     for (const col in this.config) {
-      const {props: {rules = []}} = this.config[col];
+      const {component, props: {rules = []}} = this.config[col];
       if (!isEmpty(rules)) {
         ruleMap[col] = rules;
       }
+      if (component === 'fast-object-picker') { // 对于FastObjectPicker需要特别把formData传进去
+        this.config[col].props.pickObject = formData;
+      }
     }
-    const {editRow} = this.row
     return {
       rules: ruleMap,
-      formData: {
-        ...editRow
-      }
+      formData: formData
     }
   },
   computed: {
@@ -67,7 +69,7 @@ export default {
       return layout.split(",").map(row => {
         const rowObj = {};
         const cols = row.split("|");
-        const perSpan = Math.floor(24/cols.length);
+        const perSpan = Math.floor(24 / cols.length);
         for (let i = 0; i < cols.length; i++) {
           const key = cols[i].trim();
           if (rowObj.hasOwnProperty(key)) {
@@ -87,21 +89,8 @@ export default {
      * @param config 列配置
      * @returns {boolean}
      */
-    canEdit(col, config) {
-      if (!config.hasOwnProperty(col)) {
-        return false;
-      }
-      const {editable} = config[col];
-      if (isBoolean(editable)) {
-        return editable;
-      }
-      if (this.type === 'insert') {
-        return editable === 'insert';
-      }
-      if (this.type === 'update') {
-        return editable === 'update';
-      }
-      return false;
+    canEdit(col) {
+      return colEditable.call(this.option.context, {...this.row, status: this.type}, col);
     },
     cancel() {
       const {context, beforeCancel} = this.option;
@@ -122,13 +111,7 @@ export default {
           return;
         }
         const fn = this.type === 'insert' ? this.option._insertRows : this.option._updateRows;
-        const {row, config} = this.row;
-        const fatRow = {
-          row: row,
-          editRow: this.formData,
-          config: config
-        }
-        fn.call(this.option, [fatRow]).then(() => {
+        fn.call(this.option, [this.row]).then(() => {
           this.$emit('ok')
         })
       })

@@ -20,11 +20,14 @@ const defaultQueryConfig = {
     }
 }
 const defaultEditConfig = {
-    component: 'el-input',
+    component: 'fast-object-picker',
     val: null,
     props: {
         class: 'fc-table-inline-edit-component',
-        editable: true // fast-table-column不允许编辑
+        clearable: true,
+        multiple: false, // 默认单选
+        title: '请选择',
+        editable: true,
     }
 }
 export default {

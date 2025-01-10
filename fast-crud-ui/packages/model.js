@@ -3,7 +3,7 @@ import {
     assert,
     caseToCamel,
     coverMerge,
-    defaultIfBlank,
+    defaultIfBlank, isArray,
     isBoolean,
     isEmpty, isFunction,
     isString,
@@ -38,6 +38,8 @@ export class Cond {
     val;
 
     constructor(col, opt, val) {
+        assert(isString(col) && !isEmpty(col), 'col必须为有效字符串')
+        assert(Object.values(Opt).indexOf(opt) > -1, 'opt无效!')
         this.col = col;
         this.opt = opt;
         this.val = val;
@@ -51,6 +53,13 @@ export class Cond {
     setVal(val) {
         this.val = val;
         return this;
+    }
+
+    static build(condJson) {
+        if (condJson instanceof Cond) {
+            return condJson;
+        }
+        return new Cond(condJson.col, defaultIfBlank(condJson.opt, Opt.EQ), condJson.val);
     }
 }
 
@@ -315,7 +324,147 @@ class FastTableOption {
     beforeDeleteTip;
     beforeCancel; // 工能区中取消按钮点击前
 
+    render; // 渲染函数, pick时用到
+    conds; // 固定的筛选条件，内部无法取消
+
     static $http;
+
+    constructor({
+                    context,
+                    title = '',
+                    module = '',
+                    pageUrl = '',
+                    listUrl = '',
+                    insertUrl = '',
+                    batchInsertUrl = '',
+                    updateUrl = '',
+                    batchUpdateUrl = '',
+                    deleteUrl = '',
+                    batchDeleteUrl = '',
+                    uploadUrl = '',
+                    exportUrl = '',
+                    enableDblClickEdit = true,
+                    enableMulti = true,
+                    enableColumnFilter = true,
+                    lazyLoad = false,
+                    editType = 'inline',
+                    insertable = true,
+                    updatable = true,
+                    deletable = true,
+                    sortField = '',
+                    sortDesc = true,
+                    pagination = {
+                        layout: 'total, sizes, prev, pager, next, jumper',
+                        'page-sizes': [10, 20, 50, 100, 200],
+                        size: 10
+                    },
+                    style = {
+                        flexHeight: false,
+                        bodyRowHeight: '50px',
+                        size: 'medium',
+                        formLabelWidth: 'auto',
+                        formLayout: null
+                    },
+                    beforeLoad = ({query}) => Promise.resolve(),
+                    loadSuccess = ({query, data, res}) => Promise.resolve(data),
+                    loadFail = ({query, error}) => Promise.resolve(),
+                    beforeToInsert = () => Promise.resolve(),
+                    beforeInsert = ({fatRows, rows, editRows}) => Promise.resolve(),
+                    insertSuccess = ({fatRows, rows, editRows, res}) => Promise.resolve(),
+                    insertFail = ({fatRows, rows, editRows, error}) => Promise.resolve(),
+                    beforeToUpdate = ({fatRows, rows}) => Promise.resolve(),
+                    beforeUpdate = ({fatRows, rows, editRows}) => Promise.resolve(),
+                    updateSuccess = ({fatRows, rows, editRows, res}) => Promise.resolve(),
+                    updateFail = ({fatRows, rows, editRows, error}) => Promise.resolve(),
+                    beforeDeleteTip = ({fatRows, rows}) => Promise.resolve(),
+                    beforeDelete = ({fatRows, rows}) => Promise.resolve(),
+                    deleteSuccess = ({fatRows, rows, res}) => Promise.resolve(),
+                    deleteFail = ({fatRows, rows, error}) => Promise.resolve(),
+                    beforeCancel = ({fatRows, rows, status}) => Promise.resolve(),
+                    render = (h) => [],
+                    conds = []
+                }) {
+        assert(isString(title), 'title必须为字符串')
+        assert(isString(module), 'module必须为字符串')
+        assert(isBoolean(enableDblClickEdit), 'enableDblClickEdit必须为布尔值')
+        assert(isBoolean(enableMulti), 'enableMulti必须为布尔值')
+        assert(isBoolean(enableColumnFilter), 'enableColumnFilter必须为布尔值')
+        assert(isBoolean(lazyLoad), 'lazyLoad必须为布尔值')
+        assert(['inline', 'form'].includes(editType), 'editType必须为inline或form')
+        assert(isBoolean(insertable), 'insertable必须为布尔值')
+        assert(isBoolean(updatable), 'updatable必须为布尔值')
+        assert(isBoolean(deletable), 'deletable必须为布尔值')
+        assert(isString(sortField), 'sortField必须为字符串')
+        assert(isBoolean(sortDesc), 'sortDesc必须为布尔值')
+        assert(isFunction(beforeLoad), 'beforeLoad必须为函数')
+        assert(isFunction(loadSuccess), 'loadSuccess必须为函数')
+        assert(isFunction(loadFail), 'loadFail必须为函数')
+        assert(isFunction(beforeToInsert), 'beforeToInsert必须为函数')
+        assert(isFunction(beforeInsert), 'beforeInsert必须为函数')
+        assert(isFunction(insertSuccess), 'insertSuccess必须为函数')
+        assert(isFunction(insertFail), 'insertFail必须为函数')
+        assert(isFunction(beforeToUpdate), 'beforeToUpdate必须为函数')
+        assert(isFunction(beforeUpdate), 'beforeUpdate必须为函数')
+        assert(isFunction(updateSuccess), 'updateSuccess必须为函数')
+        assert(isFunction(updateFail), 'updateFail必须为函数')
+        assert(isFunction(beforeDeleteTip), 'beforeDeleteTip必须为函数')
+        assert(isFunction(beforeDelete), 'beforeDelete必须为函数')
+        assert(isFunction(deleteSuccess), 'deleteSuccess必须为函数')
+        assert(isFunction(deleteFail), 'deleteFail必须为函数')
+        assert(isFunction(beforeCancel), 'beforeCancel必须为函数')
+        assert(isFunction(render), "render必须是一个函数")
+        assert(isArray(conds), "conds必须是Cond对象(或可转换为Cond对象的json)组成的数组")
+
+        this.context = context;
+        this.title = title;
+        this.module = module;
+        this.pageUrl = defaultIfBlank(pageUrl, module + '/page');
+        this.listUrl = defaultIfBlank(listUrl, module + '/list');
+        this.insertUrl = defaultIfBlank(insertUrl, module + '/insert');
+        this.batchInsertUrl = defaultIfBlank(batchInsertUrl, module + '/insert/batch');
+        this.updateUrl = defaultIfBlank(updateUrl, module + '/update');
+        this.batchUpdateUrl = defaultIfBlank(batchUpdateUrl, module + '/update/batch');
+        this.deleteUrl = defaultIfBlank(deleteUrl, module + '/delete');
+        this.batchDeleteUrl = defaultIfBlank(batchDeleteUrl, module + '/delete/batch');
+        this.uploadUrl = defaultIfBlank(uploadUrl, module + '/upload');
+        this.exportUrl = defaultIfBlank(exportUrl, module + '/export');
+        this.enableDblClickEdit = enableDblClickEdit;
+        this.enableMulti = enableMulti;
+        this.enableColumnFilter = enableColumnFilter;
+        this.lazyLoad = lazyLoad;
+        this.editType = editType;
+        this.insertable = insertable;
+        this.updatable = updatable;
+        this.deletable = deletable;
+        this.sortField = sortField;
+        this.sortDesc = sortDesc;
+        coverMerge(this.pagination, pagination, true, true)
+        coverMerge(this.style, style, true, true)
+
+        this.beforeLoad = beforeLoad;
+        this.loadSuccess = loadSuccess;
+        this.loadFail = loadFail;
+
+        this.beforeToInsert = beforeToInsert;
+        this.beforeInsert = beforeInsert;
+        this.insertSuccess = insertSuccess;
+        this.insertFail = insertFail;
+
+        this.beforeToUpdate = beforeToUpdate;
+        this.beforeUpdate = beforeUpdate;
+        this.updateSuccess = updateSuccess;
+        this.updateFail = updateFail;
+
+        this.beforeDeleteTip = beforeDeleteTip;
+        this.beforeDelete = beforeDelete;
+        this.deleteSuccess = deleteSuccess;
+        this.deleteFail = deleteFail;
+
+        this.beforeCancel = beforeCancel;
+
+        this.render = render;
+        this.conds = conds.map(c => Cond.build(c));
+    }
 
     /**
      * 新增行, 返回promise
@@ -464,136 +613,6 @@ class FastTableOption {
                 reject(err);
             })
         });
-    }
-
-    constructor({
-                    context,
-                    title = '',
-                    module = '',
-                    pageUrl = '',
-                    listUrl = '',
-                    insertUrl = '',
-                    batchInsertUrl = '',
-                    updateUrl = '',
-                    batchUpdateUrl = '',
-                    deleteUrl = '',
-                    batchDeleteUrl = '',
-                    uploadUrl = '',
-                    exportUrl = '',
-                    enableDblClickEdit = true,
-                    enableMulti = true,
-                    enableColumnFilter = true,
-                    lazyLoad = false,
-                    editType = 'inline',
-                    insertable = true,
-                    updatable = true,
-                    deletable = true,
-                    sortField = '',
-                    sortDesc = true,
-                    pagination = {
-                        layout: 'total, sizes, prev, pager, next, jumper',
-                        'page-sizes': [10, 20, 50, 100, 200],
-                        size: 10
-                    },
-                    style = {
-                        flexHeight: false,
-                        bodyRowHeight: '50px',
-                        size: 'medium',
-                        formLabelWidth: 'auto',
-                        formLayout: null
-                    },
-                    beforeLoad = ({query}) => Promise.resolve(),
-                    loadSuccess = ({query, data, res}) => Promise.resolve(data),
-                    loadFail = ({query, error}) => Promise.resolve(),
-                    beforeToInsert = () => Promise.resolve(),
-                    beforeInsert = ({fatRows, rows, editRows}) => Promise.resolve(),
-                    insertSuccess = ({fatRows, rows, editRows, res}) => Promise.resolve(),
-                    insertFail = ({fatRows, rows, editRows, error}) => Promise.resolve(),
-                    beforeToUpdate = ({fatRows, rows}) => Promise.resolve(),
-                    beforeUpdate = ({fatRows, rows, editRows}) => Promise.resolve(),
-                    updateSuccess = ({fatRows, rows, editRows, res}) => Promise.resolve(),
-                    updateFail = ({fatRows, rows, editRows, error}) => Promise.resolve(),
-                    beforeDeleteTip = ({fatRows, rows}) => Promise.resolve(),
-                    beforeDelete = ({fatRows, rows}) => Promise.resolve(),
-                    deleteSuccess = ({fatRows, rows, res}) => Promise.resolve(),
-                    deleteFail = ({fatRows, rows, error}) => Promise.resolve(),
-                    beforeCancel = ({fatRows, rows, status}) => Promise.resolve(),
-                }) {
-        assert(isString(title), 'title必须为字符串')
-        assert(isString(module), 'module必须为字符串')
-        assert(isBoolean(enableDblClickEdit), 'enableDblClickEdit必须为布尔值')
-        assert(isBoolean(enableMulti), 'enableMulti必须为布尔值')
-        assert(isBoolean(enableColumnFilter), 'enableColumnFilter必须为布尔值')
-        assert(isBoolean(lazyLoad), 'lazyLoad必须为布尔值')
-        assert(['inline', 'form'].includes(editType), 'editType必须为inline或form')
-        assert(isBoolean(insertable), 'insertable必须为布尔值')
-        assert(isBoolean(updatable), 'updatable必须为布尔值')
-        assert(isBoolean(deletable), 'deletable必须为布尔值')
-        assert(isString(sortField), 'sortField必须为字符串')
-        assert(isBoolean(sortDesc), 'sortDesc必须为布尔值')
-        assert(isFunction(beforeLoad), 'beforeLoad必须为函数')
-        assert(isFunction(loadSuccess), 'loadSuccess必须为函数')
-        assert(isFunction(loadFail), 'loadFail必须为函数')
-        assert(isFunction(beforeToInsert), 'beforeToInsert必须为函数')
-        assert(isFunction(beforeInsert), 'beforeInsert必须为函数')
-        assert(isFunction(insertSuccess), 'insertSuccess必须为函数')
-        assert(isFunction(insertFail), 'insertFail必须为函数')
-        assert(isFunction(beforeToUpdate), 'beforeToUpdate必须为函数')
-        assert(isFunction(beforeUpdate), 'beforeUpdate必须为函数')
-        assert(isFunction(updateSuccess), 'updateSuccess必须为函数')
-        assert(isFunction(updateFail), 'updateFail必须为函数')
-        assert(isFunction(beforeDeleteTip), 'beforeDeleteTip必须为函数')
-        assert(isFunction(beforeDelete), 'beforeDelete必须为函数')
-        assert(isFunction(deleteSuccess), 'deleteSuccess必须为函数')
-        assert(isFunction(deleteFail), 'deleteFail必须为函数')
-        assert(isFunction(beforeCancel), 'beforeCancel必须为函数')
-
-        this.context = context;
-        this.title = title;
-        this.module = module;
-        this.pageUrl = defaultIfBlank(pageUrl, module + '/page');
-        this.listUrl = defaultIfBlank(listUrl, module + '/list');
-        this.insertUrl = defaultIfBlank(insertUrl, module + '/insert');
-        this.batchInsertUrl = defaultIfBlank(batchInsertUrl, module + '/insert/batch');
-        this.updateUrl = defaultIfBlank(updateUrl, module + '/update');
-        this.batchUpdateUrl = defaultIfBlank(batchUpdateUrl, module + '/update/batch');
-        this.deleteUrl = defaultIfBlank(deleteUrl, module + '/delete');
-        this.batchDeleteUrl = defaultIfBlank(batchDeleteUrl, module + '/delete/batch');
-        this.uploadUrl = defaultIfBlank(uploadUrl, module + '/upload');
-        this.exportUrl = defaultIfBlank(exportUrl, module + '/export');
-        this.enableDblClickEdit = enableDblClickEdit;
-        this.enableMulti = enableMulti;
-        this.enableColumnFilter = enableColumnFilter;
-        this.lazyLoad = lazyLoad;
-        this.editType = editType;
-        this.insertable = insertable;
-        this.updatable = updatable;
-        this.deletable = deletable;
-        this.sortField = sortField;
-        this.sortDesc = sortDesc;
-        coverMerge(this.pagination, pagination, true, true)
-        coverMerge(this.style, style, true, true)
-
-        this.beforeLoad = beforeLoad;
-        this.loadSuccess = loadSuccess;
-        this.loadFail = loadFail;
-
-        this.beforeToInsert = beforeToInsert;
-        this.beforeInsert = beforeInsert;
-        this.insertSuccess = insertSuccess;
-        this.insertFail = insertFail;
-
-        this.beforeToUpdate = beforeToUpdate;
-        this.beforeUpdate = beforeUpdate;
-        this.updateSuccess = updateSuccess;
-        this.updateFail = updateFail;
-
-        this.beforeDeleteTip = beforeDeleteTip;
-        this.beforeDelete = beforeDelete;
-        this.deleteSuccess = deleteSuccess;
-        this.deleteFail = deleteFail;
-
-        this.beforeCancel = beforeCancel;
     }
 }
 

@@ -15,7 +15,7 @@
 
     <template v-slot:default="{row: fatRow, column, $index}">
       <slot v-bind:default="{...fatRow, column, $index}">
-        <span>{{fatRow['row'][column.property]}}</span>
+        <span>{{fatRow[fatRow.status === 'normal' ? 'row' : 'editRow'][column.property]}}</span>
       </slot>
     </template>
   </el-table-column>

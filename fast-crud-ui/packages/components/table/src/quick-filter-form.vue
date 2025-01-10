@@ -4,7 +4,7 @@
                   :key="filter.col"
                   :prop="filter.col"
                   :label="filter.label + '：'"
-                  :class="filter.props && filter.props.hasOwnProperty('quick-filter-block') ? 'fc-quick-filter-form-item-block': ''"
+                  :class="filter.props && filter.props.quickFilterBlock !== false ? 'fc-quick-filter-form-item-block': ''"
                   class="fc-quick-filter-form-item">
       <component :size="size" :is="filter.component" v-model="filter.val" v-bind="filter.props"/>
     </el-form-item>
@@ -49,9 +49,9 @@ export default {
       filters.sort((a, b) => {
         const {props: propsA} = a;
         const {props: propsB} = b;
-        if (propsA.hasOwnProperty('quick-filter-block') && !propsB.hasOwnProperty('quick-filter-block')) {
+        if (propsA.quickFilterBlock !== false && propsB.quickFilterBlock === false) {
           return -1
-        } else if (!propsA.hasOwnProperty('quick-filter-block') && propsB.hasOwnProperty('quick-filter-block')) {
+        } else if (propsA.quickFilterBlock === false && propsB.quickFilterBlock !== false) {
           return 1
         }
         return 0;
