@@ -11,7 +11,7 @@
       </fast-table-head-cell>
     </template>
 
-    <template v-slot:default="{row:fatRow, column, $index}">
+    <template v-slot:default="{row: fatRow, column, $index}">
       <slot v-bind:default="{...fatRow, column, $index}">
         <div v-if="!canEdit(fatRow, column, $index)">
           <slot v-bind:normal="{...fatRow, column, $index}">
@@ -22,16 +22,7 @@
           <fast-object-picker v-model="fatRow['editRow'][column.property]"
                               v-bind="fatRow['config'][column.property]['props']"
                               :table-option="getTableOption(fatRow, column, $index)"
-                              :show-field="showField"
                               :pick-object="fatRow['editRow']"
-                              :pick-map="pickMap"
-                              :value-covert="valueConvert"
-                              :before-open="beforeOpen"
-                              :title="title"
-                              :multiple="multiple"
-                              :placeholder="placeholder"
-                              :append-to-body="appendToBody"
-                              :clearable="clearable"
                               :ref="column.property + $index"
                               @change="(val) => handleChange(val, {...fatRow, column, $index})"
                               @blur="(event) => handleBlur(event, {...fatRow, column, $index})"

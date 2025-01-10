@@ -45,9 +45,8 @@ export function rowValid(fatRows, context) {
     const validPromises = [];
     for (let i = 0; i < fatRows.length; i++) {
         const fatRow = fatRows[i];
-        const {editRow, status, config} = fatRow;
+        const {editRow, config} = fatRow;
         Object.keys(config).map(col => {
-            const {editable} = config[col];
             const canEdit = colEditable.call(defaultIfEmpty(context, this), fatRow, col);
             if (canEdit) {
                 validPromises.push(colValid(editRow[col], config[col]));
@@ -277,7 +276,7 @@ export function colEditable(fatRow, col) {
         return false;
     }
 
-    const {editable} = config[col];
+    const {editable = true} = config[col];
     if (isBoolean(editable)) {
         return editable;
     } else if (isFunction(editable)) {

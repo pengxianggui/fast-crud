@@ -84,7 +84,7 @@
                                 required/>
       <fast-table-column label="爱慕者Id" prop="loveId"/>
       <fast-table-column-object label="爱慕者姓名" prop="loveName"
-                                :table-option="loveOption" show-field="lovName" :pick-map="{id: 'loveId', name: 'loveName'}"/>
+                                :table-option="loveOption" show-field="name" :pick-map="{id: 'loveId'}"/>
       <fast-table-column-textarea label="地址" prop="address"/>
       <fast-table-column-switch label="已毕业" prop="graduated" :quick-filter="true" required/>
       <fast-table-column-time-picker label="幸运时刻" prop="luckTime" required
