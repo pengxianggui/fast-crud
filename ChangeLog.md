@@ -1,7 +1,7 @@
 # 1.x.x
 | 版本    | 前端                                                                | 后端                                     |
 |-------|-------------------------------------------------------------------| ---------------------------------------- |
-| 1.1.0 | 支持FastTableColumnObject以及对应的pick方法和FastObjectPicker组件             | -                                        |
+| 1.1.2 | 支持FastTableColumnObject以及对应的pick方法和FastObjectPicker组件             | -                                        |
 | 1.0.6 | 对于未启用编辑的列, 不做数据校验                                                 | -                                        |
 | 1.0.5 | FastTableColumn* editable支持Function可根据行数据动态控制                     | -                                        |
 | 1.0.4 | FastTable调整addForm方法支持传入对象参数设置初始值                                 | -                                        |

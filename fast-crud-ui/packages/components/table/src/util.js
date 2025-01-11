@@ -69,7 +69,10 @@ export const getEditConfig = function (columnConfig, editType) {
         for (let i = 0; i < keys.length; i++) {
             const col = keys[i];
             const {tableColumnComponentName, inlineItemConfig, formItemConfig} = columnConfig[col];
-            config[col] = (editType === 'form' ? deepClone(formItemConfig) : deepClone(inlineItemConfig));
+            // FIX: 此处深拷贝针对FastTableColumnObject可能存在问题(TypeError: Cannot convert a Symbol value to a string)
+            // 权衡下，这里无需深拷贝, config内容其实不会更改
+            // config[col] = (editType === 'form' ? deepClone(formItemConfig) : deepClone(inlineItemConfig));
+            config[col] = (editType === 'form' ? formItemConfig : inlineItemConfig);
             if (tableColumnComponentName === 'fast-table-column') {
                 config[col].props.disabled = true;
             }
@@ -276,7 +279,7 @@ export function colEditable(fatRow, col) {
         return false;
     }
 
-    const {editable = true} = config[col];
+    const {editable} = config[col];
     if (isBoolean(editable)) {
         return editable;
     } else if (isFunction(editable)) {

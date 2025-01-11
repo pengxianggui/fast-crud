@@ -92,4 +92,4 @@ new Vue({
 </script>
 ```
 
-更多使用文档参见: [这里](http://pengxg.cc/tags/fast-crud-ui)
+更多使用文档参见: [这里](http://pengxg.cc/tags/fast-crud-ui), 版本迭代参见[这里](https://github.com/pengxianggui/fast-crud/blob/main/ChangeLog.md)

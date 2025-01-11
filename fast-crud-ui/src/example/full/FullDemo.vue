@@ -69,7 +69,7 @@
                 @selection-change="handleSelectionChange"
                 @select-all="handleSelectAll">
       <fast-table-column label="ID" prop="id"/>
-      <fast-table-column-img label="头像" prop="avatarUrl" :fixed="params.fixedAvatar" required/>
+      <fast-table-column-img label="头像" prop="avatarUrl" :fixed="params.fixedAvatar"/>
       <fast-table-column-input label="姓名" prop="name" first-filter :quick-filter="true" required/>
       <fast-table-column-number label="年龄" prop="age" required
                                 :min="18" :max="60"
@@ -83,7 +83,7 @@
                                 :disable-val="['6']"
                                 required/>
       <fast-table-column label="爱慕者Id" prop="loveId"/>
-      <fast-table-column-object label="爱慕者姓名" prop="loveName"
+      <fast-table-column-object label="爱慕者姓名" prop="loveName" required
                                 :table-option="loveOption" show-field="name" :pick-map="{id: 'loveId'}"/>
       <fast-table-column-textarea label="地址" prop="address"/>
       <fast-table-column-switch label="已毕业" prop="graduated" :quick-filter="true" required/>

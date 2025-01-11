@@ -1,5 +1,5 @@
 <template>
-  <el-input v-model="modelValue" readonly
+  <el-input v-model="modelValue" readonly prefix-icon="el-icon-search"
             :clearable="clearable" :placeholder="placeholder" :size="size" :disabled="disabled"
             @clear="(event) => $emit('clear', event)"
             @blur="(event) => $emit('blur', event)"

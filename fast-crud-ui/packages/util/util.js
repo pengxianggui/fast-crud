@@ -168,11 +168,21 @@ export function parse(str) {
 export function deepClone(obj) {
     if (isObject(obj)) {
         // return Object.assign({}, obj)
-        return cloneDeep(obj)
+        try {
+            return cloneDeep(obj);
+        } catch (err) {
+            console.error(err)
+            return {...obj}
+        }
     }
     if (isArray(obj)) {
         // return Object.assign([], obj)
-        return cloneDeep(obj)
+        try {
+            return cloneDeep(obj);
+        } catch (err) {
+            console.error(err);
+            return [...obj];
+        }
     }
     return obj;
 }

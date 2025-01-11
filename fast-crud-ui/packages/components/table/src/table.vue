@@ -292,7 +292,7 @@ export default {
           FastTableOption.$http.post(this.option.pageUrl, this.pageQuery.toJson()).then(res => {
             this.exitEditStatus();
             const loadSuccess = this.option.loadSuccess;
-            loadSuccess.call(context, {query: this.pageQuery, data: res.data, res: res}).then(({records, total}) => {
+            loadSuccess.call(context, {query: this.pageQuery, data: res.data, res: res}).then(({records = [], total = 0}) => {
               this.list = records.map(r => toTableRow(r, this.columnConfig, 'normal', 'inline'));
               this.total = total;
               this.$nextTick(() => {
