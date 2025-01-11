@@ -1,6 +1,7 @@
 # 1.x.x
 | 版本    | 前端                                                                | 后端                                     |
 |-------|-------------------------------------------------------------------| ---------------------------------------- |
+| 1.1.3 | 修复FastTableColumnObject clearable无效问题 <br/> 同时清除时清空pickMap的其它属性   | -                                        |
 | 1.1.2 | 支持FastTableColumnObject以及对应的pick方法和FastObjectPicker组件             | -                                        |
 | 1.0.6 | 对于未启用编辑的列, 不做数据校验                                                 | -                                        |
 | 1.0.5 | FastTableColumn* editable支持Function可根据行数据动态控制                     | -                                        |
