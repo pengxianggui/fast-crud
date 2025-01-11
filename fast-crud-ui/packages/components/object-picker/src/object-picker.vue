@@ -1,16 +1,17 @@
 <template>
-  <el-input v-model="modelValue" readonly prefix-icon="el-icon-search"
+  <el-input v-model="modelValue" prefix-icon="el-icon-search"
             :clearable="clearable" :placeholder="placeholder" :size="size" :disabled="disabled"
-            @clear="(event) => $emit('clear', event)"
+            @clear="handleClear"
             @blur="(event) => $emit('blur', event)"
             @change="(val) => $emit('change', val)"
             @input="(val) => $emit('input', val)"
-            @click.native="handleClick" @focus="handleFocus"></el-input>
+            @click.native="handleClick"
+            @focus="handleFocus"></el-input>
 </template>
 
 <script>
 import {pick} from "../../../util/pick";
-import {isArray, isFunction, isObject} from "../../../util/util";
+import {isArray, isObject} from "../../../util/util";
 import {FastTableOption} from "../../../index";
 
 export default {
@@ -74,7 +75,19 @@ export default {
     }
   },
   methods: {
+    handleClear(event) {
+      this.$emit('clear', event);
+      // 清除pickMap的其它属性
+      Object.entries(this.pickMap).forEach(([pickFieldName, formFieldName]) => {
+        this.pickObject[formFieldName] = null;
+        // this.$set(this.pickObject, formFieldName, row[pickFieldName])
+      })
+    },
     handleClick(event) {
+      // 检查点击事件的目标是否为清除按钮, 清除按钮的话不上抛点击事件
+      if (event.target.classList.contains('el-input__clear')) {
+        return;
+      }
       this.$emit('click', event);
       this.openPick();
     },
