@@ -1,6 +1,8 @@
 <template>
   <div class="demos">
-<!--    <easy-demo></easy-demo>-->
+    <H2>Easy Demo</H2>
+    <easy-demo></easy-demo>
+    <H2>Full Demo</H2>
     <full-demo></full-demo>
   </div>
 </template>
