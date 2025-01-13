@@ -1,7 +1,8 @@
 import axios from "axios";
 
+const baseURL = (import.meta.env.VITE_BASE_PATH);
 const http = axios.create({
-    baseURL: '/api'
+    baseURL: baseURL || '/api'
 });
 
 http.interceptors.request.use(

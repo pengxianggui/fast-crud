@@ -54,7 +54,7 @@ export default defineConfig(({mode}) => {
             },
             outDir: 'lib', // 指定输出目录为 lib
         } : {
-            outDir: 'dist' // demo输出到dist
+            outDir: mode === 'backend' ? '../demo/src/main/resources/static' : 'dist'
         },
         css: {
             preprocessorOptions: {
