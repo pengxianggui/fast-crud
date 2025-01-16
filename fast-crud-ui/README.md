@@ -29,6 +29,7 @@ Upload, Row, Col, Button, Empty, Popover, Form, FormItem, Dropdown, DropdownMenu
 - FastTableColumnImg: 图片列组件
 - FastTableColumnFile: 文件列组件
 - FastTableColumnObject: 对象选择组件
+> 你也可以直接使用原生的el-table-column，但是需要注意的是由于行数据被封装, 所以需要解构一下: {row, editRow},使用row来做单元格数据展示
 
 ## 快速开始
 
