@@ -2,13 +2,16 @@
 
 > 基于spring-boot、spring-mvc、mybatis-plus的代码生成式 + 动态crud注册的快速开发框架。
 
-应用本框架的前提是你的项目必须使用以上三个框架。文档参考[这里](http://pengxg.cc/tags/fast-crud)
+应用本框架的前提是你的项目必须使用以上三个框架。
+
+- 文档参考[这里](http://pengxg.cc/tags/fast-crud)
+- DEMO参考[这里](http://fastcrud.pengxg.cc/)
 
 ## 模块介绍
 
 - **fast-crud-spring-boot-starter**: 主要引入此依赖
 - **fast-crud-auto-generator**: 基于mybatis-plus-generator封装的controller、service、serviceImpl、mapper、entity代码生成包，非必须。
-- **fast-crud-ui**: 前端组件库, 文档详见: [这里](./fast-crud-ui/README.md)
+- **fast-crud-ui**: 前端组件库, README文档详见: [这里](./fast-crud-ui/README.md)
 - **demo**: 后端示例项目
 
 ## 版本
@@ -110,6 +113,7 @@ public class CodeGenerator {
 
 - [x] 增加FastTableColumnFile和FastTableColumnImg，分别文件上传和图片上传功能
 - [x] FastTableColumnObject: 根据另一个tableOption和render来渲染弹窗pick对象，可以回填到当前行
+- [x] 支持"更多"里扩展增加新功能按钮
 
 ### 2.x 版本：CRUD的外围扩展
 
@@ -122,7 +126,6 @@ public class CodeGenerator {
     - [ ] 针对快筛应用时,应当将过滤条件回显在表单搜索和表头过滤中,并支持二次编辑,此时应当显示针对当前快筛的两个操作按钮:
       删除和保存
 - [ ] 表格自定义配置
-- [ ] 支持"更多"里扩展增加新功能按钮
 - [ ] 支持针对mapping.js进行扩展，以便自定义增加新的FastTableColumn*组件
 - [ ] **高级筛选**: 支持类似jira中jql的使用方式。 
 
