@@ -14,16 +14,16 @@
                               :rules="[{type: 'number', min: 18, max: 60, message: '年龄必须在[18,60]之间'}]"
                               @change="handleAgeChange"/>
     <fast-table-column-select label="性别" prop="sex" :options="sexOptions" :quick-filter="true" required/>
-    <fast-table-column-select label="爱好" prop="hobby" :options="hobbyOptions"
+    <fast-table-column-select label="属国" prop="state" :options="stateOptions"
                               :quick-filter="true" quick-filter-block quick-filter-checkbox
                               val-key="code" label-key="name"
-                              :default-val_q="['1', '2', '3', '4', '5']"
-                              :disable-val="['6']"
+                              :default-val_q="['1', '2', '3']"
+                              :disable-val="['4']"
                               required/>
-    <fast-table-column label="爱慕者Id" prop="loveId"/>
-    <fast-table-column-object label="爱慕者姓名" prop="loveName"
+    <fast-table-column label="仰慕者Id" prop="loveId"/>
+    <fast-table-column-object label="仰慕者姓名" prop="loveName"
                               :table-option="loveOption" show-field="name" :pick-map="{id: 'loveId'}"/>
-    <fast-table-column-textarea label="地址" prop="address"/>
+    <fast-table-column-textarea label="简介" prop="info"/>
     <fast-table-column-switch label="已毕业" prop="graduated" :quick-filter="true" required/>
     <fast-table-column-time-picker label="幸运时刻" prop="luckTime" required
                                    :editable="({editRow}) => !(editRow.age > 35)"/>
@@ -41,7 +41,6 @@
       </template>
     </el-table-column>
     <template #button="scope">
-      <el-button :size="scope.size" icon="el-icon-link" @click="expandButton(scope)">查看源码</el-button>
       <el-button :size="scope.size" @click="tryPick(false)">Try Pick</el-button>
       <el-button :size="scope.size" @click="tryPick(true)">Try Pick(多选)</el-button>
     </template>
@@ -52,7 +51,10 @@
       <el-dropdown-item size="mini" @click.native="$refs['fastTable'].addForm()">弹窗新增</el-dropdown-item>
     </template>
     <template #foot="scope">
-      <el-button size="mini" @click="expandFoot(scope)">扩展按钮</el-button>
+      <div>
+        <el-button :size="scope.size" icon="el-icon-link" @click="expandButton(scope, 'code')">查看源码</el-button>
+        <el-button :size="scope.size" icon="el-icon-link" @click="expandButton(scope, 'doc')">查看文档</el-button>
+      </div>
     </template>
   </fast-table>
 </template>
@@ -95,7 +97,7 @@ export default {
           size: 'medium', // mini,small,medium,default
           bodyRowHeight: '45px',
           formLabelWidth: 'auto', // 默认为auto
-          formLayout: 'id,avatarUrl, name|age|sex, graduated|hobby|hobby, loveId|loveName|loveName, address, birthday|luckTime, resumeUrl, createTime' // 弹窗表单布局设置
+          formLayout: 'id,avatarUrl, name|age|sex, graduated|state|state, loveId|loveName|loveName, info, birthday|luckTime, resumeUrl, createTime' // 弹窗表单布局设置
         },
         beforeLoad({query}) {
           if (this.params.pageLoadable) {
@@ -280,8 +282,12 @@ export default {
       console.log('column:', column);
       console.log('event:', event);
     },
-    expandButton({choseRow, checkedRows, editRows}) {
-      window.open('https://github.com/pengxianggui/fast-crud/tree/main/fast-crud-ui/src/example/full/MyTable.vue', '_blank')
+    expandButton({choseRow, checkedRows, editRows}, type) {
+      if (type === 'code') {
+        window.open('https://github.com/pengxianggui/fast-crud/tree/main/fast-crud-ui/src/example/full/MyTable.vue', '_blank')
+      } else if (type === 'doc') {
+        window.open('http://pengxg.cc/tags/fast-crud', '_blank')
+      }
     },
     tryPick(multiple) {
       pick({
@@ -302,11 +308,6 @@ export default {
       console.log('checkedRows', checkedRows)
       console.log('editRows', editRows)
     },
-    expandFoot({choseRow, checkedRows, editRows}) {
-      console.log('choseRow', choseRow)
-      console.log('checkedRows', checkedRows)
-      console.log('editRows', editRows)
-    }
   }
 }
 </script>

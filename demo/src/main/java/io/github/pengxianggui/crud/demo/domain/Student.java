@@ -26,22 +26,22 @@ public class Student {
 
     private Integer age;
 
-    // 单选
+    private LocalDate birthday;
+
     private String sex;
 
-    private String hobby;
+    private String state;
 
     private Integer loveId;
 
     private String loveName;
 
-    private String address;
+    private String info;
 
     private Boolean graduated;
 
     private String luckTime;
 
-    private LocalDate birthday;
 
     /**
      * 简历地址

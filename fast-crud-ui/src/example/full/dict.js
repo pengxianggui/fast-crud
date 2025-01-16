@@ -63,34 +63,22 @@ const sexOptions = [
         value: '0'
     }
 ]
-const hobbyOptions = [
+const stateOptions = [
     {
-        name: '篮球',
+        name: '魏',
         code: '1'
     },
     {
-        name: '足球',
+        name: '蜀',
         code: '2'
     },
     {
-        name: '排球',
+        name: '吴',
         code: '3'
     },
     {
-        name: '乒乓球',
+        name: '东汉',
         code: '4'
-    },
-    {
-        name: '羽毛球',
-        code: '5'
-    },
-    {
-        name: '台球',
-        code: '6'
-    },
-    {
-        name: '游泳',
-        code: '7'
     }
 ]
 
@@ -98,5 +86,5 @@ export default {
     pickerOptionsQ,
     pickerOptionsE,
     sexOptions,
-    hobbyOptions
+    stateOptions
 }
