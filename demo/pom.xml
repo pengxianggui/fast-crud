@@ -15,6 +15,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <docker.username>${env.DOCKER_USERNAME}</docker.username>
+        <docker.password>${env.DOCKER_PASSWORD}</docker.password>
     </properties>
 
     <dependencies>
@@ -50,12 +52,67 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
                 <configuration>
                     <skip>true</skip>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <version>3.4.0</version>
+                <configuration>
+                    <from>
+                        <image>ccr.ccs.tencentyun.com/wufan/java8-shanghai:latest</image>
+                    </from>
+                    <to>
+                        <image>ccr.ccs.tencentyun.com/fast-crud/fast-crud-demo:${project.version}</image>
+                        <tags>
+                            <tag>${project.version}</tag>
+                        </tags>
+                        <auth>
+                            <username>${docker.username}</username>
+                            <password>${docker.password}</password>
+                        </auth>
+                    </to>
+                    <allowInsecureRegistries>true</allowInsecureRegistries>
+                    <container>
+                        <mainClass>io.github.pengxianggui.crud.demo.DemoApplication</mainClass>
+                        <!-- 使用该参数将镜像的创建时间和系统时间对其 -->
+                        <creationTime>${maven.build.timestamp}</creationTime>
+                        <environment>
+                            <LANG>zh_CN.UTF-8</LANG>
+                            <TZ>Asia/Shanghai</TZ>
+                        </environment>
+                        <jvmFlags>
+                            <jvmFlag>-Xms128m</jvmFlag>
+                            <jvmFlag>-Xmx512m</jvmFlag>
+<!--                            <jvmFlag>-Duser.timezone=GMT+08</jvmFlag>-->
+<!--                            <jvmFlag>&#45;&#45;Dfile.encoding=UTF-8</jvmFlag>-->
+                        </jvmFlags>
+                        <ports>
+                            <port>8080</port>
+                        </ports>
+                    </container>
+                    <outputPaths>
+                        <tar>target/${project.artifactId}.tar</tar>
+                    </outputPaths>
+                </configuration>
+            </plugin>
+
         </plugins>
     </build>
 </project>

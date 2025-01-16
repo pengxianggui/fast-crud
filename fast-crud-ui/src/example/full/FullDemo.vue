@@ -38,27 +38,20 @@
       <h5>钩子函数应用</h5>
       <el-checkbox v-model="params.loadSuccessTip">分页加载成功提示</el-checkbox>
       <el-checkbox v-model="params.customLoadFailTip">自定义加载失败提示</el-checkbox>
-      <el-checkbox v-model="params.notDeleteLWL">不能删除利威尔(不弹窗)</el-checkbox>
-      <el-checkbox v-model="params.notDeleteSS">不允许删除珊莎(弹窗后)</el-checkbox>
-      <el-checkbox v-model="params.disableDefultDeleteSuccessWhenAL">删除艾伦时庆祝</el-checkbox>
+      <el-checkbox v-model="params.notDelete">不能删除诸葛亮(不弹窗)</el-checkbox>
+      <el-checkbox v-model="params.notDeleteAfterConfirm">不允许删除赵云(弹窗后)</el-checkbox>
+      <el-checkbox v-model="params.disableDefultDeleteSuccessTip">删除吕蒙时庆祝</el-checkbox>
       <el-checkbox v-model="params.customDeleteFailTip">自定义删除失败提示</el-checkbox>
       <el-checkbox v-model="params.customInsertSuccessTip">自定义插入成功提示</el-checkbox>
       <el-checkbox v-model="params.customInsertFailTip">自定义插入失败提示</el-checkbox>
-      <el-checkbox v-model="params.disableUpdateAM">阿明不允许编辑</el-checkbox>
-      <el-checkbox v-model="params.disableUpdateToZs">名字不允许改为张三</el-checkbox>
-      <el-checkbox v-model="params.disableInsertLs">不允许添加李四</el-checkbox>
+      <el-checkbox v-model="params.disableUpdate">曹操不允许编辑</el-checkbox>
+      <el-checkbox v-model="params.disableUpdateToHd">名字不允许改为皇帝</el-checkbox>
+      <el-checkbox v-model="params.disableInsertSmy">不允许添加司马懿</el-checkbox>
       <el-checkbox v-model="params.disableCancelWhenUpdate">更新时不允许取消</el-checkbox>
 
       <h5>事件</h5>
       <el-checkbox v-model="params.autoSetGraduatedWhenAgeChange">超50岁自动毕业</el-checkbox>
       <el-checkbox v-model="params.noEditLuckWhenAgeGT35">超35岁不允许编辑幸运时刻</el-checkbox>
-
-      <h5>方法</h5>
-      <div class="methods">
-        <el-button size="mini" @click="$refs['fastTable'].addRow()">插入一行</el-button>
-        <el-button size="mini" @click="$refs['fastTable'].addRows([{name: '刘亦菲', age: 18},{}])">插入多行</el-button>
-        <el-button size="mini" @click="$refs['fastTable'].addForm()">弹窗新增</el-button>
-      </div>
     </div>
 
     <my-table ref="myTable" :params="params"></my-table>
@@ -104,19 +97,19 @@ export default {
         // 自定义插入失败提示
         customInsertFailTip: false,
         // 不允许删除利威尔
-        notDeleteLWL: true,
+        notDelete: true,
         // 不允许删除珊莎
-        notDeleteSS: true,
+        notDeleteAfterConfirm: true,
         // 自定义删除失败提示
         customDeleteFailTip: true,
         // 当删除对象包含艾伦时禁用默认删除成功提示
-        disableDefultDeleteSuccessWhenAL: true,
+        disableDefultDeleteSuccessTip: true,
         // 阿明不允许编辑
-        disableUpdateAM: true,
+        disableUpdate: true,
         // 名字不允许改为张三
-        disableUpdateToZs: true,
+        disableUpdateToHd: true,
         // 不允许添加李四
-        disableInsertLs: true,
+        disableInsertSmy: true,
         // 更新行时不允许取消
         disableCancelWhenUpdate: false,
         // 年龄大于50自动毕业

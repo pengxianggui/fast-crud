@@ -41,12 +41,15 @@
       </template>
     </el-table-column>
     <template #button="scope">
-      <el-button :size="scope.size" icon="el-icon-link" @click="expandButton(scope)">查看当前Demo源码</el-button>
+      <el-button :size="scope.size" icon="el-icon-link" @click="expandButton(scope)">查看源码</el-button>
       <el-button :size="scope.size" @click="tryPick(false)">Try Pick</el-button>
       <el-button :size="scope.size" @click="tryPick(true)">Try Pick(多选)</el-button>
     </template>
     <template #moreButton="scope">
       <el-dropdown-item :size="scope.size" @click.native="expandMoreButton(scope)">扩展按钮</el-dropdown-item>
+      <el-dropdown-item size="mini" @click.native="$refs['fastTable'].addRow()">插入一行(空)</el-dropdown-item>
+      <el-dropdown-item size="mini" @click.native="$refs['fastTable'].addRows([{name: '貂蝉', age: 21},{name: '吕布', age: '27'}])">插入多行(带默认值)</el-dropdown-item>
+      <el-dropdown-item size="mini" @click.native="$refs['fastTable'].addForm()">弹窗新增</el-dropdown-item>
     </template>
     <template #foot="scope">
       <el-button size="mini" @click="expandFoot(scope)">扩展按钮</el-button>
@@ -115,8 +118,8 @@ export default {
           return Promise.resolve(); // 可以通过reject覆盖默认的加载失败提示
         },
         beforeInsert({fatRows, rows, editRows}) {
-          if (editRows.findIndex(r => r.name === '李四') > -1 && this.params.disableInsertLs) {
-            Message.warning('你已勾选【不允许添加李四】');
+          if (editRows.findIndex(r => r.name === '司马懿') > -1 && this.params.disableInsertSmy) {
+            Message.warning('你已勾选【不允许添加司马懿】');
             return Promise.reject();
           }
           return Promise.resolve();
@@ -136,15 +139,15 @@ export default {
           return Promise.resolve();
         },
         beforeToUpdate({fatRows, rows}) {
-          if (rows.findIndex(r => r.name === '阿明') > -1 && this.params.disableUpdateAM) {
-            Message.warning("你已勾选【阿明不允许编辑】")
+          if (rows.findIndex(r => r.name === '曹操') > -1 && this.params.disableUpdate) {
+            Message.warning("你已勾选【曹操不允许编辑】")
             return Promise.reject();
           }
           return Promise.resolve();
         },
         beforeUpdate({fatRows, rows, editRows}) {
-          if (editRows.findIndex(r => r.name === '张三') > -1 && this.params.disableUpdateToZs) {
-            Message.warning('你已勾选【名字不允许改为张三】');
+          if (editRows.findIndex(r => r.name === '皇帝') > -1 && this.params.disableUpdateToHd) {
+            Message.warning('你已勾选【名字不允许改为皇帝】');
             return Promise.reject();
           }
           return Promise.resolve();
@@ -156,24 +159,24 @@ export default {
           return Promise.resolve();
         },
         beforeDeleteTip({fatRows, rows}) {
-          if (rows.findIndex(r => r.name === '利威尔') > -1 && this.params.notDeleteLWL) {
-            Message.warning('你已勾选【不能删除利威尔】');
+          if (rows.findIndex(r => r.name === '诸葛亮') > -1 && this.params.notDelete) {
+            Message.warning('你已勾选【不能删除诸葛亮】');
             return Promise.reject();
           }
           return Promise.resolve();
         },
         beforeDelete({fatRows, rows}) {
-          const {notDeleteSS} = this.params;
-          if (rows.findIndex(r => r.name === '珊莎') > -1 && notDeleteSS) {
-            Message.warning('删除记录中包含珊莎, 你已勾选不能删除珊莎');
+          const {notDeleteAfterConfirm} = this.params;
+          if (rows.findIndex(r => r.name === '赵云') > -1 && notDeleteAfterConfirm) {
+            Message.warning('删除记录中包含赵云, 你已勾选不能删除赵云');
             return Promise.reject();
           }
           return Promise.resolve(rows);
         },
         deleteSuccess({fatRows, rows, res}) {
-          const {disableDefultDeleteSuccessWhenAL} = this.params;
-          if (disableDefultDeleteSuccessWhenAL && rows.findIndex(r => r.name === '艾伦') > -1) {
-            Message.success('恭喜恭喜! 删除对象中包含艾伦');
+          const {disableDefultDeleteSuccessTip} = this.params;
+          if (disableDefultDeleteSuccessTip && rows.findIndex(r => r.name === '吕蒙') > -1) {
+            Message.success('恭喜恭喜! 删除对象中包含吕蒙');
             return Promise.reject(); // 通过reject覆盖默认的删除成功提示
           }
           return Promise.resolve();

@@ -1,8 +1,8 @@
 import axios from "axios";
 
-const baseURL = (import.meta.env.VITE_BASE_PATH);
+const mode = (import.meta.env.VITE_MODE);
 const http = axios.create({
-    baseURL: baseURL || '/api'
+    baseURL: mode === 'backend' ? '' : '/api'
 });
 
 http.interceptors.request.use(
@@ -19,7 +19,7 @@ http.interceptors.response.use(
         return response;
     },
     (error) => {
-        return Promise.reject(error)
+        return Promise.reject(error.response.data.message)
     }
 )
 
