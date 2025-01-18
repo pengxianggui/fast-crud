@@ -5,38 +5,38 @@
                    :min-width="minWidth"
                    :show-overflow-tooltip="showOverflowToolTip"
                    v-bind="$attrs">
-    <template v-slot:header="{column, $index}">
+    <template #header="{column, $index}">
       <fast-table-head-cell class="fc-table-column-head-cell" :class="{'filter': filter}" :column="columnProp"
                             @click.native="headCellClick(column)">
-        <slot v-bind:header="{column, $index}">
+        <slot name="header" v-bind:column="column" v-bind:$index="$index">
           <span>{{ column.label }}</span>
         </slot>
       </fast-table-head-cell>
     </template>
 
-    <template v-slot:default="{row:fatRow, column, $index}">
-      <slot v-bind:default="{...fatRow, column, $index}">
-        <template v-if="!canEdit(fatRow, column, $index)">
-          <slot v-bind:normal="{...fatRow, column, $index}">
+    <template #default="{row, column, $index}">
+      <slot v-bind:row="row" v-bind:column="column" v-bind:$index="$index">
+        <template v-if="!canEdit(row, column, $index)">
+          <slot name="normal" v-bind:row="row" v-bind:column="column" v-bind:$index="$index">
             <fast-upload :style="{'height': tableStyle.bodyRowHeight}"
                          class="fc-fast-upload-file"
-                         v-model="fatRow[fatRow.status === 'normal' ? 'row' : 'editRow'][column.property]"
-                         v-bind="fatRow['config'][column.property]['props']"
+                         v-model="row[row.status === 'normal' ? 'row' : 'editRow'][column.property]"
+                         v-bind="row['config'][column.property]['props']"
                          list-type="text"
                          :disabled="true"></fast-upload>
           </slot>
         </template>
-        <slot v-bind:edit="{...fatRow, column, $index}" v-else>
+        <slot name="edit" v-bind:row="row" v-bind:column="column" v-bind:$index="$index" v-else>
           <fast-upload :style="{'height': tableStyle.bodyRowHeight}"
                        class="fc-fast-upload-file"
-                       v-model="fatRow['editRow'][column.property]"
-                       :row="fatRow['editRow']" :col="column.property"
-                       v-bind="fatRow['config'][column.property]['props']"
+                       v-model="row['editRow'][column.property]"
+                       :row="row['editRow']" :col="column.property"
+                       v-bind="row['config'][column.property]['props']"
                        :ref="column.property + $index"
-                       @change="(val) => handleChange(val, {...fatRow, column, $index})"
-                       @success="(componentScope) => $emit('success', componentScope, {...fatRow, column, $index})"
-                       @fail="(componentScope) => $emit('fail', componentScope, {...fatRow, column, $index})"
-                       @exceed="(componentScope) => $emit('exceed', componentScope, {...fatRow, column, $index})"></fast-upload>
+                       @change="(val) => handleChange(val, {row, column, $index})"
+                       @success="(componentScope) => $emit('success', componentScope, {row, column, $index})"
+                       @fail="(componentScope) => $emit('fail', componentScope, {row, column, $index})"
+                       @exceed="(componentScope) => $emit('exceed', componentScope, {row, column, $index})"></fast-upload>
         </slot>
       </slot>
     </template>

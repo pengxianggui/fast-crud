@@ -4,18 +4,18 @@
                    :label="label"
                    :show-overflow-tooltip="showOverflowToolTip"
                    v-bind="$attrs">
-    <template v-slot:header="{column, $index}">
+    <template #header="{column, $index}">
       <fast-table-head-cell class="fc-table-column-head-cell" :class="{'filter': filter}" :column="columnProp"
                             @click.native="headCellClick(column)">
-        <slot v-bind:header="{column, $index}">
+        <slot name="header" v-bind:column="column" v-bind:$index="$index">
           <span>{{ column.label }}</span>
         </slot>
       </fast-table-head-cell>
     </template>
 
-    <template v-slot:default="{row: fatRow, column, $index}">
-      <slot v-bind:default="{...fatRow, column, $index}">
-        <span>{{fatRow[fatRow.status === 'normal' ? 'row' : 'editRow'][column.property]}}</span>
+    <template #default="{row, column, $index}">
+      <slot v-bind:row="row" v-bind:column="column" v-bind:$index="$index">
+        <span>{{ showLabel(row, column) }}</span>
       </slot>
     </template>
   </el-table-column>

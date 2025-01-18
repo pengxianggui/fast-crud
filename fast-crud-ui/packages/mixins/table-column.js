@@ -45,6 +45,11 @@ export default {
         canEdit(fatRow, column, $index) {
             return colEditable.call(defaultIfEmpty(this.context, this), fatRow, column.property);
         },
+        showLabel(fatRow, column) {
+            const {row, editRow, status} = fatRow;
+            const {property} = column;
+            return status === 'normal' ? row[property] : editRow[property];
+        },
         headCellClick(column) {
             if (this.filter) {
                 this.openDynamicFilterForm(this.columnProp)
@@ -53,7 +58,7 @@ export default {
         // change事件上抛并触发验证
         handleChange(val, scope) {
             this.$emit('change', val, scope);
-            const {column, $index, config} = scope;
+            const {column, $index, row: {config}} = scope;
             const {property} = column;
             const ref = this.$refs[property + $index];
             const {eventMethods: {valid} = {}, props} = config[property]

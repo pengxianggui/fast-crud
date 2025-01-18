@@ -13,7 +13,16 @@
                               :min="18" :max="60"
                               :rules="[{type: 'number', min: 18, max: 60, message: '年龄必须在[18,60]之间'}]"
                               @change="handleAgeChange"/>
-    <fast-table-column-select label="性别" prop="sex" :options="sexOptions" :quick-filter="true" required/>
+    <fast-table-column-select label="性别" prop="sex" :options="sexOptions" :quick-filter="true" required>
+      <template #header="{column, $index}">
+        <span>{{$index + '.' + column.label}}</span>
+      </template>
+      <template #normal="{row: {row}}">
+        <el-tag v-if="row.sex === '1'">男</el-tag>
+        <el-tag v-else-if="row.sex === '0'" type="danger">女</el-tag>
+        <span v-else></span>
+      </template>
+    </fast-table-column-select>
     <fast-table-column-select label="属国" prop="state" :options="stateOptions"
                               :quick-filter="true" quick-filter-block quick-filter-checkbox
                               val-key="code" label-key="name"

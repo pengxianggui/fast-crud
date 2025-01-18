@@ -31,10 +31,10 @@
           </el-button>
         </template>
         <template v-if="status === 'update' || status === 'insert'">
+          <el-button type="primary" :size="option.style.size" @click="saveEditRows">保存</el-button>
           <el-button :size="option.style.size" icon="el-icon-plus" @click="toInsert"
                      v-if="status === 'insert' && option.insertable">继续新建
           </el-button>
-          <el-button type="primary" :size="option.style.size" @click="saveEditRows">保存</el-button>
           <el-button :size="option.style.size" @click="cancelEditStatus">取消</el-button>
         </template>
         <!-- 下拉按钮-更多 -->
