@@ -1,6 +1,6 @@
 <template>
   <el-table-column class-name="fc-table-column" :prop="prop" :label="label" :min-width="minWidth"
-                   :show-overflow-tooltip="showOverflowToolTip"
+                   :show-overflow-tooltip="showOverflowTooltip"
                    v-bind="$attrs">
     <template #header="{column, $index}">
       <fast-table-head-cell class="fc-table-column-head-cell" :class="{'filter': filter}" :column="columnProp"

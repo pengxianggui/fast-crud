@@ -1,5 +1,5 @@
 <template>
-  <el-table-column class-name="fc-table-column" :prop="prop" :label="label" :show-overflow-tooltip="showOverflowToolTip"
+  <el-table-column class-name="fc-table-column" :prop="prop" :label="label" :show-overflow-tooltip="showOverflowTooltip"
                    v-bind="$attrs">
     <template #header="{column, $index}">
       <fast-table-head-cell class="fc-table-column-head-cell" :class="{'filter': filter}" :column="columnProp"

@@ -37,7 +37,7 @@
     <fast-table-column-time-picker label="幸运时刻" prop="luckTime" required
                                    :editable="({editRow}) => !(editRow.age > 35)"/>
     <fast-table-column-date-picker label="生日" prop="birthday" :picker-options="pickerOptionsE" required/>
-    <fast-table-column-file label="简历" prop="resumeUrl" :show-overflow-tool-tip="false"/>
+    <fast-table-column-file label="简历" prop="resumeUrl" :show-overflow-tooltip="false"/>
     <fast-table-column-date-picker label="创建时间" prop="createTime" :picker-options_q="pickerOptionsQ"
                                    type="datetime"
                                    :quick-filter="false" :default-val_q="defaultQueryOfCreatedTime"

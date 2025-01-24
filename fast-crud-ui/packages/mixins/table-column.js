@@ -14,7 +14,7 @@ export default {
             type: Boolean,
             default: () => false
         },
-        showOverflowToolTip: {
+        showOverflowTooltip: {
             type: Boolean,
             default: () => false
         },

@@ -2,7 +2,7 @@
   <el-table-column class-name="fc-table-column"
                    :prop="prop"
                    :label="label"
-                   :show-overflow-tooltip="showOverflowToolTip"
+                   :show-overflow-tooltip="showOverflowTooltip"
                    :min-width="minWidth"
                    v-bind="$attrs">
     <template #header="{column, $index}">
