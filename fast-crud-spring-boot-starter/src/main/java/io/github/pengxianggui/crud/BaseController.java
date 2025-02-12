@@ -1,7 +1,6 @@
 package io.github.pengxianggui.crud;
 
 import cn.hutool.core.lang.Assert;
-import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import io.github.pengxianggui.crud.download.FileResourceHttpRequestHandler;
 import io.github.pengxianggui.crud.meta.EntityUtil;
@@ -25,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.Resource;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -42,17 +42,12 @@ import java.util.stream.Collectors;
 
 public class BaseController<T> {
     private BaseService<T> baseService;
-    public Validator validator;
-    private String basePath;
 
-    public BaseController(BaseService<T> baseService, Validator validator, String basePath) {
+    @Resource
+    public Validator validator;
+
+    public BaseController(BaseService<T> baseService) {
         this.baseService = baseService;
-        this.validator = validator;
-        basePath = StrUtil.nullToDefault(basePath, "");
-        if (StrUtil.isNotBlank(basePath) && !basePath.startsWith("/")) {
-            basePath = "/" + basePath;
-        }
-        this.basePath = basePath;
     }
 
     @ApiOperation("插入")
@@ -147,7 +142,9 @@ public class BaseController<T> {
         if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
             return filePath;
         }
-        return this.basePath + "/download?path=" + URLEncoder.encode(filePath);
+        // TODO 从当前实例的@RequestMapping中获取
+        String basePath = null;
+        return basePath + "/download?path=" + URLEncoder.encode(filePath);
     }
 
     @ApiOperation(value = "下载/预览", notes = "针对上传的文件进行下载, 若是图片进行预览")
