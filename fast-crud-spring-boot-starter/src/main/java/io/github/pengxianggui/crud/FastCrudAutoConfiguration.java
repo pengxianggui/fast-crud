@@ -3,8 +3,10 @@ package io.github.pengxianggui.crud;
 import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
+import io.github.pengxianggui.crud.apidoc.SwaggerConfig;
 import io.github.pengxianggui.crud.download.FileResourceHttpRequestHandler;
-import io.github.pengxianggui.crud.dynamic.DynamicRequestMappingRemover;
+import io.github.pengxianggui.crud.config.RequestMappingAutoRemover;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -16,14 +18,15 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
  * @author pengxg
  * @date 2024/11/30 14:27
  */
+@ImportAutoConfiguration(SwaggerConfig.class)
 @EnableConfigurationProperties(FastCrudProperty.class)
 @Configuration
 public class FastCrudAutoConfiguration {
 
     @ConditionalOnBean(RequestMappingHandlerMapping.class)
     @Bean
-    public DynamicRequestMappingRemover dynamicRequestMappingRemover(RequestMappingHandlerMapping requestMappingHandlerMapping) {
-        return new DynamicRequestMappingRemover(requestMappingHandlerMapping);
+    public RequestMappingAutoRemover dynamicRequestMappingRemover(RequestMappingHandlerMapping requestMappingHandlerMapping) {
+        return new RequestMappingAutoRemover(requestMappingHandlerMapping);
     }
 
     /**

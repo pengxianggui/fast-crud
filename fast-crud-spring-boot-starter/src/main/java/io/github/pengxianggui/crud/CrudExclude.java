@@ -1,4 +1,4 @@
-package io.github.pengxianggui.crud.dynamic;
+package io.github.pengxianggui.crud;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

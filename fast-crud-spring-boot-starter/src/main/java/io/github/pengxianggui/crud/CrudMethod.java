@@ -1,4 +1,4 @@
-package io.github.pengxianggui.crud.dynamic;
+package io.github.pengxianggui.crud;
 
 public enum CrudMethod {
     INSERT("insert"),
