@@ -9,7 +9,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import io.github.pengxianggui.crud.meta.EntityUtil;
+import io.github.pengxianggui.crud.util.EntityUtil;
 import io.github.pengxianggui.crud.query.*;
 import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,14 +35,14 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
 
     @Override
     public List<T> queryList(Query query) {
-        return list(query.wrapper(clazz));
+        return list(QueryWrapperUtil.buildQueryWrapper(query, clazz));
     }
 
     @Override
-    public Pager<T> queryPage(PagerQuery query) {
-        Pager<T> pager = query.toPager();
-        QueryWrapper<T> queryWrapper = pager.wrapper(clazz);
-        return page(pager, queryWrapper);
+    public Pager<T> queryPage(PagerQuery pagerQuery) {
+        Pager<T> pager = new Pager<>(pagerQuery.getCurrent(), pagerQuery.getSize());
+        QueryWrapper<T> pageQueryWrapper = QueryWrapperUtil.buildQueryWrapper(pagerQuery, clazz);
+        return page(pager, pageQueryWrapper);
     }
 
     @Override

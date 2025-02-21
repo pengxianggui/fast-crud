@@ -8,7 +8,9 @@ import org.springframework.web.servlet.resource.ResourceHttpRequestHandler;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * 借助ResourceHttpRequestHandler实现本地资源响应时，支持range分段请求资源。
+ * 文件/图片下载支持。借助ResourceHttpRequestHandler实现本地资源响应时，支持range分段请求资源。
+ *
+ * @author pengxg
  */
 public class FileResourceHttpRequestHandler extends ResourceHttpRequestHandler {
     public final static String FILE_PATH = "FILE_PATH";

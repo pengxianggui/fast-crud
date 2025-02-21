@@ -1,9 +1,8 @@
-package io.github.pengxianggui.crud.query;
+package io.github.pengxianggui.crud.util;
 
 import cn.hutool.core.lang.Assert;
-import io.github.pengxianggui.crud.meta.EntityUtil;
 
-public class ColumnMapperUtil {
+public class ColumnUtil {
 
     public static volatile String QUOTE = "`";
 

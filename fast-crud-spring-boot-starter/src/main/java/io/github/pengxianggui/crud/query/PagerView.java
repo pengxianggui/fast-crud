@@ -3,10 +3,12 @@ package io.github.pengxianggui.crud.query;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@NoArgsConstructor
 @Data
 @ApiModel("通用分页返回")
 public class PagerView<T> {
@@ -22,9 +24,6 @@ public class PagerView<T> {
 
     @ApiModelProperty("记录")
     protected List<T> records = new ArrayList<>();
-
-    public PagerView() {
-    }
 
     public PagerView(long current, long size, long total, List<T> records) {
         this.current = current;

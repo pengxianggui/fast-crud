@@ -38,22 +38,14 @@ public class CodeAutoGenerator {
 
     public void generate() {
 
-        String moduleName = scanner("请输入模块名称:", true);
-        String tables = scanner("请输入表名，多个英文逗号分隔", false);
+        String moduleName = scanner("请输入模块名称(无则直接回车):", true, "", null);
+        String tables = scanner("请输入表名,多个英文逗号分隔:", false, null, null);
 
-        List<String> levels;
-        String level = scanner("请输入要生成的层级,controller(1),service(2),mapper(3),model(4). 注意: 多选时英文逗号分割, 若为空则表示全部", true);
-        if (level == null || level.trim().length() == 0) {
-            levels = Arrays.asList("1", "2", "3", "4");
-        } else {
-            levels = Arrays.stream(level.split(",")).map(String::trim).collect(Collectors.toList());
-        }
+        String level = scanner("请输入要生成的层级,controller(1),service(2),mapper(3),model(4)(注意: 多选时英文逗号分割, 若直接回车则表示全部):",
+                true, "1,2,3,4", Arrays.asList("1", "2", "3", "4"));
+        List<String> levels = Arrays.stream(level.split(",")).map(String::trim).collect(Collectors.toList());
 
-        String controllerMappingTemp = "";
-        if (level.contains("1")) {
-            controllerMappingTemp = scanner("请输入控制器路由，默认（" + tables.replaceFirst("_", "/") + "）:", true);
-        }
-        String controllerMapping = controllerMappingTemp;
+        String swagger = scanner("是否生成swagger文档(y/n, 默认为y, 若为y则确保有swagger相关pom依赖):", true, "y", Arrays.asList("y", "n"));
 
         String systemPath = System.getProperty("user.dir") + File.separator + getModule();
         String out = systemPath + File.separator + "src" + File.separator + "main" + File.separator + "java";
@@ -80,11 +72,12 @@ public class CodeAutoGenerator {
         FastAutoGenerator.create(dataSourceConfigBuilder).injectionConfig(builder -> {
                     builder.customMap(new HashMap() {{
                         put("moduleName", moduleName);
-                        put("controllerMapping", controllerMapping);
                     }});
                 }).globalConfig((scanner, builder) -> {
+                    if ("y".equals(swagger)) {
+                        builder.enableSwagger(); // 开启 swagger 模式
+                    }
                     builder.author(getAuthor())
-                            .enableSwagger() // 开启 swagger 模式
                             //.fileOverride() // 覆盖已生成文件
                             .dateType(DateType.TIME_PACK)
                             .outputDir(out)// 指定输出目录
@@ -143,34 +136,37 @@ public class CodeAutoGenerator {
     }
 
     /**
-     * 读取控制台内容
+     * 交互式读取控制台用户输入的内容。
+     *
+     * @param tip        提示语，展示提示内容
+     * @param blank      是否允许用户什么都不输入直接回车？
+     * @param defaultVal 默认值, 如果用户什么都不输入直接回车，则返回此默认值
+     * @param options    可选项, 如果用户输入的内容不在此可选项中，则提示用户重新输入。若允许空值, 则直接回车不受此可选项限制。
      */
-    private String scanner(String tip, boolean blankAccess) {
+    private String scanner(String tip, boolean blank, String defaultVal, List<String> options) {
         Scanner scanner = new Scanner(System.in);
-        StringBuilder help = new StringBuilder();
-        help.append(tip);
-        System.out.println(help);
-        if (blankAccess && scanner.hasNextLine()) {
-            return scanner.nextLine();
-        }
-        if (scanner.hasNext()) {
-            String ipt = scanner.next();
-            if (blankAccess || (ipt != null && !ipt.trim().equals(""))) {
-                return ipt;
-            }
-        }
-        throw new RuntimeException("请输入正确的的值！");
-    }
+        String input;
 
-    private int scannerInt(String tip) {
-        Scanner scanner = new Scanner(System.in);
-        StringBuilder help = new StringBuilder();
-        help.append(tip);
-        System.out.println(help);
-        if (scanner.hasNextInt()) {
-            return scanner.nextInt();
+        while (true) {
+            System.out.println(tip);
+
+            input = scanner.nextLine().trim();
+
+            if (input.isEmpty()) {
+                if (blank) {
+                    return defaultVal;
+                } else {
+                    continue;
+                }
+            }
+
+            // 选项校验
+            if (options == null || options.isEmpty() || options.contains(input)) {
+                return input;
+            }
+
+            System.out.println("输入错误，请输入有效选项: " + options.stream().collect(Collectors.joining(",")));
         }
-        return 0;
     }
 
     private List<String> getTables(String tables) {

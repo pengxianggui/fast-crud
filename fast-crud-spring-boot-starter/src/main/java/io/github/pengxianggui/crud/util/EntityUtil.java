@@ -1,11 +1,10 @@
-package io.github.pengxianggui.crud.meta;
+package io.github.pengxianggui.crud.util;
 
 import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.metadata.TableInfo;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
-import io.github.pengxianggui.crud.query.ColumnMapperUtil;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -61,14 +60,14 @@ public class EntityUtil {
     public static String getDbFieldName(Class clazz, String fieldName) {
         TableInfo tableInfo = TableInfoHelper.getTableInfo(clazz);
         Assert.notNull(tableInfo, "无法获取entity的tableInfo,请确保entity是一个映射有数据库表的类: " + clazz.getName());
-        String wrappedFieldName = ColumnMapperUtil.wrapper(fieldName);
-        if (wrappedFieldName.equals(ColumnMapperUtil.wrapper(tableInfo.getKeyProperty()))) {
+        String wrappedFieldName = ColumnUtil.wrapper(fieldName);
+        if (wrappedFieldName.equals(ColumnUtil.wrapper(tableInfo.getKeyProperty()))) {
             return tableInfo.getKeyColumn();
         }
 
         // 通过字段名获取映射的数据库字段名
         return tableInfo.getFieldList().stream()
-                .filter(meta -> Objects.equals(ColumnMapperUtil.wrapper(meta.getProperty()), wrappedFieldName)) // 防止后者被`处理
+                .filter(meta -> Objects.equals(ColumnUtil.wrapper(meta.getProperty()), wrappedFieldName)) // 防止后者被`处理
                 .map(meta -> meta.getColumn())
                 .findFirst()
                 .orElse(null);

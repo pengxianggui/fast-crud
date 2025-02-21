@@ -3,7 +3,7 @@ package io.github.pengxianggui.crud;
 import cn.hutool.core.lang.Assert;
 import cn.hutool.extra.spring.SpringUtil;
 import io.github.pengxianggui.crud.download.FileResourceHttpRequestHandler;
-import io.github.pengxianggui.crud.meta.EntityUtil;
+import io.github.pengxianggui.crud.util.EntityUtil;
 import io.github.pengxianggui.crud.query.*;
 import io.github.pengxianggui.crud.valid.CrudInsert;
 import io.github.pengxianggui.crud.valid.CrudUpdate;
@@ -18,10 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindException;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
@@ -97,7 +94,7 @@ public class BaseController<T> {
     @PostMapping("page")
     public PagerView<T> page(@RequestBody @Validated PagerQuery query) {
         Pager<T> pager = baseService.queryPage(query);
-        return pager.toView();
+        return new PagerView<>(pager.getCurrent(), pager.getSize(), pager.getTotal(), pager.getRecords());
     }
 
     @ApiOperation("详情查询")
@@ -142,8 +139,8 @@ public class BaseController<T> {
         if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
             return filePath;
         }
-        // TODO 从当前实例的@RequestMapping中获取
-        String basePath = null;
+        RequestMapping requestMapping = this.getClass().getAnnotation(RequestMapping.class);
+        String basePath = (requestMapping != null ? requestMapping.value()[0] : "");
         return basePath + "/download?path=" + URLEncoder.encode(filePath);
     }
 
@@ -174,7 +171,7 @@ public class BaseController<T> {
     @ApiOperation(value = "导出", notes = "数据导出")
     @PostMapping("export")
     public String export() {
-        // TODO 支持传入表头的config, 以便导出时显示excel表头，以及一些option选项之类的
+        // TODO 2.0 支持传入表头的config, 以便导出时显示excel表头，以及一些option选项之类的
 //        return responseFile(null)
         return null;
     }

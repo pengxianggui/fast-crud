@@ -1,11 +1,13 @@
 package io.github.pengxianggui.crud.query.validator;
 
-import io.github.pengxianggui.crud.query.Order;
+import cn.hutool.core.collection.CollectionUtil;
 import io.github.pengxianggui.crud.query.Query;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
+@Slf4j
 public class QueryValidator implements ConstraintValidator<ValidQuery, Query> {
 
     @Override
@@ -14,24 +16,19 @@ public class QueryValidator implements ConstraintValidator<ValidQuery, Query> {
     }
 
     @Override
-    public boolean isValid(Query value, ConstraintValidatorContext context) {
-        if (value == null) {
-            return true;
-        }
-        if (value.getCols() == null || value.getCols().length == 0) {
-            return true;
-        }
-        if (value.getOrders() == null || value.getOrders().isEmpty()) {
+    public boolean isValid(Query query, ConstraintValidatorContext context) {
+        if (query == null) {
             return true;
         }
 
-        for (Order order : value.getOrders()) {
-            for (String col : value.getCols()) {
-                if (col.equals(order.getCol())) {
-                    return true;
-                }
-            }
+        return !existColOfOrderNotInCols(query);
+    }
+
+    private boolean existColOfOrderNotInCols(Query query) {
+        if (CollectionUtil.isEmpty(query.getOrders()) || CollectionUtil.isEmpty(query.getCols())) {
+            return false;
         }
-        return false;
+
+        return !query.getOrders().stream().allMatch(order -> query.getCols().contains(order.getCol()));
     }
 }

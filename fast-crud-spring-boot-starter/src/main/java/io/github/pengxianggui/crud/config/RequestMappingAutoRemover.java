@@ -13,6 +13,8 @@ import java.util.Arrays;
 import java.util.Map;
 
 /**
+ * 在接口中兑现{@link CrudExclude}, 经此注解修饰的接口将不会被注册到spring mvc接口中，或者准确来说是会在注册之后移除掉。
+ *
  * @author pengxg
  * @date 2025/2/7 21:54
  */
