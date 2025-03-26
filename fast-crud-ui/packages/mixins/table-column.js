@@ -1,4 +1,4 @@
-import {defaultIfEmpty, isBoolean, isFunction} from "../util/util";
+import {defaultIfEmpty} from "../util/util";
 import {colEditable} from "../components/table/src/util";
 
 export default {
