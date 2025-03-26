@@ -495,7 +495,7 @@ class FastTableOption {
                         editRows: editRows,
                         res: res
                     }).then(() => {
-                        Message.success(`成功新增${editRows.length}条记录`);
+                        Message.success(`成功新增${postData.length}条记录`);
                     });
                 }).catch(err => {
                     reject(err);
@@ -593,7 +593,7 @@ class FastTableOption {
                         editRows: editRows,
                         res: res
                     }).then(() => {
-                        Message.success(`成功更新${editRows.length}条记录`);
+                        Message.success(`成功更新${postData.length}条记录`);
                     });
                 }).catch(err => {
                     reject(err);
