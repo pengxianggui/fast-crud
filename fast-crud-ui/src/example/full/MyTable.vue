@@ -133,7 +133,7 @@ export default {
             Message.warning('你已勾选【不允许添加司马懿】');
             return Promise.reject();
           }
-          return Promise.resolve();
+          return Promise.resolve(editRows);
         },
         insertSuccess({fatRows, rows, editRows, res}) {
           if (this.params.customInsertSuccessTip) {
@@ -161,7 +161,7 @@ export default {
             Message.warning('你已勾选【名字不允许改为皇帝】');
             return Promise.reject();
           }
-          return Promise.resolve();
+          return Promise.resolve(editRows);
         },
         updateSuccess({fatRows, rows, editRows, res}) {
           return Promise.resolve();
