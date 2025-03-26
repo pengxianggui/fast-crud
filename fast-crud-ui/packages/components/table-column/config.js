@@ -24,7 +24,7 @@ const defaultEditConfig = {
     val: null,
     props: {
         class: 'fc-table-inline-edit-component',
-        editable: true // fast-table-column不允许编辑
+        editable: false // fast-table-column不允许编辑
     }
 }
 export default {
