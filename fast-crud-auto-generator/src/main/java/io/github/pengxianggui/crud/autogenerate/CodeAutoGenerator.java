@@ -47,7 +47,12 @@ public class CodeAutoGenerator {
 
         String swagger = scanner("是否生成swagger文档(y/n, 默认为y, 若为y则确保有swagger相关pom依赖):", true, "y", Arrays.asList("y", "n"));
 
-        String systemPath = System.getProperty("user.dir") + File.separator + getModule();
+        final String systemPath;
+        if (this.module == null || this.module.trim().length() == 0) {
+            systemPath = System.getProperty("user.dir");
+        } else {
+            systemPath = System.getProperty("user.dir") +  File.separator + this.module;
+        }
         String out = systemPath + File.separator + "src" + File.separator + "main" + File.separator + "java";
         DataSourceConfig.Builder dataSourceConfigBuilder = new DataSourceConfig.Builder(getUrl(), getUsername(), getPassword());
         dataSourceConfigBuilder.schema(getSchema());
