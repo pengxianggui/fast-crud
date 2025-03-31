@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 spring:
   devtools:
     restart:
@@ -23,4 +23,4 @@ mybatis-plus:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 fast-crud:
-  upload-dir: ${UPLOAD_DIR:}
+  upload-dir: ${UPLOAD_DIR:${user.dir}/upload}
