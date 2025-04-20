@@ -8,7 +8,7 @@
     <packaging>pom</packaging>
 
     <name>fast-crud</name>
-    <url>https://github.com/pengxianggui/fast-crud</url>
+    <url>https://github.com/pengxianggui/fast-crud-parent</url>
     <modules>
         <module>fast-crud-auto-generator</module>
         <module>fast-crud-spring-boot-starter</module>
