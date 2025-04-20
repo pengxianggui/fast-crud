@@ -46,7 +46,7 @@
             <el-dropdown-item @click.native="activeBatchEdit" v-if="option.updatable">批量编辑</el-dropdown-item>
             <!-- TODO 2.0 批量编辑、导出和自定义表格 -->
             <!--            <el-dropdown-item @click.native="activeBatchUpdate">批量修改</el-dropdown-item>-->
-            <!--            <el-dropdown-item @click.native="exportData">导出</el-dropdown-item>-->
+            <el-dropdown-item @click.native="exportData">导出</el-dropdown-item>
             <!--            <el-dropdown-item @click.native="customTable">自定义表格</el-dropdown-item>-->
             <slot name="moreButton"
                   v-bind="{size: option.style.size, choseRow: choseRow, checkedRows: checkedRows, editRows: editRows}"></slot>
@@ -111,7 +111,7 @@ import {
   isNull,
   noRepeatAdd
 } from "../../../util/util";
-import {getEditConfig, iterBuildComponentConfig, rowValid, toTableRow} from "./util";
+import {getEditConfig, iterBuildComponentConfig, rowValid, toTableRow, buildParamForExport} from "./util";
 import {openDialog} from "../../../util/dialog";
 import {buildFinalComponentConfig} from "../../mapping";
 import RowForm from "./row-form.vue";
@@ -638,6 +638,7 @@ export default {
      */
     exportData() {
       // TODO 2.0 导出数据，基于前端col和label,props。导出当前页或当前筛选条件下的全部数据
+      const promise = this.option._exportData(buildParamForExport(this.columnConfig), this.pageQuery);
     },
     /**
      * 自定义表格

@@ -293,3 +293,17 @@ export function colEditable(fatRow, col) {
     }
     return false;
 }
+
+/**
+ * 构建导出请求参数
+ * @param columnConfigs
+ * @returns {*}
+ */
+export function buildParamForExport(columnConfigs) {
+    return Object.values(columnConfigs).map(config => {
+        return {
+            ...config.customConfig,
+            tableColumnComponentName: config.tableColumnComponentName,
+        }
+    })
+}

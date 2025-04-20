@@ -9,6 +9,8 @@ import {
     isString,
     isUndefined
 } from "./util/util.js";
+import {openDialog} from "./util/dialog";
+import ExportConfirm from "./components/table/src/export-confirm.vue";
 
 export const Opt = Object.freeze({
     EQ: "=",
@@ -323,6 +325,8 @@ class FastTableOption {
     beforeToUpdate; // 进入更新前(行内编辑更新前，或更新表单弹窗前)
     beforeDeleteTip;
     beforeCancel; // 工能区中取消按钮点击前
+    beforeExport; // 导出前
+    afterExport; // 导出后
 
     render; // 渲染函数, pick时用到
     conds; // 固定的筛选条件，内部无法取消
@@ -381,6 +385,8 @@ class FastTableOption {
                     deleteSuccess = ({fatRows, rows, res}) => Promise.resolve(),
                     deleteFail = ({fatRows, rows, error}) => Promise.resolve(),
                     beforeCancel = ({fatRows, rows, status}) => Promise.resolve(),
+                    beforeExport = ({columns, pageQuery}) => Promise.resolve(columns),
+                    afterExport = () => Promise.resolve(),
                     render = (h) => [],
                     conds = []
                 }) {
@@ -413,6 +419,8 @@ class FastTableOption {
         assert(isFunction(deleteFail), 'deleteFail必须为函数')
         assert(isFunction(beforeCancel), 'beforeCancel必须为函数')
         assert(isFunction(render), "render必须是一个函数")
+        assert(isFunction(beforeExport), "beforeExport必须是一个函数")
+        assert(isFunction(afterExport), "afterExport必须是一个函数")
         assert(isArray(conds), "conds必须是Cond对象(或可转换为Cond对象的json)组成的数组")
 
         this.context = context;
@@ -463,6 +471,8 @@ class FastTableOption {
         this.beforeCancel = beforeCancel;
 
         this.render = render;
+        this.beforeExport = beforeExport;
+        this.afterExport = afterExport;
         this.conds = conds.map(c => Cond.build(c));
     }
 
@@ -610,6 +620,36 @@ class FastTableOption {
                 reject(err);
             })
         });
+    }
+
+    _exportData(columnConfigs, pageQuery) {
+        const {context, beforeExport} = this
+        beforeExport.call(context, {
+            columns: columnConfigs,
+            pageQuery: pageQuery
+        }).then((columnConfigs) => {
+            openDialog({
+                component: ExportConfirm,
+                props: {
+                    columns: columnConfigs
+                },
+                dialogProps: {
+                    width: '60%'
+                }
+            }).then(({columns, all = false}) => {
+                // 导出数据
+                const {exportUrl, afterExport} = this;
+                FastTableOption.$http.post(exportUrl, {
+                    columns: columns,
+                    all: all, // false-当前页; true-全部
+                    pageQuery: pageQuery
+                }).then(() => {
+                    // TODO 下载
+                }).catch(() => {
+                    // TODO 错误提示
+                })
+            })
+        })
     }
 }
 
