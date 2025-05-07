@@ -1,6 +1,5 @@
 package io.github.pengxianggui.crud;
 
-import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.annotation.FieldStrategy;
@@ -9,8 +8,9 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import io.github.pengxianggui.crud.util.EntityUtil;
+import io.github.pengxianggui.crud.file.FileManager;
 import io.github.pengxianggui.crud.query.*;
+import io.github.pengxianggui.crud.util.EntityUtil;
 import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,9 +19,6 @@ import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Date;
 import java.util.List;
 
 public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends ServiceImpl<M, T> implements BaseService<T> {
@@ -32,6 +29,8 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
 
     @Resource
     private FastCrudProperty fastCrudProperty;
+    @Resource
+    private FileManager fileManager;
 
     @Override
     public List<T> queryList(Query query) {
@@ -84,36 +83,12 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
 
     @Override
     public String upload(String row, String col, MultipartFile file) throws IOException {
-        String uploadDir;
-        if (StrUtil.isBlank(fastCrudProperty.getUploadDir())) {
-            try {
-                Path tempDir = Files.createTempDirectory("upload");
-                uploadDir = tempDir.toAbsolutePath().toString();
-            } catch (IOException e) {
-                throw e;
-            }
-        } else {
-            uploadDir = fastCrudProperty.getUploadDir();
-        }
-        if (!uploadDir.endsWith(File.separator)) {
-            uploadDir += File.separator;
-        }
-        String fileName = file.getOriginalFilename();
-        File targetFile = new File(uploadDir + File.separator + DateUtil.format(new Date(), "yyyyMMddHHmmssSSS") + File.separator + fileName);
-        try {
-            if (!targetFile.getParentFile().exists()) {
-                targetFile.getParentFile().mkdirs();
-            }
-            file.transferTo(targetFile);
-        } catch (IOException e) {
-            throw e;
-        }
-        return buildPreviewFileUrl(targetFile);
+        return fileManager.getFileService().upload(file);
     }
 
     @Override
     public File download(String path) {
-        return new File(path);
+        return fileManager.getFileService().getFile(path);
     }
 
     /**

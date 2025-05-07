@@ -173,7 +173,7 @@ export default {
           }
         }
       } catch (err) {
-        log.error(err);
+        console.error(err);
       }
       this.$emit('success', {response, file, fileList})
     },
@@ -252,6 +252,7 @@ export default {
     }
   }
 }
+
 .fc-fast-upload.fc-fast-upload__disable {
   border: none !important;
 }

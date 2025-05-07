@@ -22,6 +22,7 @@
         <mybatis-plus.version>3.5.7</mybatis-plus.version>
         <knife4j.version>3.0.3</knife4j.version>
         <hutool.version>5.8.8</hutool.version>
+        <easyexcel.version>4.0.3</easyexcel.version>
         <cglib.version>3.3.0</cglib.version>
         <freemarker.version>2.3.31</freemarker.version>
         <javassist.version>3.25.0-GA</javassist.version>
@@ -85,6 +86,11 @@
                 <groupId>cn.hutool</groupId>
                 <artifactId>hutool-extra</artifactId>
                 <version>${hutool.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>easyexcel</artifactId>
+                <version>${easyexcel.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.baomidou</groupId>

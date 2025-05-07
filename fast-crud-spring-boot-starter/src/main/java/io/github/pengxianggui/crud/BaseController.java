@@ -1,8 +1,10 @@
 package io.github.pengxianggui.crud;
 
 import cn.hutool.core.lang.Assert;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import io.github.pengxianggui.crud.download.FileResourceHttpRequestHandler;
+import io.github.pengxianggui.crud.export.ExcelExportManager;
 import io.github.pengxianggui.crud.util.EntityUtil;
 import io.github.pengxianggui.crud.query.*;
 import io.github.pengxianggui.crud.valid.CrudInsert;
@@ -29,6 +31,7 @@ import javax.validation.Validator;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URLEncoder;
@@ -141,7 +144,7 @@ public class BaseController<T> {
         }
         RequestMapping requestMapping = this.getClass().getAnnotation(RequestMapping.class);
         String basePath = (requestMapping != null ? requestMapping.value()[0] : "");
-        return basePath + "/download?path=" + URLEncoder.encode(filePath);
+        return String.format("%s/download?path=%s", StrUtil.addPrefixIfNot(basePath, "/"), URLEncoder.encode(filePath));
     }
 
     @ApiOperation(value = "下载/预览", notes = "针对上传的文件进行下载, 若是图片进行预览")
@@ -170,10 +173,18 @@ public class BaseController<T> {
 
     @ApiOperation(value = "导出", notes = "数据导出")
     @PostMapping("export")
-    public String export() {
-        // TODO 2.0 支持传入表头的config, 以便导出时显示excel表头，以及一些option选项之类的
-//        return responseFile(null)
-        return null;
+    public void export(@Validated @RequestBody ExportParam exportParam, HttpServletResponse response) {
+        List<T> data = exportParam.getAll()
+                ? baseService.queryList(exportParam.getPageQuery())
+                : baseService.queryPage(exportParam.getPageQuery()).getRecords();
+        ExcelExportManager excelExportManager = new ExcelExportManager();
+        try {
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition", String.format("attachment; filename=export.xlsx"));
+            excelExportManager.exportByConfig(data, exportParam.getColumns(), response.getOutputStream());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     protected ResponseEntity<FileSystemResource> responseFile(File file) {

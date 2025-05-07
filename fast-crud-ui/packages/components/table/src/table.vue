@@ -23,7 +23,7 @@
           <el-button :size="option.style.size" icon="el-icon-plus" @click="toInsert"
                      v-if="option.insertable">新建
           </el-button>
-          <el-button type="danger" plain :size="option.style.size" @click="deleteRow"
+          <el-button type="danger" plain :size="option.style.size" icon="el-icon-delete" @click="deleteRow"
                      v-if="checkedRows.length === 0 && option.deletable">删除
           </el-button>
           <el-button type="danger" :size="option.style.size" @click="deleteRows"
@@ -43,10 +43,16 @@
             更多<i class="el-icon-arrow-down el-icon--right"></i>
           </el-button>
           <el-dropdown-menu slot="dropdown">
-            <el-dropdown-item @click.native="activeBatchEdit" v-if="option.updatable">批量编辑</el-dropdown-item>
+            <el-dropdown-item @click.native="activeBatchEdit" v-if="option.updatable">
+              <i class="el-icon-third-piliangbianji"></i>
+              <span>批量编辑</span>
+            </el-dropdown-item>
             <!-- TODO 2.0 批量编辑、导出和自定义表格 -->
             <!--            <el-dropdown-item @click.native="activeBatchUpdate">批量修改</el-dropdown-item>-->
-            <el-dropdown-item @click.native="exportData">导出</el-dropdown-item>
+            <el-dropdown-item @click.native="exportData">
+              <i class="el-icon-third-daochudangqianye"></i>
+              <span>导出</span>
+            </el-dropdown-item>
             <!--            <el-dropdown-item @click.native="customTable">自定义表格</el-dropdown-item>-->
             <slot name="moreButton"
                   v-bind="{size: option.style.size, choseRow: choseRow, checkedRows: checkedRows, editRows: editRows}"></slot>

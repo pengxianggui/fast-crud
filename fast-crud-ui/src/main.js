@@ -3,6 +3,7 @@ import ElementUI from 'element-ui'
 import App from './App.vue'
 import "element-ui/lib/theme-chalk/index.css";
 import '@/assets/index.scss'
+import '@/../packages/assets/fonts/iconfont.css'
 import FastCrudUI from '@/../packages/index.js'
 import http from "@/http";
 

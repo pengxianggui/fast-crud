@@ -61,7 +61,7 @@ export default defineConfig(({mode}) => {
                 scss: {
                     api: "modern-compiler",
                     // additionalData: `@use "sass:math";`, // 配置 Dart Sass 的现代写法
-                    // silenceDeprecations: ["legacy-js-api"] // 静默警告: Deprecation Warning: The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+                    silenceDeprecations: ["legacy-js-api"] // 静默警告: Deprecation Warning: The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
                 }
             }
         }

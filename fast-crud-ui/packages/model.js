@@ -628,23 +628,37 @@ class FastTableOption {
             columns: columnConfigs,
             pageQuery: pageQuery
         }).then((columnConfigs) => {
+            columnConfigs.forEach(colConf => {
+                if (!colConf.hasOwnProperty('exportable')) {
+                    colConf.exportable = true
+                }
+            })
             openDialog({
                 component: ExportConfirm,
                 props: {
                     columns: columnConfigs
                 },
                 dialogProps: {
+                    title: '导出设置',
                     width: '60%'
                 }
             }).then(({columns, all = false}) => {
                 // 导出数据
-                const {exportUrl, afterExport} = this;
+                const {title, module, exportUrl, afterExport} = this;
                 FastTableOption.$http.post(exportUrl, {
                     columns: columns,
                     all: all, // false-当前页; true-全部
                     pageQuery: pageQuery
-                }).then(() => {
-                    // TODO 下载
+                }, {
+                    responseType: 'blob'
+                }).then((response) => {
+                    const url = window.URL.createObjectURL(new Blob([response.data]));
+                    const link = document.createElement('a')
+                    link.href = url;
+                    link.setAttribute('download', `${title ? title : module}_${new Date().getTime()}.xlsx`);
+                    document.body.appendChild(link)
+                    link.click()
+                    link.remove()
                 }).catch(() => {
                     // TODO 错误提示
                 })

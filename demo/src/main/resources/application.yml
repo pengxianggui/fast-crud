@@ -24,3 +24,9 @@ mybatis-plus:
 
 fast-crud:
   upload-dir: ${UPLOAD_DIR:${user.dir}/upload}
+  # 服务地址(本地文件导出时等场景涉及)
+  host: ${HOST:http://localhost:8080}
+  upload:
+    mode: local
+    local:
+      dir: ${UPLOAD_DIR:${user.dir}/upload}

@@ -1,6 +1,6 @@
 <template>
   <div class="fc-dynamic-filter-list">
-    <el-popover v-for="(f, index) in filters">
+    <el-popover v-for="(f, index) in filters" :key="f.col + '.' + index">
       <template v-slot:reference>
         <div class="fc-dynamic-filter-btns">
           <el-button type="text" class="fc-dynamic-filter-open-btn" :class="{'strikethrough': f.disabled}">

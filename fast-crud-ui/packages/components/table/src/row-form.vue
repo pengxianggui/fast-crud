@@ -5,8 +5,8 @@
              :model="formData"
              :rules="rules"
              :label-width="option.style.formLabelWidth">
-      <el-row v-for="row in localLayout">
-        <el-col v-for="(span, col) in row" :span="span">
+      <el-row v-for="row in localLayout" :key="row.col">
+        <el-col v-for="(span, col) in row" :span="span" :key="col">
           <el-form-item :prop="col"
                         :label="config[col].label"
                         :key="col"

@@ -4,8 +4,9 @@ import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import io.github.pengxianggui.crud.apidoc.SwaggerConfig;
-import io.github.pengxianggui.crud.download.FileResourceHttpRequestHandler;
 import io.github.pengxianggui.crud.config.RequestMappingAutoRemover;
+import io.github.pengxianggui.crud.download.FileResourceHttpRequestHandler;
+import io.github.pengxianggui.crud.file.FileConfig;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -18,7 +19,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
  * @author pengxg
  * @date 2024/11/30 14:27
  */
-@ImportAutoConfiguration(SwaggerConfig.class)
+@ImportAutoConfiguration({SwaggerConfig.class, FileConfig.class})
 @EnableConfigurationProperties(FastCrudProperty.class)
 @Configuration
 public class FastCrudAutoConfiguration {
