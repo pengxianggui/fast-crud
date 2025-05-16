@@ -2,9 +2,12 @@
   <div class="export-confirm">
     <el-table :data="columns">
 <!--      <el-table-column prop="col" label="字段"/>-->
-      <el-table-column prop="label" label="名称"/>
+      <el-table-column prop="label" label="名称">
+        <template #default="{row}">
+          <el-input v-model="row.label" size="small" placeholder="请输入名称"></el-input>
+        </template>
+      </el-table-column>
       <el-table-column prop="exportable" label="是否导出">
-        <!-- TODO -->
         <template #default="{row}">
           <el-switch v-model="row.exportable"></el-switch>
         </template>

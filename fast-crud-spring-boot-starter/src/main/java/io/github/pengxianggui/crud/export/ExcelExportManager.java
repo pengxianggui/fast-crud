@@ -2,9 +2,11 @@ package io.github.pengxianggui.crud.export;
 
 import cn.hutool.core.util.ReflectUtil;
 import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.converters.localdate.LocalDateDateConverter;
 import com.alibaba.excel.converters.localdatetime.LocalDateTimeDateConverter;
 import com.alibaba.excel.converters.localdatetime.LocalDateTimeStringConverter;
+import com.alibaba.excel.write.metadata.WriteSheet;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.OutputStream;
@@ -18,6 +20,13 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ExcelExportManager {
 
+    /**
+     * 按配置导出数据
+     *
+     * @param data         要导出的数据
+     * @param columns      要导出的列配置
+     * @param outputStream 输出流
+     */
     public void exportByConfig(List<?> data, List<Map<String, Object>> columns, OutputStream outputStream) {
         List<List<String>> head = new ArrayList<>();
         List<Integer> widths = new ArrayList<>();
@@ -44,7 +53,7 @@ public class ExcelExportManager {
             return rowData;
         }).collect(Collectors.toList());
 
-        EasyExcel.write(outputStream)
+        ExcelWriter excelWriter = EasyExcel.write(outputStream)
                 .head(head)
                 .includeColumnFieldNames(cols)
                 .registerWriteHandler(new CustomSheetWriteHandler(widths, handlerMapping))
@@ -53,10 +62,20 @@ public class ExcelExportManager {
                 .registerConverter(new LocalDateTimeDateConverter())
                 .registerConverter(new LocalDateDateConverter())
                 .registerConverter(new LocalTimeConverter())
-                .sheet("Sheet1")
-                .doWrite(dataList);
+                .build();
+        WriteSheet sheet = EasyExcel.writerSheet("Sheet1").build();
+        excelWriter.write(dataList, sheet);
+        excelWriter.finish();
     }
 
+    // TODO 大表时需要分页追加写入
+
+    /**
+     * 根据列配置获取列处理器
+     *
+     * @param columnConfig
+     * @return
+     */
     private ColumnHandler getColumnHandler(Map<String, Object> columnConfig) {
         String columnType = (String) columnConfig.get("tableColumnComponentName");
         switch (columnType) {

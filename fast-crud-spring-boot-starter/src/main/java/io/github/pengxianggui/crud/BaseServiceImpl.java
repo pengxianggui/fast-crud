@@ -92,17 +92,6 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
     }
 
     /**
-     * 构建文件预览地址。在文件资源上传之后会调用此方法。默认将返回文件的绝对路径, 客户端将通过内置的 xxx/download?path=${path}来访问此资源。
-     * 若希望上传到oss并返回绝对oss资源路径,可以重写此方法实现oss上传并返回http绝对资源路径，返回给客户端的将是绝对oss资源路径，而不会再通过xxx/download?path=来访问。
-     *
-     * @param targetFile
-     * @return
-     */
-    protected String buildPreviewFileUrl(File targetFile) {
-        return targetFile.getAbsolutePath();
-    }
-
-    /**
      * 判断字段是否需要更新，通过mybatisplus的@TableField注解判断
      *
      * @param field      字段

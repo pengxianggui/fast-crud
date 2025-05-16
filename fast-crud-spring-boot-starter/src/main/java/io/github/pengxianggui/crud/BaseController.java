@@ -64,7 +64,7 @@ public class BaseController<T> {
         return baseService.listByIds(models.stream().map(EntityUtil::getPkVal).collect(Collectors.toList()));
     }
 
-    @ApiOperation("更新")
+    @ApiOperation("编辑")
     @PostMapping("update")
     public T update(@RequestBody UpdateModelWrapper<T> modelWrapper) throws BindException {
         ValidUtil.valid(validator, modelWrapper, CrudUpdate.class);
@@ -72,7 +72,7 @@ public class BaseController<T> {
         return baseService.getById(EntityUtil.getPkVal(modelWrapper.getModel()));
     }
 
-    @ApiOperation(value = "批量更新", notes = "不支持个性化选择_updateNull")
+    @ApiOperation(value = "批量编辑", notes = "不支持个性化选择_updateNull")
     @PostMapping("update/batch")
     @Transactional(rollbackFor = Exception.class)
     public List<T> updateBatch(@RequestBody List<T> models) throws BindException {
