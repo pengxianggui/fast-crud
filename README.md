@@ -141,10 +141,9 @@ public class CodeGenerator {
 
 #### 后端: 基础功能CRUD接口
 
-- [X]  支持基于注解动态生成CRUD涉及的相关接口(新增(批量新增)、删除(批量删除)、修改(批量修改)、查询(分页、列表、详情)
-  、唯一性验证)
+- [X]  支持通过继承+注解动态生成CRUD涉及的相关接口(新增(批量新增)、删除(批量删除)、修改(批量修改)、查询(分页、列表、详情)
+  、唯一性验证
 - [X]  支持controller、service、serviceImpl、mapper、entity自动生成
-- [X]  调整CRUD动态注册策略: 不根据ApiOperation来识别是否是接口方法，而是通过GetMapper、PostMapper、DeleteMapper、PutMapper、RequestMapper等来识别
 - [X]  移除对knife4j-spring-boot-starter的强依赖
 
 #### 前端: 提供配套的前端CRUD表格组件库
@@ -184,6 +183,8 @@ public class CodeGenerator {
 - [X]  增加FastTableColumnFile和FastTableColumnImg，分别文件上传和图片上传功能
 - [X]  FastTableColumnObject: 根据另一个tableOption和render来渲染弹窗pick对象，可以回填到当前行
 - [X]  支持"更多"里扩展增加新功能按钮
+- [ ]  支持跨表分页/详情
+- [ ]  支持多图/多文件上传
 
 ### 2.x 版本：CRUD的外围扩展
 
