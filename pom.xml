@@ -20,6 +20,7 @@
         <fast-crud.version>1.0.0-SNAPSHOT</fast-crud.version>
         <spring-boot.version>2.6.8</spring-boot.version>
         <mybatis-plus.version>3.5.7</mybatis-plus.version>
+        <mybatis-plus-join.version>1.5.3</mybatis-plus-join.version>
         <knife4j.version>3.0.3</knife4j.version>
         <hutool.version>5.8.8</hutool.version>
         <easyexcel.version>4.0.3</easyexcel.version>
@@ -71,6 +72,11 @@
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-boot-starter</artifactId>
                 <version>${mybatis-plus.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.yulichang</groupId>
+                <artifactId>mybatis-plus-join-boot-starter</artifactId>
+                <version>${mybatis-plus-join.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.xiaoymin</groupId>

@@ -4,12 +4,15 @@ import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.annotation.FieldStrategy;
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.github.yulichang.wrapper.MPJLambdaWrapper;
+import io.github.pengxianggui.crud.dao.BaseMapper;
 import io.github.pengxianggui.crud.file.FileManager;
 import io.github.pengxianggui.crud.query.*;
+import io.github.pengxianggui.crud.query.join.MPJLambdaWrapperUtil;
 import io.github.pengxianggui.crud.util.EntityUtil;
 import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,6 +22,7 @@ import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.Collection;
 import java.util.List;
 
 public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends ServiceImpl<M, T> implements BaseService<T> {
@@ -28,20 +32,31 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
     public abstract void init();
 
     @Resource
-    private FastCrudProperty fastCrudProperty;
-    @Resource
     private FileManager fileManager;
 
     @Override
     public List<T> queryList(Query query) {
-        return list(QueryWrapperUtil.buildQueryWrapper(query, clazz));
+        return list(QueryWrapperUtil.build(query, clazz));
     }
 
     @Override
-    public Pager<T> queryPage(PagerQuery pagerQuery) {
-        Pager<T> pager = new Pager<>(pagerQuery.getCurrent(), pagerQuery.getSize());
-        QueryWrapper<T> pageQueryWrapper = QueryWrapperUtil.buildQueryWrapper(pagerQuery, clazz);
-        return page(pager, pageQueryWrapper);
+    public <DTO> List<DTO> queryList(Query query, Class<DTO> dtoClazz) {
+        MPJLambdaWrapper<T> wrapper = MPJLambdaWrapperUtil.build(query, clazz, dtoClazz);
+        return baseMapper.selectJoinList(dtoClazz, wrapper);
+    }
+
+    @Override
+    public Pager<T> queryPage(PagerQuery query) {
+        Pager<T> pager = new Pager<>(query.getCurrent(), query.getSize());
+        Wrapper<T> wrapper = QueryWrapperUtil.build(query, clazz);
+        return page(pager, wrapper);
+    }
+
+    @Override
+    public <DTO> Pager<DTO> queryPage(PagerQuery query, Class<DTO> dtoClazz) {
+        Pager<DTO> pager = new Pager<>(query.getCurrent(), query.getSize());
+        MPJLambdaWrapper<T> wrapper = MPJLambdaWrapperUtil.build(query, clazz, dtoClazz);
+        return baseMapper.selectJoinPage(pager, dtoClazz, wrapper);
     }
 
     @Override
@@ -74,11 +89,33 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
         return this.update(updateWrapper);
     }
 
+    @Override
+    public <DTO> boolean updateById(UpdateModelWrapper<DTO> dtoWrapper, Class<DTO> dtoClazz) {
+        // TODO 根据dtoClass和dtoWrapper，借助mybatis-plus-join构造跨表的更新
+        return false;
+    }
+
+    @Override
+    public <DTO> boolean deleteByIds(Collection<?> ids, Class<DTO> dtoClazz) {
+        // TODO 根据dtoClass和ids，借助mybatis-plus-join构造跨表的删除
+        return false;
+    }
+
     public boolean exists(List<Cond> conditions) {
-        QueryWrapper<T> wrapper = new QueryWrapper<T>();
-        QueryWrapperUtil.addConditions(wrapper, conditions, clazz);
+        Query query = new Query();
+        query.setConds(conditions);
+        QueryWrapper<T> wrapper = QueryWrapperUtil.build(query, clazz);
         wrapper.last(" limit 1");
         return this.count(wrapper) > 0;
+    }
+
+    @Override
+    public <DTO> boolean exists(List<Cond> conditions, Class<DTO> dtoClazz) {
+        Query query = new Query();
+        query.setConds(conditions);
+        MPJLambdaWrapper<T> wrapper = MPJLambdaWrapperUtil.build(query, clazz, dtoClazz);
+        wrapper.last("limit 1");
+        return baseMapper.selectJoinCount(wrapper) > 0;
     }
 
     @Override

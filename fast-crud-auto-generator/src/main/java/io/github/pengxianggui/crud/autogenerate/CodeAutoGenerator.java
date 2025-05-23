@@ -38,7 +38,7 @@ public class CodeAutoGenerator {
 
     public void generate() {
 
-        String moduleName = scanner("请输入模块名称(无则直接回车):", true, "", null);
+        String moduleName = scanner("如需按业务分包,请输入模块名称(无则直接回车):", true, "", null);
         String tables = scanner("请输入表名,多个英文逗号分隔:", false, null, null);
 
         String level = scanner("请输入要生成的层级,controller(1),service(2),mapper(3),model(4)(注意: 多选时英文逗号分割, 若直接回车则表示全部):",
@@ -51,7 +51,7 @@ public class CodeAutoGenerator {
         if (this.module == null || this.module.trim().length() == 0) {
             systemPath = System.getProperty("user.dir");
         } else {
-            systemPath = System.getProperty("user.dir") +  File.separator + this.module;
+            systemPath = System.getProperty("user.dir") + File.separator + this.module;
         }
         String out = systemPath + File.separator + "src" + File.separator + "main" + File.separator + "java";
         DataSourceConfig.Builder dataSourceConfigBuilder = new DataSourceConfig.Builder(getUrl(), getUsername(), getPassword());
@@ -122,10 +122,9 @@ public class CodeAutoGenerator {
                     if (!levels.contains("2")) {
                         serviceBuilder.disable();
                     }
-                    // mapper暂时未定制化
                     Mapper.Builder mapperBuilder = builder1.mapperBuilder()
-//                            .mapperTemplate("classpath:/templates/mapper.java")
-//                            .mapperXmlTemplate("classpath:/templates/mapper.xml")
+                            .mapperTemplate("templates/dynamic/mapper.java")
+//                            .mapperXmlTemplate("classpath:/templates/mapper.xml") // xml未定制
                             ;
                     if (!levels.contains("3")) {
                         mapperBuilder.disable();

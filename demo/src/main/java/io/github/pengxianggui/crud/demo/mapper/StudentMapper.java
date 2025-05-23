@@ -1,7 +1,7 @@
 package io.github.pengxianggui.crud.demo.mapper;
 
+import io.github.pengxianggui.crud.dao.BaseMapper;
 import io.github.pengxianggui.crud.demo.domain.Student;
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
  * <p>
