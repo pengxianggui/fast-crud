@@ -28,8 +28,6 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
     public abstract void init();
 
     @Resource
-    private FastCrudProperty fastCrudProperty;
-    @Resource
     private FileManager fileManager;
 
     @Override
@@ -75,8 +73,9 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
     }
 
     public boolean exists(List<Cond> conditions) {
-        QueryWrapper<T> wrapper = new QueryWrapper<T>();
-        QueryWrapperUtil.addConditions(wrapper, conditions, clazz);
+        Query query = new Query();
+        query.setConds(conditions);
+        QueryWrapper<T> wrapper = QueryWrapperUtil.buildQueryWrapper(query, clazz);
         wrapper.last(" limit 1");
         return this.count(wrapper) > 0;
     }

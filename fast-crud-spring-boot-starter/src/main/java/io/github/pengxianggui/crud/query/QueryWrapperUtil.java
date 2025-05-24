@@ -9,7 +9,7 @@ import java.util.function.Consumer;
 
 public class QueryWrapperUtil {
 
-    public static <T> QueryWrapper addConditions(QueryWrapper<T> queryWrapper, List<Cond> conds, Class<?> entityClazz) {
+    private static <T> QueryWrapper addConditions(QueryWrapper<T> queryWrapper, List<Cond> conds, Class<?> entityClazz) {
         if (conds != null && conds.size() > 0) {
             Consumer<QueryWrapper<T>> wrapper = wrapper(queryWrapper, conds, entityClazz);
             wrapper.accept(queryWrapper);
@@ -17,7 +17,7 @@ public class QueryWrapperUtil {
         return queryWrapper;
     }
 
-    public static <T> QueryWrapper addSelect(QueryWrapper<T> queryWrapper, List<String> cols, boolean distinct, Class<?> entityClazz) {
+    private static <T> QueryWrapper addSelect(QueryWrapper<T> queryWrapper, List<String> cols, boolean distinct, Class<?> entityClazz) {
         //查询字段
         if (cols != null && !cols.isEmpty()) {
             String[] selects = new String[cols.size()];
@@ -55,7 +55,7 @@ public class QueryWrapperUtil {
         };
     }
 
-    public static <T> QueryWrapper addOrders(QueryWrapper<T> queryWrapper, List<Order> orders, Class<?> entityClazz) {
+    private static <T> QueryWrapper addOrders(QueryWrapper<T> queryWrapper, List<Order> orders, Class<?> entityClazz) {
         if (orders != null) {
             for (Order order : orders) {
                 if (order.isAsc()) {
@@ -177,11 +177,11 @@ public class QueryWrapperUtil {
     public static <T> QueryWrapper<T> buildQueryWrapper(Query query, Class<T> clazz) {
         QueryWrapper<T> wrapper = new QueryWrapper<>();
         //条件
-        QueryWrapperUtil.addConditions(wrapper, query.getConds(), clazz);
+        addConditions(wrapper, query.getConds(), clazz);
         //排序
-        QueryWrapperUtil.addOrders(wrapper, query.getOrders(), clazz);
+        addOrders(wrapper, query.getOrders(), clazz);
         //查询字段
-        QueryWrapperUtil.addSelect(wrapper, query.getCols(), query.isDistinct(), clazz);
+        addSelect(wrapper, query.getCols(), query.isDistinct(), clazz);
         return wrapper;
     }
 }
