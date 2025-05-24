@@ -44,9 +44,9 @@ public class DtoInfo<DTO, T> {
     public DtoInfo(Class<DTO> dtoClass, Class<T> clazz) {
         this.dtoClass = dtoClass;
         this.mainEntityClass = clazz;
-        Join[] joins = dtoClass.getAnnotationsByType(Join.class);
-        this.joinMap = Arrays.stream(joins).map(join -> new JoinInfo<>(join, clazz))
-                .collect(Collectors.groupingBy(joinInfo -> joinInfo.getJoin().joinType()));
+        JoinTo[] joinTos = dtoClass.getAnnotationsByType(JoinTo.class);
+        this.joinMap = Arrays.stream(joinTos).map(joinTo -> new JoinInfo<>(joinTo, clazz))
+                .collect(Collectors.groupingBy(joinInfo -> joinInfo.getJoinTo().joinType()));
         this.fields = Arrays.stream(ReflectUtil.getFields(dtoClass))
                 .map(field -> new FieldRelate(field, clazz, dtoClass)).collect(Collectors.toList());
     }
@@ -63,14 +63,14 @@ public class DtoInfo<DTO, T> {
     @NoArgsConstructor
     @Getter
     public static class JoinInfo<T> {
-        private Join join;
+        private JoinTo joinTo;
         private CondFieldRelate[] condFieldRelates;
 
-        public JoinInfo(Join join, Class<T> clazz) {
-            this.join = join;
-            this.condFieldRelates = new CondFieldRelate[join.on().length];
-            for (int i = 0; i < join.on().length; i++) {
-                CondFieldRelate condFieldRelate = new CondFieldRelate(clazz, join.value(), join.on()[i]);
+        public JoinInfo(JoinTo joinTo, Class<T> clazz) {
+            this.joinTo = joinTo;
+            this.condFieldRelates = new CondFieldRelate[joinTo.on().length];
+            for (int i = 0; i < joinTo.on().length; i++) {
+                CondFieldRelate condFieldRelate = new CondFieldRelate(clazz, joinTo.value(), joinTo.on()[i]);
                 condFieldRelates[i] = condFieldRelate;
             }
         }

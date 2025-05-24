@@ -73,7 +73,7 @@ public class MPJLambdaWrapperUtil {
         }
         joinMap.forEach((joinType, joinInfos) -> {
             joinInfos.forEach(joinInfo -> {
-                Class<?> joinToClass = joinInfo.getJoin().value();
+                Class<?> joinToClass = joinInfo.getJoinTo().value();
                 switch (joinType) {
                     case INNER:
                         wrapper.innerJoin(joinToClass, on -> joinInfo.apply(on));

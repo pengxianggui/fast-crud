@@ -39,10 +39,10 @@
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-boot-starter</artifactId>
         </dependency>
-        <!-- https://mybatis-plus-join.github.io/ -->
+        <!-- https://mybatis-plus-joinTo.github.io/ -->
         <dependency>
             <groupId>com.github.yulichang</groupId>
-            <artifactId>mybatis-plus-join-boot-starter</artifactId>
+            <artifactId>mybatis-plus-joinTo-boot-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -64,6 +64,13 @@
         <dependency>
             <groupId>org.javassist</groupId>
             <artifactId>javassist</artifactId>
+        </dependency>
+        <!-- 确保APT自动生成META-INF文件，被编译器识别 -->
+        <dependency>
+            <groupId>com.google.auto.service</groupId>
+            <artifactId>auto-service</artifactId>
+            <version>1.1.1</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 

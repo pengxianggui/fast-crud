@@ -1,10 +1,7 @@
 package io.github.pengxianggui.crud.demo.controller.order.dto;
 
 import io.github.pengxianggui.crud.demo.domain.order.OrderAddress;
-import io.github.pengxianggui.crud.query.join.JoinType;
-import io.github.pengxianggui.crud.query.join.OnCond;
-import io.github.pengxianggui.crud.query.join.RelateTo;
-import io.github.pengxianggui.crud.query.join.Join;
+import io.github.pengxianggui.crud.query.join.*;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Getter;
@@ -16,7 +13,8 @@ import java.time.LocalDateTime;
  * @author pengxg
  * @date 2025/5/23 09:34
  */
-@Join(joinType = JoinType.INNER, value = OrderAddress.class, on = {@OnCond(field = "orderNo")})
+@JoinMain
+@JoinTo(joinType = JoinType.INNER, value = OrderAddress.class, on = {@OnCond(field = "orderNo")})
 @Getter
 @Setter
 @ApiModel(value = "Orders分页对象")

@@ -8,7 +8,7 @@ import java.lang.annotation.*;
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Join {
+public @interface JoinTo {
 
 //    /**
 //     * 关联来源的Entity类，默认是当前类。暂不启用，在mybatis-plus-join官方文档中没有看到 A join B 再 B join C的样例，因此暂不支持
