@@ -146,10 +146,12 @@ public class DtoInfo<DTO, T> {
 
         public <E> SFunction<E, ?> getFieldGetter() {
             return getFieldGetterFunction(field);
+            // TODO 改为从注册中心获取，注册中心采用APT技术生成
         }
 
         public <E> SFunction<E, ?> getTargetFieldGetter() {
             return getFieldGetterFunction(targetField);
+            // TODO 改为从注册中心获取，注册中心采用APT技术生成
         }
     }
 
@@ -165,13 +167,26 @@ public class DtoInfo<DTO, T> {
         }
     }
 
+    /**
+     * 获取字段的getter方法并返回，以便提供外部作为给MPJ的lambda参数。例如.selectAs(getFieldGetterFunction(field1), getFieldGetterFunction(field2))
+     * 此招不通！MPJ在解析lambda表达式时使用SerializedLambda推断字段名，这里返回的是运行时反射构造的lambda表达式(匿名内部类), MPJ不支持, 会报错:
+     * org.apache.ibatis.reflection.ReflectionException: Error parsing property name 'lambda$getFieldGetterFunction$6d075322$1'.  Didn't start with 'is', 'get' or 'set'.
+     * gpt明确给出结论: 我们是无法通过运行时构造lambda表达式传入 .selectAs(lambdaA, lambdaB), 无法识别的。
+     * 难搞！但是gpt也指了一条活路: 那就是利用编译器代码生成技术, Java APT（Annotation Processing Tool）
+     *
+     * @param field
+     * @param <E>
+     * @return
+     * @deprecated
+     */
+    @Deprecated
     private static <E> SFunction<E, ?> getFieldGetterFunction(Field field) {
-        return (E instance) -> {
+        return (SFunction<E, Object>) e -> {
             field.setAccessible(Boolean.TRUE);
             try {
-                return field.get(instance);
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
+                return field.get(e);
+            } catch (IllegalAccessException ex) {
+                throw new RuntimeException(ex);
             }
         };
     }
