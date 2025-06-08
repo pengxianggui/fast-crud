@@ -12,7 +12,7 @@ import com.github.yulichang.wrapper.MPJLambdaWrapper;
 import io.github.pengxianggui.crud.dao.BaseMapper;
 import io.github.pengxianggui.crud.file.FileManager;
 import io.github.pengxianggui.crud.query.*;
-import io.github.pengxianggui.crud.query.join.MPJLambdaWrapperUtil;
+import io.github.pengxianggui.crud.join.MPJLambdaWrapperUtil;
 import io.github.pengxianggui.crud.util.EntityUtil;
 import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 import org.springframework.web.multipart.MultipartFile;

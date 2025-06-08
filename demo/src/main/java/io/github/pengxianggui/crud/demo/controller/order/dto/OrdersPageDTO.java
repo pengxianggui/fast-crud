@@ -1,22 +1,24 @@
 package io.github.pengxianggui.crud.demo.controller.order.dto;
 
 import io.github.pengxianggui.crud.demo.domain.order.OrderAddress;
-import io.github.pengxianggui.crud.query.join.*;
+import io.github.pengxianggui.crud.demo.domain.order.OrderItem;
+import io.github.pengxianggui.crud.demo.domain.order.Orders;
+import io.github.pengxianggui.crud.join.*;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * @author pengxg
  * @date 2025/5/23 09:34
  */
-@JoinMain
-@JoinTo(joinType = JoinType.INNER, value = OrderAddress.class, on = {@OnCond(field = "orderNo")})
-@Getter
-@Setter
+@JoinMain(Orders.class)
+@InnerJoin(value = OrderAddress.class, on = {@OnCond(field = "orderNo", targetField = "orderNo")})
+@LeftJoin(value = OrderItem.class, on = {@OnCond(field = "orderNo", targetField = "orderNo")})
+@Data
 @ApiModel(value = "Orders分页对象")
 public class OrdersPageDTO {
     private Long id;
@@ -126,4 +128,17 @@ public class OrdersPageDTO {
     @RelateTo(OrderAddress.class)
     @ApiModelProperty("收货手机号")
     private String receiverMobi;
+
+    @RelateTo(OrderItem.class)
+    @ApiModelProperty("订单行列表")
+    private List<OrderItem> orderItems;
+
+    @RelateTo(value = OrderItem.class, field = "id")
+    @ApiModelProperty("订单行id列表")
+    private List<Long> orderItemIds;
+
+    @RelateTo(OrderAddress.class)
+    @ApiModelProperty("收货地址信息")
+    private OrderAddress address;
+
 }

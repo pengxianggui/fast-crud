@@ -164,8 +164,9 @@ public class CodeAutoGenerator {
                 }
             }
 
+            Set<String> inputs = Arrays.stream(input.split(",")).collect(Collectors.toSet());
             // 选项校验
-            if (options == null || options.isEmpty() || options.contains(input)) {
+            if (options == null || options.isEmpty() || inputs.stream().allMatch(options::contains)) {
                 return input;
             }
 

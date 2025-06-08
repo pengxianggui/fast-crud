@@ -1,4 +1,4 @@
-package io.github.pengxianggui.crud.query.join;
+package io.github.pengxianggui.crud.join;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -6,26 +6,23 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 指定关联信息
- *
  * @author pengxg
- * @date 2025/5/22 18:41
+ * @date 2025/5/28 16:11
  */
-@Target({ElementType.FIELD})
+@Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface RelateTo {
-
+public @interface LeftJoin {
     /**
-     * 关联的entity类
+     * 关联目标的entity类
      *
      * @return
      */
     Class<?> value();
 
     /**
-     * 关联的entity类中的字段，不配置则默认为DTO类中的同名字段
+     * join后的on条件
      *
      * @return
      */
-    String field() default "";
+    OnCond[] on();
 }

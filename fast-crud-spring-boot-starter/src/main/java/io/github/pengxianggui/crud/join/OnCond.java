@@ -1,4 +1,4 @@
-package io.github.pengxianggui.crud.query.join;
+package io.github.pengxianggui.crud.join;
 
 import io.github.pengxianggui.crud.query.Opt;
 

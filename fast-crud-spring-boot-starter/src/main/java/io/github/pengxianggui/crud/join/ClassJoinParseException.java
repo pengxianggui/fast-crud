@@ -1,4 +1,4 @@
-package io.github.pengxianggui.crud.query.join;
+package io.github.pengxianggui.crud.join;
 
 /**
  * 类关联解析异常

@@ -73,9 +73,10 @@
                 <artifactId>mybatis-plus-boot-starter</artifactId>
                 <version>${mybatis-plus.version}</version>
             </dependency>
+            <!-- https://mybatis-plus-join.github.io/ -->
             <dependency>
                 <groupId>com.github.yulichang</groupId>
-                <artifactId>mybatis-plus-joinTo-boot-starter</artifactId>
+                <artifactId>mybatis-plus-join-boot-starter</artifactId>
                 <version>${mybatis-plus-joinTo.version}</version>
             </dependency>
             <dependency>
@@ -112,6 +113,12 @@
                 <groupId>org.javassist</groupId>
                 <artifactId>javassist</artifactId>
                 <version>${javassist.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>1.18.24</version>
+                <optional>true</optional>
             </dependency>
         </dependencies>
     </dependencyManagement>

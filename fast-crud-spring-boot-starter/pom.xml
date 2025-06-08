@@ -39,10 +39,10 @@
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-boot-starter</artifactId>
         </dependency>
-        <!-- https://mybatis-plus-joinTo.github.io/ -->
+        <!-- https://mybatis-plus-join.github.io/ -->
         <dependency>
             <groupId>com.github.yulichang</groupId>
-            <artifactId>mybatis-plus-joinTo-boot-starter</artifactId>
+            <artifactId>mybatis-plus-join-boot-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
