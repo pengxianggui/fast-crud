@@ -16,12 +16,39 @@ import java.util.List;
 public interface BaseService<T> extends IService<T> {
 
     /**
-     * 自定义列表查询
+     * 列表查询
      *
      * @param query
      * @return
      */
     List<T> queryList(Query query);
+
+    /**
+     * 分页查询
+     *
+     * @param query
+     * @return
+     */
+    Pager<T> queryPage(PagerQuery query);
+
+    /**
+     * 更新单条记录。
+     * <p>
+     * 与{@link #updateById(T entity)}不同的是, 此方法能支持指定此次是否更新null值字段, 若{@link UpdateModelWrapper#get_updateNull()}
+     * 为null, 则等同于调用{@link #updateById(T entity)}
+     *
+     * @param modelWrapper
+     * @return
+     */
+    boolean updateById(UpdateModelWrapper<T> modelWrapper);
+
+    /**
+     * 判断主表指定条件是否存在数据
+     *
+     * @param conditions 其中非null字段将参与条件进行筛选判断
+     * @return
+     */
+    boolean exists(List<Cond> conditions);
 
     /**
      * 自定义跨表列表查询
@@ -34,14 +61,6 @@ public interface BaseService<T> extends IService<T> {
     <DTO> List<DTO> queryList(Query query, Class<DTO> dtoClazz);
 
     /**
-     * 自定义分页查询
-     *
-     * @param query
-     * @return
-     */
-    Pager<T> queryPage(PagerQuery query);
-
-    /**
      * 跨表分页查询
      *
      * @param query    分页查询对象
@@ -52,13 +71,14 @@ public interface BaseService<T> extends IService<T> {
     <DTO> Pager<DTO> queryPage(PagerQuery query, Class<DTO> dtoClazz);
 
     /**
-     * 与{@link #updateById(T entity)}不同的是, 此方法能支持指定此次是否更新null值字段, 若{@link UpdateModelWrapper#get_updateNull()}
-     * 为null, 则等同于调用{@link #updateById(T entity)}
+     * 跨表详情查询
      *
-     * @param modelWrapper
+     * @param query    查询条件
+     * @param dtoClazz 目标DTO类
+     * @param <DTO>
      * @return
      */
-    boolean updateById(UpdateModelWrapper<T> modelWrapper);
+    <DTO> DTO getOne(Query query, Class<DTO> dtoClazz);
 
     /**
      * 与{@link #updateById(T entity)} 不同的是，此方法支持跨表更新。
@@ -79,14 +99,6 @@ public interface BaseService<T> extends IService<T> {
      * @return
      */
     <DTO> boolean deleteByIds(Collection<?> ids, Class<DTO> dtoClazz);
-
-    /**
-     * 判断指定条件是否存在数据
-     *
-     * @param conditions 其中非null字段将参与条件进行筛选判断
-     * @return
-     */
-    boolean exists(List<Cond> conditions);
 
     /**
      * 跨表判断指定条件是否存在数据

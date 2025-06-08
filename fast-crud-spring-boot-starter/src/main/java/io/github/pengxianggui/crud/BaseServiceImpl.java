@@ -40,23 +40,10 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
     }
 
     @Override
-    public <DTO> List<DTO> queryList(Query query, Class<DTO> dtoClazz) {
-        MPJLambdaWrapper<T> wrapper = MPJLambdaWrapperUtil.build(query, clazz, dtoClazz);
-        return baseMapper.selectJoinList(dtoClazz, wrapper);
-    }
-
-    @Override
     public Pager<T> queryPage(PagerQuery query) {
         Pager<T> pager = new Pager<>(query.getCurrent(), query.getSize());
         Wrapper<T> wrapper = QueryWrapperUtil.build(query, clazz);
         return page(pager, wrapper);
-    }
-
-    @Override
-    public <DTO> Pager<DTO> queryPage(PagerQuery query, Class<DTO> dtoClazz) {
-        Pager<DTO> pager = new Pager<>(query.getCurrent(), query.getSize());
-        MPJLambdaWrapper<T> wrapper = MPJLambdaWrapperUtil.build(query, clazz, dtoClazz);
-        return baseMapper.selectJoinPage(pager, dtoClazz, wrapper);
     }
 
     @Override
@@ -89,6 +76,33 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
         return this.update(updateWrapper);
     }
 
+    public boolean exists(List<Cond> conditions) {
+        Query query = new Query();
+        query.setConds(conditions);
+        QueryWrapper<T> wrapper = QueryWrapperUtil.build(query, clazz);
+        wrapper.last(" limit 1");
+        return this.count(wrapper) > 0;
+    }
+
+    @Override
+    public <DTO> List<DTO> queryList(Query query, Class<DTO> dtoClazz) {
+        MPJLambdaWrapper<T> wrapper = MPJLambdaWrapperUtil.build(query, clazz, dtoClazz);
+        return baseMapper.selectJoinList(dtoClazz, wrapper);
+    }
+
+    @Override
+    public <DTO> Pager<DTO> queryPage(PagerQuery query, Class<DTO> dtoClazz) {
+        Pager<DTO> pager = new Pager<>(query.getCurrent(), query.getSize());
+        MPJLambdaWrapper<T> wrapper = MPJLambdaWrapperUtil.build(query, clazz, dtoClazz);
+        return baseMapper.selectJoinPage(pager, dtoClazz, wrapper);
+    }
+
+    @Override
+    public <DTO> DTO getOne(Query query, Class<DTO> dtoClazz) {
+        // TODO 根据dtoClass和query，借助mybatis-plus-join构造跨表的查询
+        return null;
+    }
+
     @Override
     public <DTO> boolean updateById(UpdateModelWrapper<DTO> dtoWrapper, Class<DTO> dtoClazz) {
         // TODO 根据dtoClass和dtoWrapper，借助mybatis-plus-join构造跨表的更新
@@ -99,14 +113,6 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
     public <DTO> boolean deleteByIds(Collection<?> ids, Class<DTO> dtoClazz) {
         // TODO 根据dtoClass和ids，借助mybatis-plus-join构造跨表的删除
         return false;
-    }
-
-    public boolean exists(List<Cond> conditions) {
-        Query query = new Query();
-        query.setConds(conditions);
-        QueryWrapper<T> wrapper = QueryWrapperUtil.build(query, clazz);
-        wrapper.last(" limit 1");
-        return this.count(wrapper) > 0;
     }
 
     @Override
