@@ -11,6 +11,8 @@ import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.Rollback;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.lang.reflect.Field;
@@ -21,6 +23,8 @@ import java.util.List;
  * @author pengxg
  * @date 2025/5/23 11:31
  */
+@Rollback
+@Transactional
 @SpringBootTest
 public class OrderServiceTest {
     @Resource
