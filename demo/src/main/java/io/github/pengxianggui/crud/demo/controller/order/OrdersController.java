@@ -1,6 +1,6 @@
 package io.github.pengxianggui.crud.demo.controller.order;
 
-import io.github.pengxianggui.crud.demo.controller.order.dto.OrdersPageDTO;
+import io.github.pengxianggui.crud.demo.controller.order.dto.OrdersDTO;
 import io.github.pengxianggui.crud.demo.service.order.OrdersService;
 import io.github.pengxianggui.crud.demo.domain.order.Orders;
 import io.github.pengxianggui.crud.query.Pager;
@@ -31,8 +31,8 @@ public class OrdersController extends BaseController<Orders> {
 
     @ApiOperation("分页查询")
     @PostMapping("page/v1")
-    public PagerView<OrdersPageDTO> pageVO(@RequestBody @Validated PagerQuery query) {
-        Pager<OrdersPageDTO> pager = ordersService.queryPage(query, OrdersPageDTO.class);
+    public PagerView<OrdersDTO> pageVO(@RequestBody @Validated PagerQuery query) {
+        Pager<OrdersDTO> pager = ordersService.queryPage(query, OrdersDTO.class);
         return new PagerView<>(pager.getCurrent(), pager.getSize(), pager.getTotal(), pager.getRecords());
     }
 

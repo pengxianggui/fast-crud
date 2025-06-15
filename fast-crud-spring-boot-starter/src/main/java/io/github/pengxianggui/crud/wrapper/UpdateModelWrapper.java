@@ -13,6 +13,10 @@ public class UpdateModelWrapper<T> extends ModelWrapper<T> {
     public UpdateModelWrapper() {
     }
 
+    public UpdateModelWrapper(@NotNull T model) {
+        this(model, false);
+    }
+
     public UpdateModelWrapper(@NotNull T model, boolean _updateNull) {
         super(model);
         this._updateNull = _updateNull;

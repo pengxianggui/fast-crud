@@ -20,7 +20,7 @@ import java.util.List;
 @LeftJoin(value = OrderItem.class, on = {@OnCond(field = "orderNo", targetField = "orderNo")})
 @Data
 @ApiModel(value = "Orders分页对象")
-public class OrdersPageDTO {
+public class OrdersDTO {
     private Long id;
 
     @ApiModelProperty("订单编号")
@@ -133,6 +133,7 @@ public class OrdersPageDTO {
     @ApiModelProperty("订单行列表")
     private List<OrderItem> orderItems;
 
+    @JoinIgnore({IgnoreWhen.Update})
     @RelateTo(value = OrderItem.class, field = "id")
     @ApiModelProperty("订单行id列表")
     private List<Long> orderItemIds;

@@ -3,7 +3,7 @@ package io.github.pengxianggui.crud.demo.mybatisjoin;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.yulichang.wrapper.MPJLambdaWrapper;
-import io.github.pengxianggui.crud.demo.controller.order.dto.OrdersPageDTO;
+import io.github.pengxianggui.crud.demo.controller.order.dto.OrdersDTO;
 import io.github.pengxianggui.crud.demo.domain.Student;
 import io.github.pengxianggui.crud.demo.domain.order.OrderAddress;
 import io.github.pengxianggui.crud.demo.domain.order.Orders;
@@ -48,7 +48,7 @@ public class MpJoinTest {
                 .eq(Orders::getOrderStatus, "UNDEFINE")
                 .like(OrderAddress::getCityName, "上海")
                 .orderByAsc(OrderAddress::getCityName);
-        IPage<OrdersPageDTO> page = ordersMapper.selectJoinPage(new Page<>(1, 10), OrdersPageDTO.class, wrapper);
+        IPage<OrdersDTO> page = ordersMapper.selectJoinPage(new Page<>(1, 10), OrdersDTO.class, wrapper);
         Assertions.assertTrue(page.getRecords().size() == 1);
     }
 

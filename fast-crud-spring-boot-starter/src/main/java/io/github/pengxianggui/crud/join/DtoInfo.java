@@ -6,6 +6,7 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
 import com.github.yulichang.wrapper.JoinAbstractLambdaWrapper;
 import io.github.pengxianggui.crud.query.Opt;
+import io.github.pengxianggui.crud.util.EntityUtil;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -233,12 +234,46 @@ class DtoInfo {
         }
 
         /**
+         * 判断dto中此字段是否标注@JoinIgnore并且指定查询时忽略
+         *
+         * @return
+         */
+        public boolean isJoinIgnoreForQuery() {
+            return isJoinIgnore()
+                    && Arrays.stream(this.field.getAnnotation(JoinIgnore.class).value())
+                    .anyMatch(ignoreWhen -> ignoreWhen == IgnoreWhen.Query);
+        }
+
+        /**
+         * 判断dto中此字段是否标注@JoinIgnore并且指定更新时忽略
+         *
+         * @return
+         */
+        public boolean isJoinIgnoreForUpdate() {
+            return isJoinIgnore()
+                    && Arrays.stream(this.field.getAnnotation(JoinIgnore.class).value())
+                    .anyMatch(ignoreWhen -> ignoreWhen == IgnoreWhen.Update);
+        }
+
+        /**
          * 判断关联的目标字段是否存在
          *
          * @return
          */
         public boolean targetFieldNotExist() {
             return this.targetField == null;
+        }
+
+        /**
+         * 判断关联的目标字段在实体类中是否为主键
+         *
+         * @return
+         */
+        public boolean isPk() {
+            if (this.targetField == null) {
+                return false;
+            }
+            return StrUtil.equals(EntityUtil.getPkName(this.targetClazz), this.targetField.getName());
         }
     }
 

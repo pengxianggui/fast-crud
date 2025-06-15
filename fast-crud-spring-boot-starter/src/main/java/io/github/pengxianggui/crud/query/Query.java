@@ -4,11 +4,14 @@ import io.github.pengxianggui.crud.query.validator.ValidQuery;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.validation.Valid;
+import java.util.ArrayList;
 import java.util.List;
 
+@NoArgsConstructor
 @Getter
 @Setter
 @ApiModel("通用查询条件")
@@ -29,4 +32,22 @@ public class Query {
     @ApiModelProperty(value = "排序")
     private List<Order> orders;
 
+    public Query(String col, Object val) {
+        this.cols = new ArrayList<>();
+        this.conds = new ArrayList<>();
+        this.orders = new ArrayList<>();
+        this.distinct = false;
+        this.addCond(col, val);
+    }
+
+    public void addCond(String col, Object val) {
+        addCond(col, Opt.EQ, val);
+    }
+
+    public void addCond(String col, Opt opt, Object val) {
+        if (this.conds == null) {
+            this.conds = new java.util.ArrayList<>();
+        }
+        this.conds.add(Cond.of(col, opt, val));
+    }
 }

@@ -6,12 +6,19 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * join查询中忽略字段。标注后，查询结果和查询条件中都不生效
+ * join查询、更新中忽略字段。标注后，查询结果和查询条件中都不生效
  *
  * @author pengxg
  * @date 2025/6/1 11:32
+ * @see IgnoreWhen
  */
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface JoinIgnore {
+    /**
+     * 指定何时忽略，默认所有场景
+     *
+     * @return
+     */
+    IgnoreWhen[] value() default {IgnoreWhen.Query, IgnoreWhen.Update};
 }

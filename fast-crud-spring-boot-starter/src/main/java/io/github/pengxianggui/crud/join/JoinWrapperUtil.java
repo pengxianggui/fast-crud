@@ -4,7 +4,11 @@ import cn.hutool.core.util.ClassUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.core.util.TypeUtil;
 import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
+import com.github.yulichang.wrapper.JoinAbstractLambdaWrapper;
+import com.github.yulichang.wrapper.JoinAbstractWrapper;
 import com.github.yulichang.wrapper.MPJLambdaWrapper;
+import com.github.yulichang.wrapper.UpdateJoinWrapper;
+import com.github.yulichang.wrapper.interfaces.QueryJoin;
 import io.github.pengxianggui.crud.query.Cond;
 import io.github.pengxianggui.crud.query.Order;
 import io.github.pengxianggui.crud.query.Query;
@@ -19,12 +23,12 @@ import java.util.function.Consumer;
 
 /**
  * @author pengxg
- * @date 2025/5/23 16:04
+ * @date 2025/6/15 19:52
  */
-public class MPJLambdaWrapperUtil {
+public class JoinWrapperUtil {
     private static final Map<Class<?>, DtoInfo> CACHE = new ConcurrentHashMap<>();
 
-    public static <DTO> DtoInfo getDtoInfo(Class<DTO> dtoClazz) {
+    public static <D> DtoInfo getDtoInfo(Class<D> dtoClazz) {
         if (CACHE.containsKey(dtoClazz)) {
             return CACHE.get(dtoClazz);
         }
@@ -33,6 +37,7 @@ public class MPJLambdaWrapperUtil {
         return dtoInfo;
     }
 
+
     /**
      * 构造MPJLambdaWrapper实例，通过解析dtoClazz类和clazz类，将query解析为查询条件，构造MPJLambdaWrapper实例
      *
@@ -40,11 +45,11 @@ public class MPJLambdaWrapperUtil {
      * @param clazz    主表对应的实体类
      * @param dtoClazz dto类，结果类
      * @param <T>      主表对应的实体类泛型
-     * @param <DTO>    dto类泛型
+     * @param <D>      dto类泛型
      * @return 返回MPJLambdaWrapper实例
      */
-    public static <T, DTO> MPJLambdaWrapper<T> build(Query query, Class<T> clazz, Class<DTO> dtoClazz) {
-        DtoInfo dtoInfo = getDtoInfo(dtoClazz);
+    static <T, D> MPJLambdaWrapper<T> build(Query query, Class<T> clazz, Class<D> dtoClazz) {
+        DtoInfo dtoInfo = JoinWrapperUtil.getDtoInfo(dtoClazz);
         if (dtoInfo == null) {
             throw new ClassJoinParseException(dtoClazz, "Can not found dtoInfo of dtoClass:" + dtoClazz.getName());
         }
@@ -60,13 +65,11 @@ public class MPJLambdaWrapperUtil {
         return wrapper;
     }
 
-    // TODO 上述build方法是全包，扩展性不好，提供一个可定制的半包build
-
-    private static <T> void addSelect(MPJLambdaWrapper<T> wrapper, List<String> cols, boolean distinct, DtoInfo dtoInfo) {
+    static <T> void addSelect(MPJLambdaWrapper<T> wrapper, List<String> cols, boolean distinct, DtoInfo dtoInfo) {
         List<DtoInfo.DtoField> dtoFields = dtoInfo.getFields();
         dtoFields.stream().filter(field -> cols == null || cols.size() == 0 || cols.contains(field.getField().getName()))
                 .forEach(field -> {
-                    if (field.isJoinIgnore()) {
+                    if (field.isJoinIgnoreForQuery()) {
                         return;
                     }
 
@@ -85,7 +88,7 @@ public class MPJLambdaWrapperUtil {
                                     DtoInfo subDtoInfo = new DtoInfo(TypeUtil.getClass(type));
                                     // 这里面暂不考虑递归情况, 否则太复杂, 还要牵扯子查询, mybatis-plus-join怕无法支撑
                                     subDtoInfo.getFields().forEach(field1 -> {
-                                        if (field1.isJoinIgnore() || field1.targetFieldNotExist()) {
+                                        if (field1.isJoinIgnoreForQuery() || field1.targetFieldNotExist()) {
                                             return;
                                         }
                                         map.result(field1.getTargetFieldGetter(), field1.getFieldGetter());
@@ -106,7 +109,7 @@ public class MPJLambdaWrapperUtil {
                                 DtoInfo subDtoInfo = new DtoInfo(TypeUtil.getClass(type), field.getTargetClazz());
                                 // 这里面暂不考虑递归情况, 否则太复杂, 还要牵扯子查询, mybatis-plus-join怕无法支撑
                                 subDtoInfo.getFields().forEach(field1 -> {
-                                    if (field1.isJoinIgnore()) {
+                                    if (field1.isJoinIgnoreForQuery()) {
                                         return;
                                     }
                                     map.result(field1.getTargetFieldGetter(), field1.getFieldGetter());
@@ -121,7 +124,7 @@ public class MPJLambdaWrapperUtil {
         }
     }
 
-    private static <T> void addJoin(MPJLambdaWrapper<T> wrapper, DtoInfo dtoInfo) {
+    static <T> void addJoin(QueryJoin<? extends JoinAbstractLambdaWrapper<T, ? extends JoinAbstractLambdaWrapper>, T> wrapper, DtoInfo dtoInfo) {
         List<DtoInfo.JoinInfo> innerJoins = dtoInfo.getInnerJoinInfo();
         if (innerJoins != null && !innerJoins.isEmpty()) {
             innerJoins.forEach(join -> wrapper.innerJoin(join.getTargetEntityClass(), on -> join.apply(on)));
@@ -136,21 +139,20 @@ public class MPJLambdaWrapperUtil {
         }
     }
 
-    private static <T> MPJLambdaWrapper<T> addConditions(MPJLambdaWrapper<T> wrapper, List<Cond> conds, DtoInfo dtoInfo) {
+    static <T, C extends JoinAbstractWrapper<T, C>> void addConditions(JoinAbstractWrapper<T, C> wrapper, List<Cond> conds, DtoInfo dtoInfo) {
         if (conds == null || conds.isEmpty()) {
-            return wrapper;
+            return;
         }
-        Consumer<MPJLambdaWrapper<T>> consumer = wrapperConsumer(conds, Rel.AND, dtoInfo);
+        Consumer<JoinAbstractWrapper<T, C>> consumer = wrapperConsumer(conds, Rel.AND, dtoInfo);
         consumer.accept(wrapper);
-        return wrapper;
     }
 
-    private static <T> Consumer<MPJLambdaWrapper<T>> wrapperConsumer(List<Cond> conds, Rel rel, DtoInfo dtoInfo) {
+    static <T, C extends JoinAbstractWrapper<T, C>> Consumer<JoinAbstractWrapper<T, C>> wrapperConsumer(List<Cond> conds, Rel rel, DtoInfo dtoInfo) {
         return w -> {
             for (int i = 0; i < conds.size(); i++) {
                 Cond cond = conds.get(i);
                 if (cond.getConds() != null && cond.getConds().size() > 0) {
-                    w.nested(wrapperConsumer(cond.getConds(), rel, dtoInfo));
+                    w.nested((Consumer<C>) wrapperConsumer(cond.getConds(), rel, dtoInfo));
                 } else {
                     addCondition(w, cond, rel, dtoInfo);
                 }
@@ -158,9 +160,9 @@ public class MPJLambdaWrapperUtil {
         };
     }
 
-    private static <T> void addCondition(MPJLambdaWrapper<T> wrapper, Cond cond, Rel rel, DtoInfo dtoInfo) {
+    static <T> void addCondition(JoinAbstractWrapper<T, ?> wrapper, Cond cond, Rel rel, DtoInfo dtoInfo) {
         DtoInfo.DtoField dtoField = dtoInfo.getField(cond.getCol());
-        if (dtoField.isJoinIgnore()) {
+        if (dtoField.isJoinIgnoreForQuery()) {
             return;
         }
 
@@ -275,13 +277,13 @@ public class MPJLambdaWrapperUtil {
         }
     }
 
-    private static <T> void addOrders(MPJLambdaWrapper<T> wrapper, List<Order> orders, DtoInfo dtoInfo) {
+    static <T> void addOrders(MPJLambdaWrapper<T> wrapper, List<Order> orders, DtoInfo dtoInfo) {
         if (orders == null) {
             return;
         }
         for (Order order : orders) {
             DtoInfo.DtoField dtoField = dtoInfo.getField(order.getCol());
-            if (dtoField.isJoinIgnore()) {
+            if (dtoField.isJoinIgnoreForQuery()) {
                 continue;
             }
 
@@ -292,6 +294,47 @@ public class MPJLambdaWrapperUtil {
                 wrapper.orderByAsc(dtoField.getTargetFieldGetter());
             } else {
                 wrapper.orderByDesc(dtoField.getTargetFieldGetter());
+            }
+        }
+    }
+
+    static <T, D> void addSet(UpdateJoinWrapper<T> wrapper, DtoInfo dtoInfo, D dto) {
+        List<DtoInfo.DtoField> dtoFields = dtoInfo.getFields();
+        for (DtoInfo.DtoField field : dtoFields) {
+            if (field.isJoinIgnoreForUpdate() || field.targetFieldNotExist() || field.isPk()) {
+                continue;
+            }
+
+            try {
+                field.getField().setAccessible(true);
+                Object fieldValue = field.getField().get(dto);
+                if (Collection.class.isAssignableFrom(field.getField().getType())) { // 一对多
+                    Type type = TypeUtil.getTypeArgument(field.getField().getGenericType());
+                    if (ClassUtil.isSimpleValueType(TypeUtil.getClass(type))) { // 简单字段
+                        wrapper.set(field.getTargetFieldGetter(), fieldValue);
+                    } else {
+                        // 一对多映射实体不级联更新
+                    }
+                } else { // 一对一
+                    if (ClassUtil.isSimpleValueType(field.getField().getType())) { // 单字段
+                        wrapper.set(field.getTargetFieldGetter(), fieldValue);
+                    } else { // 一对一映射实体暂
+                        if (fieldValue == null) {
+                            continue;
+                        }
+                        Type type = field.getField().getType();
+                        DtoInfo subDtoInfo = new DtoInfo(TypeUtil.getClass(type), field.getTargetClazz());
+                        // 这里面暂不考虑递归情况, 否则太复杂, 还要牵扯子查询, mybatis-plus-join怕无法支撑
+                        for (DtoInfo.DtoField subDtoInfoField : subDtoInfo.getFields()) {
+                            if (subDtoInfoField.isJoinIgnoreForUpdate() || subDtoInfoField.targetFieldNotExist()) {
+                                continue;
+                            }
+                            wrapper.set(subDtoInfoField.getTargetFieldGetter(), subDtoInfoField.getField().get(fieldValue));
+                        }
+                    }
+                }
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
             }
         }
     }

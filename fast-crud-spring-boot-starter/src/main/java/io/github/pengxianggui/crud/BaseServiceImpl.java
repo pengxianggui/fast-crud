@@ -9,10 +9,12 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.yulichang.wrapper.MPJLambdaWrapper;
+import com.github.yulichang.wrapper.UpdateJoinWrapper;
 import io.github.pengxianggui.crud.dao.BaseMapper;
 import io.github.pengxianggui.crud.file.FileManager;
+import io.github.pengxianggui.crud.join.MPJLambdaWrapperBuilder;
+import io.github.pengxianggui.crud.join.UpdateJoinWrapperBuilder;
 import io.github.pengxianggui.crud.query.*;
-import io.github.pengxianggui.crud.join.MPJLambdaWrapperUtil;
 import io.github.pengxianggui.crud.util.EntityUtil;
 import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,7 +24,6 @@ import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.Collection;
 import java.util.List;
 
 public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends ServiceImpl<M, T> implements BaseService<T> {
@@ -80,47 +81,48 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
         Query query = new Query();
         query.setConds(conditions);
         QueryWrapper<T> wrapper = QueryWrapperUtil.build(query, clazz);
-        wrapper.last(" limit 1");
         return this.count(wrapper) > 0;
     }
 
     @Override
-    public <DTO> List<DTO> queryList(Query query, Class<DTO> dtoClazz) {
-        MPJLambdaWrapper<T> wrapper = MPJLambdaWrapperUtil.build(query, clazz, dtoClazz);
+    public <D> List<D> queryList(Query query, Class<D> dtoClazz) {
+        MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder<>(query, clazz, dtoClazz).build();
         return baseMapper.selectJoinList(dtoClazz, wrapper);
     }
 
     @Override
-    public <DTO> Pager<DTO> queryPage(PagerQuery query, Class<DTO> dtoClazz) {
-        Pager<DTO> pager = new Pager<>(query.getCurrent(), query.getSize());
-        MPJLambdaWrapper<T> wrapper = MPJLambdaWrapperUtil.build(query, clazz, dtoClazz);
+    public <D> Pager<D> queryPage(PagerQuery query, Class<D> dtoClazz) {
+        Pager<D> pager = new Pager<>(query.getCurrent(), query.getSize());
+        MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder(query, clazz, dtoClazz).build();
         return baseMapper.selectJoinPage(pager, dtoClazz, wrapper);
     }
 
     @Override
-    public <DTO> DTO getOne(Query query, Class<DTO> dtoClazz) {
-        // TODO 根据dtoClass和query，借助mybatis-plus-join构造跨表的查询
-        return null;
+    public <D> D getOne(Query query, Class<D> dtoClazz) {
+        MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder<>(query, clazz, dtoClazz).build();
+        return baseMapper.selectJoinOne(dtoClazz, wrapper);
     }
 
     @Override
-    public <DTO> boolean updateById(UpdateModelWrapper<DTO> dtoWrapper, Class<DTO> dtoClazz) {
-        // TODO 根据dtoClass和dtoWrapper，借助mybatis-plus-join构造跨表的更新
-        return false;
+    public <D> int updateById(UpdateModelWrapper<D> dtoWrapper, Class<D> dtoClazz) {
+        Assert.isTrue(EntityUtil.getPkVal(dtoWrapper.getModel(), clazz) != null,
+                "[%s]主键不能为空", EntityUtil.getPkName(clazz));
+        Query query = new Query(EntityUtil.getPkName(clazz), EntityUtil.getPkVal(dtoWrapper.getModel(), clazz));
+        UpdateJoinWrapper<T> wrapper = new UpdateJoinWrapperBuilder<>(query, clazz, dtoClazz).build(dtoWrapper.getModel());
+        if (dtoWrapper.get_updateNull()) {
+            return baseMapper.updateJoinAndNull(null, wrapper);
+        } else {
+            return baseMapper.updateJoin(null, wrapper);
+        }
     }
 
     @Override
-    public <DTO> boolean deleteByIds(Collection<?> ids, Class<DTO> dtoClazz) {
-        // TODO 根据dtoClass和ids，借助mybatis-plus-join构造跨表的删除
-        return false;
-    }
-
-    @Override
-    public <DTO> boolean exists(List<Cond> conditions, Class<DTO> dtoClazz) {
+    public <D> boolean exists(List<Cond> conditions, Class<D> dtoClazz) {
         Query query = new Query();
         query.setConds(conditions);
-        MPJLambdaWrapper<T> wrapper = MPJLambdaWrapperUtil.build(query, clazz, dtoClazz);
-        wrapper.last("limit 1");
+        MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder<T>(query, clazz, dtoClazz)
+                .select(w -> w.select("t." + EntityUtil.getPkName(clazz))) // 主表别名就是t
+                .build();
         return baseMapper.selectJoinCount(wrapper) > 0;
     }
 

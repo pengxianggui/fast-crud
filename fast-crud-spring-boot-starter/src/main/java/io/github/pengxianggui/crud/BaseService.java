@@ -55,60 +55,50 @@ public interface BaseService<T> extends IService<T> {
      *
      * @param query    查询对象
      * @param dtoClazz 目标DTO类
-     * @param <DTO>
+     * @param <D>
      * @return
      */
-    <DTO> List<DTO> queryList(Query query, Class<DTO> dtoClazz);
+    <D> List<D> queryList(Query query, Class<D> dtoClazz);
 
     /**
      * 跨表分页查询
      *
      * @param query    分页查询对象
      * @param dtoClazz 目标DTO类
-     * @param <DTO>
+     * @param <D>
      * @return
      */
-    <DTO> Pager<DTO> queryPage(PagerQuery query, Class<DTO> dtoClazz);
+    <D> Pager<D> queryPage(PagerQuery query, Class<D> dtoClazz);
 
     /**
      * 跨表详情查询
      *
      * @param query    查询条件
      * @param dtoClazz 目标DTO类
-     * @param <DTO>
+     * @param <D>
      * @return
      */
-    <DTO> DTO getOne(Query query, Class<DTO> dtoClazz);
+    <D> D getOne(Query query, Class<D> dtoClazz);
 
     /**
-     * 与{@link #updateById(T entity)} 不同的是，此方法支持跨表更新。
+     * 与{@link #updateById(T entity)} 不同的是，此方法支持跨表更新。注意一对多关联的子表不更新
      *
      * @param dtoWrapper
      * @param dtoClazz   目标DTO类
-     * @param <DTO>
-     * @return
+     * @param <D>
+     * @return 返回更新数量
      */
-    <DTO> boolean updateById(UpdateModelWrapper<DTO> dtoWrapper, Class<DTO> dtoClazz);
-
-    /**
-     * 跨表删除。从表会一并删除
-     *
-     * @param ids
-     * @param dtoClazz
-     * @param <DTO>
-     * @return
-     */
-    <DTO> boolean deleteByIds(Collection<?> ids, Class<DTO> dtoClazz);
+    <D> int updateById(UpdateModelWrapper<D> dtoWrapper, Class<D> dtoClazz);
 
     /**
      * 跨表判断指定条件是否存在数据
      *
      * @param conditions 其中非null字段将参与条件进行筛选判断
      * @param dtoClazz   目标DTO类
-     * @param <DTO>
+     * @param <D>
      * @return
      */
-    <DTO> boolean exists(List<Cond> conditions, Class<DTO> dtoClazz);
+    <D> boolean exists(List<Cond> conditions, Class<D> dtoClazz);
 
     /**
      * 针对某个字段上传文件。默认将上传到java临时目录。如果希望自定义可以通过fast-crud.upload-dir配置

@@ -30,7 +30,7 @@ public @interface OnCond {
     Opt opt() default Opt.EQ;
 
     /**
-     * 关联的entity类中的字段名称，不配置则默认为DTO类中的同名字段
+     * 关联的entity类中的字段名称，不配置则视为和主类名称一致，取{@link #field()}值
      *
      * @return
      */
