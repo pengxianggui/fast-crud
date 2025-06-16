@@ -3,10 +3,13 @@ package io.github.pengxianggui.crud.util;
 import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.annotation.FieldStrategy;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.core.metadata.TableInfo;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.util.Objects;
 
 /**
@@ -91,4 +94,41 @@ public class EntityUtil {
                 .findFirst()
                 .orElse(null);
     }
+
+    /**
+     * 判断字段是否需要更新，通过mybatisplus的@TableField 更新策略、结合入参updateNull联合判断，注意: @TableField更新策略的优先级更高。
+     *
+     * @param field      Entity字段
+     * @param fieldValue 字段值
+     * @param updateNull 是否更新null值，优先级低于@TableField注解中的更新策略
+     * @return 若需要更新，则返回true
+     */
+    public static boolean fieldNeedUpdate(Field field, Object fieldValue, boolean updateNull) {
+        boolean defaultPredicate = (fieldValue != null || updateNull); // 默认判断条件
+        TableField tableField = field.getAnnotation(TableField.class);
+        if (tableField == null) { // 无@TableField修饰，则判断依据交给入参updateNull
+            return defaultPredicate;
+        }
+        boolean exist = tableField.exist();
+        if (exist == Boolean.FALSE) { // 针对不存在的字段, 直接返回false
+            return false;
+        }
+        // 其它情况由更新策略和入参updateNull组合判断，更新策略优先级高于入参updateNull
+        FieldStrategy updateStrategy = tableField.updateStrategy();
+        switch (updateStrategy) {
+            case IGNORED:
+            case ALWAYS:
+                return true;
+            case NOT_NULL:
+                return fieldValue != null;
+            case NOT_EMPTY:
+                return (fieldValue instanceof CharSequence) ? StrUtil.isNotBlank((CharSequence) fieldValue) : fieldValue != null;
+            case NEVER:
+                return false;
+            case DEFAULT:
+            default:
+                return defaultPredicate;
+        }
+    }
+
 }

@@ -327,6 +327,22 @@ export function getNameFromUrl(url) {
 }
 
 /**
+ * 从fileItems中获取第一个url。
+ * @param fileItems 期望是[{name:'', url:''}, ..],如果非数组或空数组，返回null; 为数组则取首个元素，首个元素为对象类型，取url属性返回, 否则直接返回
+ * @returns {*|null}
+ */
+export function getFirstUrlFromFileItems(fileItems) {
+    if (!isArray(fileItems) || fileItems.length === 0) {
+        return null;
+    }
+    const firstItem = fileItems[0];
+    if (isObject(firstItem)) {
+        return firstItem.url;
+    }
+    return firstItem; // 直接视为url
+}
+
+/**
  * 获取元素的完整高度, 包括offsetHeight + 上下margin值
  * @param ele
  */

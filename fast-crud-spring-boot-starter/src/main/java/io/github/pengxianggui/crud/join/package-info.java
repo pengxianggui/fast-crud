@@ -5,10 +5,10 @@
  * 的Method Reference到注册表，运行时从注册表获取(详见{@link io.github.pengxianggui.crud.join.MethodReferenceScanProcessor},
  * 注册表见{@link io.github.pengxianggui.crud.join.MethodReferenceRegistry}
  * <p>
- * 【验证】
+ * 【已验证】
  * <pre>
- * ✅ 一对一关联(a inner/left/right join b on a.x = b.y)
- * ✅ 一对多关联(a inner/left/right join b on a.x = b.y)
+ * 一对一关联(a inner/left/right join b on a.x = b.y)
+ * 一对多关联(a inner/left/right join b on a.x = b.y)
  * </pre>
  *
  * @author pengxg

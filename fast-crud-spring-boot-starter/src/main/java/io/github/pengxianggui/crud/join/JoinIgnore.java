@@ -6,7 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * join查询、更新中忽略字段。标注后，查询结果和查询条件中都不生效
+ * join查询、更新中忽略字段
  *
  * @author pengxg
  * @date 2025/6/1 11:32

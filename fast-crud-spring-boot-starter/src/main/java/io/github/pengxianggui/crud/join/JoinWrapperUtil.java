@@ -13,6 +13,8 @@ import io.github.pengxianggui.crud.query.Cond;
 import io.github.pengxianggui.crud.query.Order;
 import io.github.pengxianggui.crud.query.Query;
 import io.github.pengxianggui.crud.query.Rel;
+import io.github.pengxianggui.crud.util.EntityUtil;
+import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -48,7 +50,7 @@ public class JoinWrapperUtil {
      * @param <D>      dto类泛型
      * @return 返回MPJLambdaWrapper实例
      */
-    static <T, D> MPJLambdaWrapper<T> build(Query query, Class<T> clazz, Class<D> dtoClazz) {
+    public static <T, D> MPJLambdaWrapper<T> buildMPJLambdaWrapper(Query query, Class<T> clazz, Class<D> dtoClazz) {
         DtoInfo dtoInfo = JoinWrapperUtil.getDtoInfo(dtoClazz);
         if (dtoInfo == null) {
             throw new ClassJoinParseException(dtoClazz, "Can not found dtoInfo of dtoClass:" + dtoClazz.getName());
@@ -70,6 +72,11 @@ public class JoinWrapperUtil {
         dtoFields.stream().filter(field -> cols == null || cols.size() == 0 || cols.contains(field.getField().getName()))
                 .forEach(field -> {
                     if (field.isJoinIgnoreForQuery()) {
+                        return;
+                    }
+
+                    if (field.isDbField()) { // 无论是什么类型(简单类型、集合、对象类型),标记为数据库字段则直接select
+                        wrapper.selectAs(field.getTargetFieldGetter(), field.getFieldGetter());
                         return;
                     }
 
@@ -127,15 +134,77 @@ public class JoinWrapperUtil {
     static <T> void addJoin(QueryJoin<? extends JoinAbstractLambdaWrapper<T, ? extends JoinAbstractLambdaWrapper>, T> wrapper, DtoInfo dtoInfo) {
         List<DtoInfo.JoinInfo> innerJoins = dtoInfo.getInnerJoinInfo();
         if (innerJoins != null && !innerJoins.isEmpty()) {
-            innerJoins.forEach(join -> wrapper.innerJoin(join.getTargetEntityClass(), on -> join.apply(on)));
+            innerJoins.forEach(join -> wrapper.innerJoin(join.getTargetEntityClass(), on -> {
+                addConditions(on, join.getCondFieldRelates());
+                return on;
+            }));
         }
         List<DtoInfo.JoinInfo> leftJoins = dtoInfo.getLeftJoinInfo();
         if (leftJoins != null && !leftJoins.isEmpty()) {
-            leftJoins.forEach(join -> wrapper.leftJoin(join.getTargetEntityClass(), on -> join.apply(on)));
+            leftJoins.forEach(join -> wrapper.leftJoin(join.getTargetEntityClass(), on -> {
+                addConditions(on, join.getCondFieldRelates());
+                return on;
+            }));
         }
         List<DtoInfo.JoinInfo> rightJoins = dtoInfo.getRightJoinInfo();
         if (rightJoins != null && !rightJoins.isEmpty()) {
-            rightJoins.forEach(join -> wrapper.rightJoin(join.getTargetEntityClass(), on -> join.apply(on)));
+            rightJoins.forEach(join -> wrapper.rightJoin(join.getTargetEntityClass(), on -> {
+                addConditions(on, join.getCondFieldRelates());
+                return on;
+            }));
+        }
+    }
+
+    static <T, C extends JoinAbstractWrapper<T, C>> void addConditions(JoinAbstractWrapper<T, C> on, DtoInfo.CondDtoField[] condFieldRelates) {
+        for (DtoInfo.CondDtoField condFieldRelate : condFieldRelates) {
+            // join左边entity中的cond字段的Getter Method Reference
+            SFunction<?, ?> fieldGetter = condFieldRelate.getFieldGetter();
+            // join右边entity中的cond字段的Getter Method Reference
+            SFunction<?, ?> targetFieldGetter = condFieldRelate.getTargetFieldGetter();
+            switch (condFieldRelate.getOpt()) {
+                case EQ:
+                    on.eq(targetFieldGetter, fieldGetter);
+                    break;
+                case NE:
+                    on.ne(targetFieldGetter, fieldGetter);
+                    break;
+                case GT:
+                    on.gt(targetFieldGetter, fieldGetter);
+                    break;
+                case GE:
+                    on.ge(targetFieldGetter, fieldGetter);
+                    break;
+                case LT:
+                    on.lt(targetFieldGetter, fieldGetter);
+                    break;
+                case LE:
+                    on.le(targetFieldGetter, fieldGetter);
+                    break;
+                case IN:
+                    on.in(targetFieldGetter, fieldGetter);
+                    break;
+                case NIN:
+                    on.notIn(targetFieldGetter, fieldGetter);
+                    break;
+                case LIKE:
+                    on.like(targetFieldGetter, fieldGetter);
+                    break;
+                case NLIKE:
+                    on.notLike(targetFieldGetter, fieldGetter);
+                    break;
+                case NULL:
+                    on.isNull(targetFieldGetter);
+                    break;
+                case NNULL:
+                    on.isNotNull(targetFieldGetter);
+                    break;
+                case EMPTY:
+                    on.nested(q -> q.isNull(targetFieldGetter).or().eq(targetFieldGetter, ""));
+                    break;
+                case NEMPTY:
+                    on.nested(q -> q.isNotNull(targetFieldGetter).ne(targetFieldGetter, ""));
+                    break;
+            }
         }
     }
 
@@ -298,7 +367,7 @@ public class JoinWrapperUtil {
         }
     }
 
-    static <T, D> void addSet(UpdateJoinWrapper<T> wrapper, DtoInfo dtoInfo, D dto) {
+    static <T, D> void addSet(UpdateJoinWrapper<T> wrapper, DtoInfo dtoInfo, UpdateModelWrapper<D> dtoWrapper) {
         List<DtoInfo.DtoField> dtoFields = dtoInfo.getFields();
         for (DtoInfo.DtoField field : dtoFields) {
             if (field.isJoinIgnoreForUpdate() || field.targetFieldNotExist() || field.isPk()) {
@@ -307,7 +376,15 @@ public class JoinWrapperUtil {
 
             try {
                 field.getField().setAccessible(true);
-                Object fieldValue = field.getField().get(dto);
+                Object fieldValue = field.getField().get(dtoWrapper.getModel());
+
+                if (!EntityUtil.fieldNeedUpdate(field.getTargetField(), fieldValue, dtoWrapper.get_updateNull())) {
+                    continue;
+                }
+                if (field.isDbField()) { // 无论是什么类型(简单类型、集合、对象类型),标记为数据库字段则直接set
+                    wrapper.set(field.getTargetFieldGetter(), fieldValue);
+                    continue;
+                }
                 if (Collection.class.isAssignableFrom(field.getField().getType())) { // 一对多
                     Type type = TypeUtil.getTypeArgument(field.getField().getGenericType());
                     if (ClassUtil.isSimpleValueType(TypeUtil.getClass(type))) { // 简单字段

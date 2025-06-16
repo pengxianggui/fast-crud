@@ -3,9 +3,14 @@ package io.github.pengxianggui.crud.demo.service;
 import cn.hutool.core.util.ClassUtil;
 import cn.hutool.core.util.TypeUtil;
 import cn.hutool.json.JSONUtil;
+import com.github.yulichang.wrapper.UpdateJoinWrapper;
 import com.google.common.collect.Lists;
 import io.github.pengxianggui.crud.demo.controller.order.dto.OrdersDTO;
+import io.github.pengxianggui.crud.demo.domain.order.OrderAddress;
+import io.github.pengxianggui.crud.demo.domain.order.Orders;
+import io.github.pengxianggui.crud.demo.mapper.order.OrdersMapper;
 import io.github.pengxianggui.crud.demo.service.order.OrdersService;
+import io.github.pengxianggui.crud.join.UpdateJoinWrapperBuilder;
 import io.github.pengxianggui.crud.query.*;
 import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 import org.junit.jupiter.api.Assertions;
@@ -29,6 +34,8 @@ import java.util.List;
 public class OrderServiceTest {
     @Resource
     private OrdersService ordersService;
+    @Resource
+    private OrdersMapper ordersMapper;
 
     public static void main(String[] args) throws NoSuchFieldException {
         Field field = OrdersDTO.class.getDeclaredField("address");
@@ -74,20 +81,53 @@ public class OrderServiceTest {
         Assertions.assertTrue(exited);
     }
 
+    /**
+     * 直接基于dto更新
+     */
     @Test
     public void testUpdateJoin() {
         Query query = new Query("orderNo", "MD202312040001");
         OrdersDTO orderDTO = ordersService.getOne(query, OrdersDTO.class);
         System.out.println("old remark: " + orderDTO.getRemark());
+        System.out.println("old provinceNo: " + orderDTO.getProvinceNo());
         System.out.println("old provinceName: " + orderDTO.getProvinceName());
         System.out.println("old provinceName in address: " + orderDTO.getAddress().getProvinceName());
         orderDTO.setRemark("我是更新后的备注值");
+        orderDTO.setProvinceNo(null);
         orderDTO.setProvinceName("浙江省1");
         // 更新
-        int updateCount = ordersService.updateById(new UpdateModelWrapper<>(orderDTO), OrdersDTO.class);
+        boolean updateNull = false;
+        int updateCount = ordersService.updateById(new UpdateModelWrapper<>(orderDTO, updateNull), OrdersDTO.class);
         Assertions.assertTrue(updateCount == 2);
         orderDTO = ordersService.getOne(query, OrdersDTO.class);
         System.out.println("new remark: " + orderDTO.getRemark());
+        System.out.println("new provinceNo: " + orderDTO.getProvinceNo());
+        System.out.println("new provinceName: " + orderDTO.getProvinceName());
+        System.out.println("new provinceName in address: " + orderDTO.getAddress().getProvinceName());
+    }
+
+    /**
+     * 自定义更新时set哪些值
+     */
+    @Test
+    public void testUpdateJoin1() {
+        Query query = new Query("orderNo", "MD202312040001");
+        OrdersDTO orderDTO = ordersService.getOne(query, OrdersDTO.class);
+        System.out.println("old remark: " + orderDTO.getRemark());
+        System.out.println("old provinceNo: " + orderDTO.getProvinceNo());
+        System.out.println("old provinceName: " + orderDTO.getProvinceName());
+        System.out.println("old provinceName in address: " + orderDTO.getAddress().getProvinceName());
+        // 更新
+        UpdateJoinWrapper<Orders> wrapper = new UpdateJoinWrapperBuilder<>(query, Orders.class, OrdersDTO.class)
+                .set(w -> w.set(Orders::getRemark, "我是更新后的备注值")
+                        .set(OrderAddress::getProvinceNo, null)
+                        .set(OrderAddress::getProvinceName, "浙江省1"))
+                .build();
+        int updateCount = ordersMapper.updateJoin(null, wrapper);
+        Assertions.assertTrue(updateCount == 2);
+        orderDTO = ordersService.getOne(query, OrdersDTO.class);
+        System.out.println("new remark: " + orderDTO.getRemark());
+        System.out.println("new provinceNo: " + orderDTO.getProvinceNo());
         System.out.println("new provinceName: " + orderDTO.getProvinceName());
         System.out.println("new provinceName in address: " + orderDTO.getAddress().getProvinceName());
     }

@@ -1,8 +1,10 @@
 package io.github.pengxianggui.crud.join;
 
+import cn.hutool.core.lang.Assert;
 import com.github.yulichang.toolkit.JoinWrappers;
 import com.github.yulichang.wrapper.UpdateJoinWrapper;
 import io.github.pengxianggui.crud.query.Query;
+import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 
 import java.util.function.Consumer;
 
@@ -76,7 +78,25 @@ public class UpdateJoinWrapperBuilder<T, D> {
         return this;
     }
 
+    /**
+     * 必须自定义set逻辑
+     *
+     * @return
+     */
+    public UpdateJoinWrapper<T> build() {
+        Assert.notNull(this.customSet != null, "Please call set function to custom set!");
+        return build((UpdateModelWrapper) null);
+    }
+
     public UpdateJoinWrapper<T> build(D dto) {
+        return build(new UpdateModelWrapper<>(dto));
+    }
+
+    public UpdateJoinWrapper<T> build(D dto, boolean updateNull) {
+        return build(new UpdateModelWrapper<>(dto, updateNull));
+    }
+
+    private UpdateJoinWrapper<T> build(UpdateModelWrapper<D> dtoWrapper) {
         DtoInfo dtoInfo = JoinWrapperUtil.getDtoInfo(dtoClazz);
         if (dtoInfo == null) {
             throw new ClassJoinParseException(dtoClazz, "Can not found dtoInfo of dtoClass:" + dtoClazz.getName());
@@ -86,7 +106,7 @@ public class UpdateJoinWrapperBuilder<T, D> {
         if (customSet != null) {
             customSet.accept(wrapper);
         } else {
-            JoinWrapperUtil.addSet(wrapper, dtoInfo, dto);
+            JoinWrapperUtil.addSet(wrapper, dtoInfo, dtoWrapper);
         }
         if (customJoin != null) {
             customJoin.accept(wrapper);

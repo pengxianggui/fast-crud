@@ -4,7 +4,6 @@ import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
-import com.github.yulichang.wrapper.JoinAbstractLambdaWrapper;
 import io.github.pengxianggui.crud.query.Opt;
 import io.github.pengxianggui.crud.util.EntityUtil;
 import lombok.Data;
@@ -112,60 +111,6 @@ class DtoInfo {
                 condFieldRelates[i] = condFieldRelate;
             }
         }
-
-        JoinAbstractLambdaWrapper apply(JoinAbstractLambdaWrapper<?, ?> on) {
-            for (CondDtoField condFieldRelate : this.condFieldRelates) {
-                // join左边entity中的cond字段的Getter Method Reference
-                SFunction<?, ?> fieldGetter = condFieldRelate.getFieldGetter();
-                // join右边entity中的cond字段的Getter Method Reference
-                SFunction<?, ?> targetFieldGetter = condFieldRelate.getTargetFieldGetter();
-                switch (condFieldRelate.opt) {
-                    case EQ:
-                        on.eq(targetFieldGetter, fieldGetter);
-                        break;
-                    case NE:
-                        on.ne(targetFieldGetter, fieldGetter);
-                        break;
-                    case GT:
-                        on.gt(targetFieldGetter, fieldGetter);
-                        break;
-                    case GE:
-                        on.ge(targetFieldGetter, fieldGetter);
-                        break;
-                    case LT:
-                        on.lt(targetFieldGetter, fieldGetter);
-                        break;
-                    case LE:
-                        on.le(targetFieldGetter, fieldGetter);
-                        break;
-                    case IN:
-                        on.in(targetFieldGetter, fieldGetter);
-                        break;
-                    case NIN:
-                        on.notIn(targetFieldGetter, fieldGetter);
-                        break;
-                    case LIKE:
-                        on.like(targetFieldGetter, fieldGetter);
-                        break;
-                    case NLIKE:
-                        on.notLike(targetFieldGetter, fieldGetter);
-                        break;
-                    case NULL:
-                        on.isNull(targetFieldGetter);
-                        break;
-                    case NNULL:
-                        on.isNotNull(targetFieldGetter);
-                        break;
-                    case EMPTY:
-                        on.nested(q -> q.isNull(targetFieldGetter).or().eq(targetFieldGetter, ""));
-                        break;
-                    case NEMPTY:
-                        on.nested(q -> q.isNotNull(targetFieldGetter).ne(targetFieldGetter, ""));
-                        break;
-                }
-            }
-            return on;
-        }
     }
 
     @NoArgsConstructor
@@ -183,7 +128,13 @@ class DtoInfo {
         /**
          * 关联的实体字段(可能为null)
          */
+        @Getter
         protected Field targetField;
+
+        /**
+         * 是否数据库字段
+         */
+        protected boolean isDbField;
 
         /**
          * @param entityClazz 字段field关联的目标entity类型，field上@RelateTo指定的优先
@@ -195,9 +146,11 @@ class DtoInfo {
             if (field.isAnnotationPresent(RelateTo.class)) {
                 RelateTo relateTo = field.getAnnotation(RelateTo.class);
                 this.targetClazz = relateTo.value();
+                this.isDbField = relateTo.dbField();
                 targetFieldName = StrUtil.blankToDefault(relateTo.field(), targetFieldName);
             } else {
                 this.targetClazz = entityClazz;
+                this.isDbField = true;
             }
             this.targetField = ReflectUtil.getField(this.targetClazz, targetFieldName);
         }
@@ -221,6 +174,10 @@ class DtoInfo {
          * @return
          */
         <T, R> SFunction<T, R> getTargetFieldGetter() {
+            if (targetField == null) {
+                throw new ClassJoinParseException(field.getDeclaringClass(),
+                        "The relate target field of [{}] in class [{}] is not found, you may add @JoinIgnore", field.getName(), field.getDeclaringClass());
+            }
             return MethodReferenceRegistry.getFunction(targetField);
         }
 
@@ -274,6 +231,10 @@ class DtoInfo {
                 return false;
             }
             return StrUtil.equals(EntityUtil.getPkName(this.targetClazz), this.targetField.getName());
+        }
+
+        public boolean isDbField() {
+            return isDbField;
         }
     }
 

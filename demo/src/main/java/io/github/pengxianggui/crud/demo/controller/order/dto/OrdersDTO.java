@@ -129,17 +129,23 @@ public class OrdersDTO {
     @ApiModelProperty("收货手机号")
     private String receiverMobi;
 
-    @RelateTo(OrderItem.class)
+    @RelateTo(value = OrderItem.class, dbField = false)
     @ApiModelProperty("订单行列表")
     private List<OrderItem> orderItems;
 
     @JoinIgnore({IgnoreWhen.Update})
-    @RelateTo(value = OrderItem.class, field = "id")
+    @RelateTo(value = OrderItem.class, field = "id", dbField = false)
     @ApiModelProperty("订单行id列表")
     private List<Long> orderItemIds;
 
-    @RelateTo(OrderAddress.class)
+    @RelateTo(value = OrderAddress.class, dbField = false)
     @ApiModelProperty("收货地址信息")
     private OrderAddress address;
+
+    /**
+     * 这是一个自定义字段，涉及的数据库表里是不存在的。需要用@JoinIgnore注解修饰以便忽略
+     */
+    @JoinIgnore
+    private String customField;
 
 }
