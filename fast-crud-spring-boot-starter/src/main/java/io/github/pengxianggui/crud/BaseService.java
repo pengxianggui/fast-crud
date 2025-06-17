@@ -10,13 +10,13 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URLEncoder;
+import java.util.Collection;
 import java.util.List;
 
 public interface BaseService<T> extends IService<T> {
 
     /**
-     * 自定义列表查询
+     * 列表查询
      *
      * @param query
      * @return
@@ -24,7 +24,7 @@ public interface BaseService<T> extends IService<T> {
     List<T> queryList(Query query);
 
     /**
-     * 自定义分页查询
+     * 分页查询
      *
      * @param query
      * @return
@@ -32,6 +32,8 @@ public interface BaseService<T> extends IService<T> {
     Pager<T> queryPage(PagerQuery query);
 
     /**
+     * 更新单条记录。
+     * <p>
      * 与{@link #updateById(T entity)}不同的是, 此方法能支持指定此次是否更新null值字段, 若{@link UpdateModelWrapper#get_updateNull()}
      * 为null, 则等同于调用{@link #updateById(T entity)}
      *
@@ -41,12 +43,62 @@ public interface BaseService<T> extends IService<T> {
     boolean updateById(UpdateModelWrapper<T> modelWrapper);
 
     /**
-     * 判断指定条件是否存在数据
+     * 判断主表指定条件是否存在数据
      *
      * @param conditions 其中非null字段将参与条件进行筛选判断
      * @return
      */
     boolean exists(List<Cond> conditions);
+
+    /**
+     * 自定义跨表列表查询
+     *
+     * @param query    查询对象
+     * @param dtoClazz 目标DTO类
+     * @param <D>
+     * @return
+     */
+    <D> List<D> queryList(Query query, Class<D> dtoClazz);
+
+    /**
+     * 跨表分页查询
+     *
+     * @param query    分页查询对象
+     * @param dtoClazz 目标DTO类
+     * @param <D>
+     * @return
+     */
+    <D> Pager<D> queryPage(PagerQuery query, Class<D> dtoClazz);
+
+    /**
+     * 跨表详情查询
+     *
+     * @param query    查询条件
+     * @param dtoClazz 目标DTO类
+     * @param <D>
+     * @return
+     */
+    <D> D getOne(Query query, Class<D> dtoClazz);
+
+    /**
+     * 与{@link #updateById(T entity)} 不同的是，此方法支持跨表更新。注意一对多关联的子表不更新
+     *
+     * @param dtoWrapper
+     * @param dtoClazz   目标DTO类
+     * @param <D>
+     * @return 返回更新数量
+     */
+    <D> int updateById(UpdateModelWrapper<D> dtoWrapper, Class<D> dtoClazz);
+
+    /**
+     * 跨表判断指定条件是否存在数据
+     *
+     * @param conditions 其中非null字段将参与条件进行筛选判断
+     * @param dtoClazz   目标DTO类
+     * @param <D>
+     * @return
+     */
+    <D> boolean exists(List<Cond> conditions, Class<D> dtoClazz);
 
     /**
      * 针对某个字段上传文件。默认将上传到java临时目录。如果希望自定义可以通过fast-crud.upload-dir配置

@@ -1,4 +1,4 @@
-package io.github.pengxianggui.crud.valid;
+package io.github.pengxianggui.crud.util;
 
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.validation.BindException;

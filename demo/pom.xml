@@ -23,6 +23,11 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.github.pengxianggui</groupId>
             <artifactId>fast-crud-spring-boot-starter</artifactId>
             <version>${fast-crud.version}</version>
@@ -44,6 +49,12 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-json</artifactId>
+            <version>5.8.8</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -98,8 +109,8 @@
                         <jvmFlags>
                             <jvmFlag>-Xms128m</jvmFlag>
                             <jvmFlag>-Xmx512m</jvmFlag>
-<!--                            <jvmFlag>-Duser.timezone=GMT+08</jvmFlag>-->
-<!--                            <jvmFlag>&#45;&#45;Dfile.encoding=UTF-8</jvmFlag>-->
+                            <!--                            <jvmFlag>-Duser.timezone=GMT+08</jvmFlag>-->
+                            <!--                            <jvmFlag>&#45;&#45;Dfile.encoding=UTF-8</jvmFlag>-->
                         </jvmFlags>
                         <ports>
                             <port>8080</port>

@@ -49,13 +49,27 @@
 
 <script>
 import {Message} from 'element-ui';
-import {isArray, isEmpty, isFunction, getNameFromUrl, defaultIfBlank} from "../../../util/util";
+import {
+  isArray,
+  isEmpty,
+  isFunction,
+  getNameFromUrl,
+  getFirstUrlFromFileItems,
+  defaultIfBlank
+} from "../../../util/util";
 import FastTableOption from "../../../model";
 import {openDialog} from "../../../util/dialog";
 
 export default {
   name: "fast-upload",
   props: {
+    /**
+     * 是否支持多文件
+     */
+    multiple: {
+      type: Boolean,
+      default: () => false
+    },
     // multiple为true则应当是单个url地址, 否则为url数组
     value: {
       type: [String, Array],
@@ -102,10 +116,10 @@ export default {
   computed: {
     modelValue: {
       get() {
-        this.refreshFiles(this.value)
-        return this.value;
+        return this.fillBackFiles(this.value)
       },
       set(val) {
+        debugger
         this.$emit('input', val);
       }
     },
@@ -134,36 +148,57 @@ export default {
   },
   methods: {
     isEmpty,
-    refreshFiles(value) {
-      const urls = [];
-      if (isArray(value)) {
-        urls.push(...value)
-      } else if (!isEmpty(value)) {
-        urls.push(value)
+    /**
+     * 回显files并返回modelValue值
+     * @param value
+     */
+    fillBackFiles(value) {
+      const multiple = this.multiple;
+      const files = [];
+      if (multiple) {
+        if (isArray(value)) {
+          files.push(...value)
+        } else {
+          if (!isEmpty(value)) {
+            files.push({name: getNameFromUrl(value), url: value})
+          }
+        }
+      } else {
+        const url = isArray(value) ? getFirstUrlFromFileItems(value) : value;
+        if (!isEmpty(url)) {
+          files.push({name: getNameFromUrl(value), url: url})
+        }
       }
-      if (isEmpty(urls)) {
-        this.files = [];
-        return;
-      }
+
+      // 处理代理前缀
       const {apiPrefix} = this;
-      urls.forEach(url => {
-        const name = getNameFromUrl(url);
-        if (this.files.every(f => f.name !== name && f.url !== url)) {
-          this.files.push({name: name, url: apiPrefix + url});
-        }
+      this.files = files.map(f => {
+        return {name: f.name, url: apiPrefix + f.url}
       });
-      for (let i = this.files.length - 1; i >= 0; i--) {
-        if (urls.every(url => apiPrefix + url !== this.files[i].url)) {
-          this.files.splice(i, 1);
-        }
+      if (multiple) {
+        return files;
+      } else {
+        return isEmpty(files) ? null : files[0].url;
       }
+      // urls.forEach(url => {
+      //   const name = getNameFromUrl(url);
+      //   if (this.files.every(f => f.name !== name && f.url !== url)) {
+      //     this.files.push({name: name, url: apiPrefix + url});
+      //   }
+      // });
+      // for (let i = this.files.length - 1; i >= 0; i--) {
+      //   if (urls.every(url => (apiPrefix + url) !== this.files[i].url)) {
+      //     this.files.splice(i, 1);
+      //   }
+      // }
     },
     handleSuccess(response, file, fileList) {
       const url = this.responseHandler(response, file, fileList);
-      if (this.limit === 1) {
+      if (this.multiple === false) {
         this.modelValue = url;
       } else {
-        this.modelValue = this.modelValue.push(url);
+        this.modelValue.push({name: file.name, url: url});
+        this.modelValue = [...this.modelValue]
       }
       try {
         if (this.$attrs.hasOwnProperty('on-success')) {
@@ -194,10 +229,12 @@ export default {
       const index = this.files.findIndex(f => f.url === file.url);
       this.files.splice(index, 1);
       const urls = this.files.map(f => f.url);
-      if (this.limit === 1) {
+      if (this.multiple === false) {
         this.modelValue = isEmpty(urls) ? '' : urls[0];
       } else {
-        this.modelValue = urls;
+        this.modelValue = this.files.map(f => {
+          return { name: f.name, url: f.url }
+        });
       }
     },
     preview(file) {

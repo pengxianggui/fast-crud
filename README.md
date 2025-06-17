@@ -183,8 +183,8 @@ public class CodeGenerator {
 - [X]  增加FastTableColumnFile和FastTableColumnImg，分别文件上传和图片上传功能
 - [X]  FastTableColumnObject: 根据另一个tableOption和render来渲染弹窗pick对象，可以回填到当前行
 - [X]  支持"更多"里扩展增加新功能按钮
-- [ ]  支持跨表分页/详情
-- [ ]  支持多图/多文件上传
+- [x]  支持跨表分页/详情
+- [x]  支持多图/多文件上传
 
 ### 2.x 版本：CRUD的外围扩展
 
