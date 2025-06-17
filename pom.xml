@@ -4,7 +4,7 @@
 
     <groupId>io.github.pengxianggui</groupId>
     <artifactId>fast-crud</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>fast-crud</name>
@@ -17,7 +17,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <fast-crud.version>1.0.0-SNAPSHOT</fast-crud.version>
+        <fast-crud.version>1.1.0-SNAPSHOT</fast-crud.version>
         <spring-boot.version>2.6.8</spring-boot.version>
         <mybatis-plus.version>3.5.7</mybatis-plus.version>
         <mybatis-plus-joinTo.version>1.5.3</mybatis-plus-joinTo.version>
