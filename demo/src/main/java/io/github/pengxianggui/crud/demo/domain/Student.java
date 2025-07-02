@@ -64,7 +64,8 @@ public class Student {
     private LocalTime luckTime;
 
     @ApiModelProperty("简历地址")
-    private String resumeUrl;
+    @TableField(typeHandler = FileItemTypeHandler.class, jdbcType = JdbcType.VARCHAR)
+    private List<FileItem> resumeUrl;
 
     @ApiModelProperty("创建时间")
     private LocalDateTime createTime;

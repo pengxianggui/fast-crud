@@ -79,21 +79,30 @@ public class ExcelExportManager {
     private ColumnHandler getColumnHandler(Map<String, Object> columnConfig) {
         String columnType = (String) columnConfig.get("tableColumnComponentName");
         switch (columnType) {
+            case "FastTableColumnDatePicker":
             case "fast-table-column-date-picker":
                 return new DateColumnHandler(columnType, columnConfig);
-//            case "fast-table-column-time-picker":
+//            case "FastTableColumnTimePicker":
 //                return new TimeColumnHandler(columnType, columnConfig);
+            case "FastTableColumnImg":
             case "fast-table-column-img":
                 return new ImageColumnHandler(columnType, columnConfig);
+            case "FastTableColumnFile":
             case "fast-table-column-file":
                 return new FileColumnHandler(columnType, columnConfig);
+            case "FastTableColumnNumber":
             case "fast-table-column-number":
                 return new NumberColumnHandler(columnType, columnConfig);
+            case "FastTableColumnSelect":
             case "fast-table-column-select":
+            case "FastTableColumnSwitch":
             case "fast-table-column-switch":
                 return new SelectColumnHandler(columnType, columnConfig);
+            case "FastTableColumn":
             case "fast-table-column":
+            case "FastTableColumnInput":
             case "fast-table-column-input":
+            case "FastTableColumnTextarea":
             case "fast-table-column-textarea":
             default:
                 return new TextColumnHandler(columnType, columnConfig);
