@@ -10,6 +10,7 @@ import lombok.Setter;
 import javax.validation.Valid;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @NoArgsConstructor
 @Getter
@@ -18,19 +19,37 @@ import java.util.List;
 @ValidQuery
 public class Query {
 
+    /**
+     * 查询的字段
+     */
     @ApiModelProperty("查询的字段")
     private List<String> cols;
 
+    /**
+     * 字段去重。指定cols时有效
+     */
     @ApiModelProperty("字段去重。指定cols时有效")
     private boolean distinct;
 
+    /**
+     * 查询条件
+     */
     @Valid
     @ApiModelProperty("查询条件")
     private List<Cond> conds;
 
+    /**
+     * 排序
+     */
     @Valid
     @ApiModelProperty(value = "排序")
     private List<Order> orders;
+
+    /**
+     * 扩展字段
+     */
+    @ApiModelProperty(value = "扩展字段")
+    private Map<String, Object> extra;
 
     public Query(String col, Object val) {
         this.cols = new ArrayList<>();

@@ -12,6 +12,7 @@ import io.github.pengxianggui.crud.valid.CrudUpdate;
 import io.github.pengxianggui.crud.util.ValidUtil;
 import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -136,7 +137,9 @@ public class BaseController<T> {
 
     @ApiOperation(value = "上传", notes = "某个字段为图片/文件字段时需要使用上传接口")
     @PostMapping("upload")
-    public String upload(@RequestParam("row") String row, @RequestParam("col") String col, MultipartFile file) throws IOException {
+    public String upload(@ApiParam("上传字段所在行的记录(json字符串)") @RequestParam(value = "row", required = false) String row,
+                         @ApiParam("上传字段") @RequestParam(value = "col", required = false) String col,
+                         MultipartFile file) throws IOException {
         String filePath = baseService.upload(row, col, file);
         if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
             return filePath;
