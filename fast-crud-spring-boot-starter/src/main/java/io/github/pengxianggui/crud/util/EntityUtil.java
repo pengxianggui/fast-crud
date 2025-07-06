@@ -8,9 +8,11 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.core.metadata.TableInfo;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 
+import java.beans.Transient;
 import java.io.Serializable;
 import java.lang.reflect.Field;
-import java.util.Objects;
+import java.lang.reflect.Modifier;
+import java.util.*;
 
 /**
  * entity工具类, 获取一些基于mybatisplus的信息
@@ -65,6 +67,33 @@ public class EntityUtil {
         String pkName = getPkName(clazz);
         Assert.notNull(pkName, "无法通过主键名获取主键值, 主键名为空");
         return (Serializable) ReflectUtil.getFieldValue(obj, pkName);
+    }
+
+    /**
+     * 判断是否声明为非数据库字段。满足以下条件返回 true
+     * <pre>
+     * 1. static、transient修饰
+     * 2. @Transient修饰
+     * 3. @TableField修饰，且注解中的exist属性为false
+     * </pre>
+     * 注意: 若返回false只能表示未声明字段为非数据库字段，而不能表示字段就是数据库字段！
+     *
+     * @param field
+     * @return
+     */
+    public static boolean isMarkAsNotDbField(Field field) {
+        if (Modifier.isStatic(field.getModifiers())
+                || Modifier.isTransient(field.getModifiers())) { // 排除static和transient
+            return true;
+        }
+        if (field.isAnnotationPresent(Transient.class)) { // 排除@Transient
+            return true;
+        }
+        if (field.isAnnotationPresent(TableField.class)
+                && field.getAnnotation(TableField.class).exist() == Boolean.FALSE) { // 排除mybatis声明的非数据库字段
+            return true;
+        }
+        return false;
     }
 
     /**

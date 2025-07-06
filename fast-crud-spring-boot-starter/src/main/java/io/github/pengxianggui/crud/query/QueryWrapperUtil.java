@@ -47,7 +47,7 @@ public class QueryWrapperUtil {
         return queryWrapper;
     }
 
-    private static <T> QueryWrapper addConditions(QueryWrapper<T> queryWrapper, List<Cond> conds, Class<?> entityClazz) {
+    public static <T> QueryWrapper addConditions(QueryWrapper<T> queryWrapper, List<Cond> conds, Class<?> entityClazz) {
         if (conds == null || conds.isEmpty()) {
             return queryWrapper;
         }
@@ -69,7 +69,7 @@ public class QueryWrapperUtil {
         };
     }
 
-    private static <T> QueryWrapper addOrders(QueryWrapper<T> queryWrapper, List<Order> orders, Class<?> entityClazz) {
+    public static <T> QueryWrapper addOrders(QueryWrapper<T> queryWrapper, List<Order> orders, Class<?> entityClazz) {
         if (orders == null) {
             return queryWrapper;
         }

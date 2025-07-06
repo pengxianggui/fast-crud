@@ -4,10 +4,7 @@ import cn.hutool.core.util.ClassUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.core.util.TypeUtil;
 import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
-import com.github.yulichang.wrapper.JoinAbstractLambdaWrapper;
-import com.github.yulichang.wrapper.JoinAbstractWrapper;
-import com.github.yulichang.wrapper.MPJLambdaWrapper;
-import com.github.yulichang.wrapper.UpdateJoinWrapper;
+import com.github.yulichang.wrapper.*;
 import com.github.yulichang.wrapper.interfaces.QueryJoin;
 import io.github.pengxianggui.crud.query.Cond;
 import io.github.pengxianggui.crud.query.Order;
@@ -30,12 +27,17 @@ import java.util.function.Consumer;
 public class JoinWrapperUtil {
     private static final Map<Class<?>, DtoInfo> CACHE = new ConcurrentHashMap<>();
 
-    public static <D> DtoInfo getDtoInfo(Class<D> dtoClazz) {
+    static DtoInfo getDtoInfo(Class<?> dtoClazz) {
+        DtoInfo dtoInfo;
         if (CACHE.containsKey(dtoClazz)) {
-            return CACHE.get(dtoClazz);
+            dtoInfo = CACHE.get(dtoClazz);
+        } else {
+            dtoInfo = new DtoInfo(dtoClazz);
+            CACHE.put(dtoClazz, dtoInfo);
         }
-        DtoInfo dtoInfo = new DtoInfo(dtoClazz);
-        CACHE.put(dtoClazz, dtoInfo);
+        if (dtoInfo == null) {
+            throw new ClassJoinParseException(dtoClazz, "Can not found dtoInfo of dtoClass:" + dtoClazz.getName());
+        }
         return dtoInfo;
     }
 
@@ -47,10 +49,9 @@ public class JoinWrapperUtil {
      * @param clazz    主表对应的实体类
      * @param dtoClazz dto类，结果类
      * @param <T>      主表对应的实体类泛型
-     * @param <D>      dto类泛型
      * @return 返回MPJLambdaWrapper实例
      */
-    public static <T, D> MPJLambdaWrapper<T> buildMPJLambdaWrapper(Query query, Class<T> clazz, Class<D> dtoClazz) {
+    public static <T> MPJLambdaWrapper<T> buildMPJLambdaWrapper(Query query, Class<T> clazz, Class<?> dtoClazz) {
         DtoInfo dtoInfo = JoinWrapperUtil.getDtoInfo(dtoClazz);
         if (dtoInfo == null) {
             throw new ClassJoinParseException(dtoClazz, "Can not found dtoInfo of dtoClass:" + dtoClazz.getName());
@@ -131,89 +132,103 @@ public class JoinWrapperUtil {
         }
     }
 
-    static <T> void addJoin(QueryJoin<? extends JoinAbstractLambdaWrapper<T, ? extends JoinAbstractLambdaWrapper>, T> wrapper, DtoInfo dtoInfo) {
+    static <T> void addJoin(QueryJoin<? extends JoinAbstractLambdaWrapper<T, ? extends JoinAbstractLambdaWrapper>, T> wrapper,
+                            DtoInfo dtoInfo) {
         List<DtoInfo.JoinInfo> innerJoins = dtoInfo.getInnerJoinInfo();
         if (innerJoins != null && !innerJoins.isEmpty()) {
-            innerJoins.forEach(join -> wrapper.innerJoin(join.getTargetEntityClass(), on -> {
-                addConditions(on, join.getCondFieldRelates());
+            innerJoins.forEach(join -> wrapper.innerJoin(join.getJoinEntityClass(), on -> {
+                addJoinConditions(on, join.getCondFieldRelates());
                 return on;
             }));
         }
         List<DtoInfo.JoinInfo> leftJoins = dtoInfo.getLeftJoinInfo();
         if (leftJoins != null && !leftJoins.isEmpty()) {
-            leftJoins.forEach(join -> wrapper.leftJoin(join.getTargetEntityClass(), on -> {
-                addConditions(on, join.getCondFieldRelates());
+            leftJoins.forEach(join -> wrapper.leftJoin(join.getJoinEntityClass(), on -> {
+                addJoinConditions(on, join.getCondFieldRelates());
                 return on;
             }));
         }
         List<DtoInfo.JoinInfo> rightJoins = dtoInfo.getRightJoinInfo();
         if (rightJoins != null && !rightJoins.isEmpty()) {
-            rightJoins.forEach(join -> wrapper.rightJoin(join.getTargetEntityClass(), on -> {
-                addConditions(on, join.getCondFieldRelates());
+            rightJoins.forEach(join -> wrapper.rightJoin(join.getJoinEntityClass(), on -> {
+                addJoinConditions(on, join.getCondFieldRelates());
                 return on;
             }));
         }
     }
 
-    static <T, C extends JoinAbstractWrapper<T, C>> void addConditions(JoinAbstractWrapper<T, C> on, DtoInfo.CondDtoField[] condFieldRelates) {
-        for (DtoInfo.CondDtoField condFieldRelate : condFieldRelates) {
-            // join左边entity中的cond字段的Getter Method Reference
+    public static <T> void addJoin(DeleteJoinWrapper<T> wrapper, Class<?> dtoClazz) {
+        DtoInfo dtoInfo = getDtoInfo(dtoClazz);
+        addJoin(wrapper, dtoInfo);
+    }
+
+    static <T, C extends JoinAbstractWrapper<T, C>> void addJoinConditions(JoinAbstractWrapper<T, C> on,
+                                                                           DtoInfo.OnCondition[] condFieldRelates) {
+        for (DtoInfo.OnCondition condFieldRelate : condFieldRelates) {
             SFunction<?, ?> fieldGetter = condFieldRelate.getFieldGetter();
-            // join右边entity中的cond字段的Getter Method Reference
             SFunction<?, ?> targetFieldGetter = condFieldRelate.getTargetFieldGetter();
             switch (condFieldRelate.getOpt()) {
                 case EQ:
-                    on.eq(targetFieldGetter, fieldGetter);
+                    on.eq(fieldGetter, targetFieldGetter);
                     break;
                 case NE:
-                    on.ne(targetFieldGetter, fieldGetter);
+                    on.ne(fieldGetter, targetFieldGetter);
                     break;
                 case GT:
-                    on.gt(targetFieldGetter, fieldGetter);
+                    on.gt(fieldGetter, targetFieldGetter);
                     break;
                 case GE:
-                    on.ge(targetFieldGetter, fieldGetter);
+                    on.ge(fieldGetter, targetFieldGetter);
                     break;
                 case LT:
-                    on.lt(targetFieldGetter, fieldGetter);
+                    on.lt(fieldGetter, targetFieldGetter);
                     break;
                 case LE:
-                    on.le(targetFieldGetter, fieldGetter);
+                    on.le(fieldGetter, targetFieldGetter);
                     break;
                 case IN:
-                    on.in(targetFieldGetter, fieldGetter);
+                    on.in(fieldGetter, targetFieldGetter);
                     break;
                 case NIN:
-                    on.notIn(targetFieldGetter, fieldGetter);
+                    on.notIn(fieldGetter, targetFieldGetter);
                     break;
                 case LIKE:
-                    on.like(targetFieldGetter, fieldGetter);
+                    on.like(fieldGetter, targetFieldGetter);
                     break;
                 case NLIKE:
-                    on.notLike(targetFieldGetter, fieldGetter);
+                    on.notLike(fieldGetter, targetFieldGetter);
                     break;
                 case NULL:
-                    on.isNull(targetFieldGetter);
+                    on.isNull(fieldGetter);
                     break;
                 case NNULL:
-                    on.isNotNull(targetFieldGetter);
+                    on.isNotNull(fieldGetter);
                     break;
                 case EMPTY:
-                    on.nested(q -> q.isNull(targetFieldGetter).or().eq(targetFieldGetter, ""));
+                    on.nested(q -> q.isNull(fieldGetter).or().eq(fieldGetter, ""));
                     break;
                 case NEMPTY:
-                    on.nested(q -> q.isNotNull(targetFieldGetter).ne(targetFieldGetter, ""));
+                    on.nested(q -> q.isNotNull(fieldGetter).ne(fieldGetter, ""));
                     break;
             }
         }
     }
 
-    static <T, C extends JoinAbstractWrapper<T, C>> void addConditions(JoinAbstractWrapper<T, C> wrapper, List<Cond> conds, DtoInfo dtoInfo) {
+    static <T, C extends JoinAbstractWrapper<T, C>> void addConditions(JoinAbstractWrapper<T, C> wrapper,
+                                                                       List<Cond> conds,
+                                                                       DtoInfo dtoInfo) {
         if (conds == null || conds.isEmpty()) {
             return;
         }
         Consumer<JoinAbstractWrapper<T, C>> consumer = wrapperConsumer(conds, Rel.AND, dtoInfo);
         consumer.accept(wrapper);
+    }
+
+    public static <T, C extends JoinAbstractWrapper<T, C>> void addConditions(JoinAbstractWrapper<T, C> wrapper,
+                                                                              List<Cond> conds,
+                                                                              Class<?> dtoClazz) {
+        DtoInfo dtoInfo = getDtoInfo(dtoClazz);
+        addConditions(wrapper, conds, dtoInfo);
     }
 
     static <T, C extends JoinAbstractWrapper<T, C>> Consumer<JoinAbstractWrapper<T, C>> wrapperConsumer(List<Cond> conds, Rel rel, DtoInfo dtoInfo) {
@@ -367,7 +382,12 @@ public class JoinWrapperUtil {
         }
     }
 
-    static <T, D> void addSet(UpdateJoinWrapper<T> wrapper, DtoInfo dtoInfo, UpdateModelWrapper<D> dtoWrapper) {
+    public static <T> void addOrders(MPJLambdaWrapper<T> wrapper, List<Order> orders, Class<?> dtoClazz) {
+        DtoInfo dtoInfo = JoinWrapperUtil.getDtoInfo(dtoClazz);
+        addOrders(wrapper, orders, dtoInfo);
+    }
+
+    static <T> void addSet(UpdateJoinWrapper<T> wrapper, DtoInfo dtoInfo, UpdateModelWrapper<?> dtoWrapper) {
         List<DtoInfo.DtoField> dtoFields = dtoInfo.getFields();
         for (DtoInfo.DtoField field : dtoFields) {
             if (field.isJoinIgnoreForUpdate() || field.targetFieldNotExist() || field.isPk()) {

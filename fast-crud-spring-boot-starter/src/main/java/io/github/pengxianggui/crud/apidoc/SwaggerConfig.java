@@ -19,13 +19,11 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @ConditionalOnClass(Docket.class)
 public class SwaggerConfig {
 
-    @ConditionalOnClass(Docket.class)
     @Bean
     public CrudApiDocAutoRemovePredicate crudApiDocAutoRemovePredicate() {
         return new CrudApiDocAutoRemovePredicate();
     }
-
-    @ConditionalOnClass(Docket.class)
+    
     @ConditionalOnMissingBean
     @Bean
     public Docket api() {

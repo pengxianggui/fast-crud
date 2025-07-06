@@ -10,6 +10,10 @@ public enum IgnoreWhen {
      */
     Query,
     /**
+     * 插入时忽略。
+     */
+    Insert,
+    /**
      * 更新时忽略。包括set、where都将忽略
      */
     Update

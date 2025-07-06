@@ -1,5 +1,6 @@
 package io.github.pengxianggui.crud.demo.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.github.pengxianggui.crud.demo.domain.Student;
 import io.github.pengxianggui.crud.query.*;
 import org.assertj.core.util.Lists;
@@ -26,7 +27,7 @@ public class StudentServiceTest {
         PagerQuery pagerQuery = new PagerQuery();
         Cond nestCond = Cond.of(Rel.OR, Lists.list(Cond.of("sex", Opt.EQ, "1"), Cond.of("age", Opt.GE, 20)));
         pagerQuery.setConds(Lists.list(Cond.of("state", Opt.EQ, "2"), nestCond));
-        Pager<Student> pager = studentService.queryPage(pagerQuery);
+        IPage<Student> pager = studentService.queryPage(pagerQuery);
         Assertions.assertTrue(pager.getRecords().size() > 0);
     }
 }

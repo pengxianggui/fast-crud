@@ -17,8 +17,13 @@ public class UpdateModelWrapper<T> extends ModelWrapper<T> {
     public UpdateModelWrapper() {
     }
 
-    public UpdateModelWrapper(@NotNull T model) {
-        this(model, false);
+    // TODO 添加一个IEntity接口，参数为IEntity
+    public static UpdateModelWrapper create(Object model) {
+        return create(model, false);
+    }
+
+    public static UpdateModelWrapper create(Object model, boolean updateNull) {
+        return new UpdateModelWrapper(model, updateNull);
     }
 
     public UpdateModelWrapper(@NotNull T model, boolean _updateNull) {

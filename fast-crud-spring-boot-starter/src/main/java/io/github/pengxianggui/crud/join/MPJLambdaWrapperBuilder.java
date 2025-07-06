@@ -13,8 +13,8 @@ import java.util.function.Consumer;
  */
 public class MPJLambdaWrapperBuilder<T> {
     private Query query;
-    private Class<T> mainClazz;
-    private Class<?> dtoClazz;
+    private final Class<T> mainClazz;
+    private final DtoInfo dtoInfo;
     private Consumer<MPJLambdaWrapper<T>> customSelect;
     private Consumer<MPJLambdaWrapper<T>> customJoin;
     private Consumer<MPJLambdaWrapper<T>> customWhere;
@@ -39,8 +39,12 @@ public class MPJLambdaWrapperBuilder<T> {
      */
     public MPJLambdaWrapperBuilder(Query query, Class<T> mainClazz, Class<?> dtoClazz) {
         this.query = query;
-        this.mainClazz = mainClazz;
-        this.dtoClazz = dtoClazz;
+        DtoInfo dtoInfo = JoinWrapperUtil.getDtoInfo(dtoClazz);
+        if (dtoInfo == null) {
+            throw new ClassJoinParseException(dtoClazz, "Can not found dtoInfo of dtoClass:" + dtoClazz.getName());
+        }
+        this.dtoInfo = dtoInfo;
+        this.mainClazz = (mainClazz == null ? (Class<T>) dtoInfo.getMainEntityClazz() : mainClazz);
     }
 
     /**
@@ -88,11 +92,6 @@ public class MPJLambdaWrapperBuilder<T> {
     }
 
     public MPJLambdaWrapper<T> build() {
-        DtoInfo dtoInfo = JoinWrapperUtil.getDtoInfo(dtoClazz);
-        if (dtoInfo == null) {
-            throw new ClassJoinParseException(dtoClazz, "Can not found dtoInfo of dtoClass:" + dtoClazz.getName());
-        }
-        Class<T> mainClazz = this.mainClazz == null ? (Class<T>) dtoInfo.getMainEntityClazz() : this.mainClazz;
         MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapper<>(mainClazz);
         if (customSelect != null) {
             customSelect.accept(wrapper);

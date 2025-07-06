@@ -9,17 +9,17 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 
-@Api(tags="学生")
+@Api(tags = "学生")
 //@CrudExclude(CrudMethod.EXISTS)
 @RestController
 @RequestMapping("student")
-public class StudentController extends BaseController<Student>{
+public class StudentController extends BaseController<Student> {
 
     @Resource
     private StudentService studentService;
 
     public StudentController(StudentService studentService) {
-        super(studentService);
+        super(studentService, Student.class);
     }
 
 }

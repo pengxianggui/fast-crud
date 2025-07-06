@@ -1,7 +1,6 @@
 package io.github.pengxianggui.crud.demo.controller.order.dto;
 
 import io.github.pengxianggui.crud.demo.domain.order.OrderAddress;
-import io.github.pengxianggui.crud.demo.domain.order.OrderItem;
 import io.github.pengxianggui.crud.demo.domain.order.Orders;
 import io.github.pengxianggui.crud.join.*;
 import io.swagger.annotations.ApiModel;
@@ -9,7 +8,6 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * @author pengxg
@@ -17,10 +15,14 @@ import java.util.List;
  */
 @JoinMain(Orders.class)
 @InnerJoin(value = OrderAddress.class, on = {@OnCond(field = "orderNo", targetField = "orderNo")})
-@LeftJoin(value = OrderItem.class, on = {@OnCond(field = "orderNo", targetField = "orderNo")})
 @Data
 @ApiModel(value = "Orders分页对象")
-public class OrdersDTO {
+public class OrdersPageVO {
+    /**
+     * 验证静态类对dto解析的影响
+     */
+//    private static final String staticField = "staticField";
+
     private Long id;
 
     @ApiModelProperty("订单编号")
@@ -128,19 +130,6 @@ public class OrdersDTO {
     @RelateTo(OrderAddress.class)
     @ApiModelProperty("收货手机号")
     private String receiverMobi;
-
-    @RelateTo(value = OrderItem.class, dbField = false)
-    @ApiModelProperty("订单行列表")
-    private List<OrderItem> orderItems;
-
-    @JoinIgnore({IgnoreWhen.Update})
-    @RelateTo(value = OrderItem.class, field = "id", dbField = false)
-    @ApiModelProperty("订单行id列表")
-    private List<Long> orderItemIds;
-
-    @RelateTo(value = OrderAddress.class, dbField = false)
-    @ApiModelProperty("收货地址信息")
-    private OrderAddress address;
 
     /**
      * 这是一个自定义字段，涉及的数据库表里是不存在的。需要用@JoinIgnore注解修饰以便忽略

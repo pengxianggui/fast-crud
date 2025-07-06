@@ -15,10 +15,11 @@ import java.lang.annotation.Target;
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface JoinIgnore {
+    
     /**
      * 指定何时忽略，默认所有场景
      *
      * @return
      */
-    IgnoreWhen[] value() default {IgnoreWhen.Query, IgnoreWhen.Update};
+    IgnoreWhen[] value() default {IgnoreWhen.Query, IgnoreWhen.Insert, IgnoreWhen.Update};
 }

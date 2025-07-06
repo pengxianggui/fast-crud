@@ -72,13 +72,14 @@ class DtoInfo {
         this.dtoClazz = dtoClazz;
         this.mainEntityClazz = mainEntityClazz;
         this.innerJoinInfo = Arrays.stream(dtoClazz.getAnnotationsByType(InnerJoin.class))
-                .map(join -> new JoinInfo(this.mainEntityClazz, join.value(), join.on())).collect(Collectors.toList());
+                .map(join -> new JoinInfo(join.value(), this.mainEntityClazz, join.on())).collect(Collectors.toList());
         this.leftJoinInfo = Arrays.stream(dtoClazz.getAnnotationsByType(LeftJoin.class))
-                .map(join -> new JoinInfo(this.mainEntityClazz, join.value(), join.on())).collect(Collectors.toList());
+                .map(join -> new JoinInfo(join.value(), this.mainEntityClazz, join.on())).collect(Collectors.toList());
         this.rightJoinInfo = Arrays.stream(dtoClazz.getAnnotationsByType(RightJoin.class))
-                .map(join -> new JoinInfo(this.mainEntityClazz, join.value(), join.on())).collect(Collectors.toList());
+                .map(join -> new JoinInfo(join.value(), this.mainEntityClazz, join.on())).collect(Collectors.toList());
         this.fields = Arrays.stream(ReflectUtil.getFields(dtoClazz))
-                .map(field -> new DtoField(this.mainEntityClazz, field)).collect(Collectors.toList());
+                .filter(field -> !EntityUtil.isMarkAsNotDbField(field))
+                .map(field -> new DtoField(this.dtoClazz, field, this.mainEntityClazz)).collect(Collectors.toList());
     }
 
     DtoField getField(String col) {
@@ -93,21 +94,21 @@ class DtoInfo {
     @NoArgsConstructor
     @Getter
     static class JoinInfo {
-        private Class<?> mainEntityClass;
+        private Class<?> joinEntityClass;
         private Class<?> targetEntityClass;
-        private CondDtoField[] condFieldRelates;
+        private OnCondition[] condFieldRelates;
 
         /**
-         * @param mainEntityClass   主类
+         * @param joinEntityClass   join的entity类
          * @param targetEntityClass join目标类
          * @param onConds           on条件
          */
-        JoinInfo(Class<?> mainEntityClass, Class<?> targetEntityClass, OnCond[] onConds) {
-            this.mainEntityClass = mainEntityClass;
+        JoinInfo(Class<?> joinEntityClass, Class<?> targetEntityClass, OnCond[] onConds) {
+            this.joinEntityClass = joinEntityClass;
             this.targetEntityClass = targetEntityClass;
-            this.condFieldRelates = new CondDtoField[onConds.length];
+            this.condFieldRelates = new OnCondition[onConds.length];
             for (int i = 0; i < onConds.length; i++) {
-                CondDtoField condFieldRelate = new CondDtoField(mainEntityClass, targetEntityClass, onConds[i]);
+                OnCondition condFieldRelate = new OnCondition(this, onConds[i]);
                 condFieldRelates[i] = condFieldRelate;
             }
         }
@@ -115,6 +116,7 @@ class DtoInfo {
 
     @NoArgsConstructor
     static class DtoField {
+        protected Class<?> dtoClazz;
         /**
          * 属性
          */
@@ -132,15 +134,17 @@ class DtoInfo {
         protected Field targetField;
 
         /**
-         * 是否数据库字段
+         * field是否映射一个数据库字段
          */
         protected boolean isDbField;
 
         /**
-         * @param entityClazz 字段field关联的目标entity类型，field上@RelateTo指定的优先
-         * @param field       字段
+         * @param dtoClazz    dto类型
+         * @param field       dto字段
+         * @param entityClazz field关联的目标实体类型，field上@RelateTo指定的优先, 未指定则默认是此值
          */
-        DtoField(Class<?> entityClazz, Field field) {
+        DtoField(Class<?> dtoClazz, Field field, Class<?> entityClazz) {
+            this.dtoClazz = dtoClazz;
             this.field = field;
             String targetFieldName = field.getName();
             if (field.isAnnotationPresent(RelateTo.class)) {
@@ -150,7 +154,9 @@ class DtoInfo {
                 targetFieldName = StrUtil.blankToDefault(relateTo.field(), targetFieldName);
             } else {
                 this.targetClazz = entityClazz;
-                this.isDbField = true;
+                if (EntityUtil.isMarkAsNotDbField(field)) {
+                    this.isDbField = false;
+                }
             }
             this.targetField = ReflectUtil.getField(this.targetClazz, targetFieldName);
         }
@@ -163,7 +169,7 @@ class DtoInfo {
          * @return
          */
         <T, R> SFunction<T, R> getFieldGetter() {
-            return MethodReferenceRegistry.getFunction(field);
+            return MethodReferenceRegistry.getFunction(this.dtoClazz, field);
         }
 
         /**
@@ -178,7 +184,7 @@ class DtoInfo {
                 throw new ClassJoinParseException(field.getDeclaringClass(),
                         "The relate target field of [{}] in class [{}] is not found, you may add @JoinIgnore", field.getName(), field.getDeclaringClass());
             }
-            return MethodReferenceRegistry.getFunction(targetField);
+            return MethodReferenceRegistry.getFunction(this.targetClazz, targetField);
         }
 
         /**
@@ -186,7 +192,7 @@ class DtoInfo {
          *
          * @return
          */
-        public boolean isJoinIgnore() {
+        private boolean isJoinIgnore() {
             return this.field.isAnnotationPresent(JoinIgnore.class);
         }
 
@@ -213,6 +219,17 @@ class DtoInfo {
         }
 
         /**
+         * 判断dto中此字段是否标注@JoinIgnore并且指定插入时忽略
+         *
+         * @return
+         */
+        public boolean isJoinIgnoreForInsert() {
+            return isJoinIgnore()
+                    && Arrays.stream(this.field.getAnnotation(JoinIgnore.class).value())
+                    .anyMatch(ignoreWhen -> ignoreWhen == IgnoreWhen.Insert);
+        }
+
+        /**
          * 判断关联的目标字段是否存在
          *
          * @return
@@ -236,49 +253,49 @@ class DtoInfo {
         public boolean isDbField() {
             return isDbField;
         }
+
+        /**
+         * 将dto中的字段值复制给entity中的字段值
+         *
+         * @param model
+         * @param entity
+         */
+        public void copyValue(Object model, Object entity) {
+            if (this.targetFieldNotExist()) {
+                return;
+            }
+            Class dtoClazz = this.field.getDeclaringClass();
+            if (!dtoClazz.isInstance(model)) {
+                throw new ClassJoinParseException(dtoClazz, "The model [{}] is not instance of [{}]", model, dtoClazz);
+            }
+            ReflectUtil.setFieldValue(entity, this.targetField, getFieldGetter().apply(model));
+        }
     }
 
     @NoArgsConstructor
     @Getter
-    static class CondDtoField extends DtoField {
+    static class OnCondition {
+        private Class<?> clazz;
+        private Field field;
         private Opt opt;
+        protected Class<?> targetClazz;
+        protected Field targetField;
 
-        public CondDtoField(Class<?> mainEntityClass, Class<?> targetEntityClass, OnCond onCond) {
+        public OnCondition(JoinInfo joinInfo, OnCond onCond) {
+            this.clazz = joinInfo.getJoinEntityClass();
+            this.field = ReflectUtil.getField(this.clazz, onCond.field());
             this.opt = onCond.opt();
-            this.field = ReflectUtil.getField(mainEntityClass, onCond.field());
-            this.targetField = ReflectUtil.getField(targetEntityClass, StrUtil.blankToDefault(onCond.targetField(), onCond.field()));
+            this.targetClazz = joinInfo.getTargetEntityClass();
+            // TODO 如何实现类似: on B.deleted = false呢?
+            this.targetField = ReflectUtil.getField(this.targetClazz, StrUtil.blankToDefault(onCond.targetField(), onCond.field()));
         }
 
-        /**
-         * @return join左边entity中的cond字段
-         */
-        @Override
-        public Field getField() {
-            return field;
-        }
-
-        /**
-         * 获取join左边entity中的cond字段的Getter Method Reference
-         *
-         * @param <T>
-         * @param <R>
-         * @return
-         */
-        @Override
         public <T, R> SFunction<T, R> getFieldGetter() {
-            return super.getFieldGetter();
+            return MethodReferenceRegistry.getFunction(this.clazz, field);
         }
 
-        /**
-         * 获取join右边entity中的cond字段的Getter Method Reference
-         *
-         * @param <T>
-         * @param <R>
-         * @return
-         */
-        @Override
         public <T, R> SFunction<T, R> getTargetFieldGetter() {
-            return super.getTargetFieldGetter();
+            return MethodReferenceRegistry.getFunction(this.targetClazz, targetField);
         }
     }
 

@@ -22,7 +22,7 @@ public class ${table.controllerName} extends BaseController<${entity}>{
     private ${table.serviceName} ${table.serviceName?uncap_first};
 
     public ${table.controllerName}(${table.serviceName} ${table.serviceName?uncap_first}) {
-        super(${table.serviceName?uncap_first});
+        super(${table.serviceName?uncap_first}, ${entity}.class);
     }
 
 }

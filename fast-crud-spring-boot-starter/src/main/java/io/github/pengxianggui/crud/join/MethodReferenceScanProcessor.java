@@ -174,11 +174,22 @@ public class MethodReferenceScanProcessor extends AbstractProcessor {
     }
 
     private void collectFields(TypeElement typeEle, String className, Map<String, String> registry) {
+        // 处理当前类字段
         for (Element enclosed : typeEle.getEnclosedElements()) {
-            if (enclosed.getKind() == ElementKind.FIELD) {
+            if (enclosed.getKind() == ElementKind.FIELD
+                    && !enclosed.getModifiers().contains(Modifier.STATIC)) { // 排除静态属性
                 String fieldName = enclosed.getSimpleName().toString();
                 String getter = getGetterMethodName(enclosed);
                 registry.put(MethodReferenceRegistry.getKey(className, fieldName), className + "::" + getter);
+            }
+        }
+
+        // 递归处理父类字段
+        TypeMirror superMirror = typeEle.getSuperclass();
+        if (superMirror != null && !superMirror.toString().equals("java.lang.Object")) {
+            Element superElement = processingEnv.getTypeUtils().asElement(superMirror);
+            if (superElement instanceof TypeElement) {
+                collectFields((TypeElement) superElement, className, registry);
             }
         }
     }

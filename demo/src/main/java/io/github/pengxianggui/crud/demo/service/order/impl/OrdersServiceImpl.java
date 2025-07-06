@@ -6,17 +6,7 @@ import io.github.pengxianggui.crud.demo.mapper.order.OrdersMapper;
 import io.github.pengxianggui.crud.demo.service.order.OrdersService;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
-
 @Service
 public class OrdersServiceImpl extends BaseServiceImpl<Orders, OrdersMapper> implements OrdersService {
 
-    @Resource
-    private OrdersMapper ordersMapper;
-
-    @Override
-    public void init() {
-        this.baseMapper = ordersMapper;
-        this.clazz = Orders.class;
-    }
 }

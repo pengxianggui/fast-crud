@@ -3,16 +3,16 @@ package io.github.pengxianggui.crud.demo.service;
 import cn.hutool.core.util.ClassUtil;
 import cn.hutool.core.util.TypeUtil;
 import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.github.yulichang.wrapper.UpdateJoinWrapper;
 import com.google.common.collect.Lists;
-import io.github.pengxianggui.crud.demo.controller.order.dto.OrdersDTO;
+import io.github.pengxianggui.crud.demo.controller.order.dto.OrdersDetailVO;
 import io.github.pengxianggui.crud.demo.domain.order.OrderAddress;
 import io.github.pengxianggui.crud.demo.domain.order.Orders;
 import io.github.pengxianggui.crud.demo.mapper.order.OrdersMapper;
 import io.github.pengxianggui.crud.demo.service.order.OrdersService;
 import io.github.pengxianggui.crud.join.UpdateJoinWrapperBuilder;
 import io.github.pengxianggui.crud.query.*;
-import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -38,7 +38,7 @@ public class OrderServiceTest {
     private OrdersMapper ordersMapper;
 
     public static void main(String[] args) throws NoSuchFieldException {
-        Field field = OrdersDTO.class.getDeclaredField("address");
+        Field field = OrdersDetailVO.class.getDeclaredField("address");
 //        Type type = TypeUtil.getTypeArgument(field.getGenericType(), 0);
 //        Type type = TypeUtil.getTypeArgument(field.getGenericType());
         Type type = field.getType();
@@ -52,7 +52,7 @@ public class OrderServiceTest {
         List<Cond> condList = Lists.newArrayList(Cond.of("orderNo", Opt.EQ, "MD202312040001"));
         query.setConds(condList);
         query.setOrders(Lists.newArrayList(new Order("createTime", true)));
-        Pager<OrdersDTO> page = ordersService.queryPage(query, OrdersDTO.class);
+        IPage<OrdersDetailVO> page = ordersService.queryPage(query, OrdersDetailVO.class);
         System.out.println(JSONUtil.toJsonStr(page.getRecords()));
         Assertions.assertTrue(page.getRecords().size() == 1);
     }
@@ -60,7 +60,7 @@ public class OrderServiceTest {
     @Test
     public void testGetOne() {
         Query query = new Query("orderNo", "MD202312040001");
-        OrdersDTO orderDTO = ordersService.getOne(query, OrdersDTO.class);
+        OrdersDetailVO orderDTO = ordersService.queryOne(query, OrdersDetailVO.class);
         System.out.println(JSONUtil.toJsonStr(orderDTO));
         Assertions.assertTrue(orderDTO != null);
     }
@@ -76,7 +76,7 @@ public class OrderServiceTest {
     @Test
     public void testExists1() {
         List<Cond> condList = Lists.newArrayList(Cond.of("orderNo", Opt.EQ, "MD202312040001"));
-        boolean exited = ordersService.exists(condList, OrdersDTO.class);
+        boolean exited = ordersService.exists(condList, OrdersDetailVO.class);
         System.out.println(exited);
         Assertions.assertTrue(exited);
     }
@@ -87,7 +87,7 @@ public class OrderServiceTest {
     @Test
     public void testUpdateJoin() {
         Query query = new Query("orderNo", "MD202312040001");
-        OrdersDTO orderDTO = ordersService.getOne(query, OrdersDTO.class);
+        OrdersDetailVO orderDTO = ordersService.queryOne(query, OrdersDetailVO.class);
         System.out.println("old remark: " + orderDTO.getRemark());
         System.out.println("old provinceNo: " + orderDTO.getProvinceNo());
         System.out.println("old provinceName: " + orderDTO.getProvinceName());
@@ -97,9 +97,9 @@ public class OrderServiceTest {
         orderDTO.setProvinceName("浙江省1");
         // 更新
         boolean updateNull = false;
-        int updateCount = ordersService.updateById(new UpdateModelWrapper<>(orderDTO, updateNull), OrdersDTO.class);
+        int updateCount = ordersService.updateById(orderDTO, OrdersDetailVO.class, updateNull);
         Assertions.assertTrue(updateCount == 2);
-        orderDTO = ordersService.getOne(query, OrdersDTO.class);
+        orderDTO = ordersService.queryOne(query, OrdersDetailVO.class);
         System.out.println("new remark: " + orderDTO.getRemark());
         System.out.println("new provinceNo: " + orderDTO.getProvinceNo());
         System.out.println("new provinceName: " + orderDTO.getProvinceName());
@@ -112,20 +112,20 @@ public class OrderServiceTest {
     @Test
     public void testUpdateJoin1() {
         Query query = new Query("orderNo", "MD202312040001");
-        OrdersDTO orderDTO = ordersService.getOne(query, OrdersDTO.class);
+        OrdersDetailVO orderDTO = ordersService.queryOne(query, OrdersDetailVO.class);
         System.out.println("old remark: " + orderDTO.getRemark());
         System.out.println("old provinceNo: " + orderDTO.getProvinceNo());
         System.out.println("old provinceName: " + orderDTO.getProvinceName());
         System.out.println("old provinceName in address: " + orderDTO.getAddress().getProvinceName());
         // 更新
-        UpdateJoinWrapper<Orders> wrapper = new UpdateJoinWrapperBuilder<>(query, Orders.class, OrdersDTO.class)
+        UpdateJoinWrapper<Orders> wrapper = new UpdateJoinWrapperBuilder<>(query, Orders.class, OrdersDetailVO.class)
                 .set(w -> w.set(Orders::getRemark, "我是更新后的备注值")
                         .set(OrderAddress::getProvinceNo, null)
                         .set(OrderAddress::getProvinceName, "浙江省1"))
                 .build();
         int updateCount = ordersMapper.updateJoin(null, wrapper);
         Assertions.assertTrue(updateCount == 2);
-        orderDTO = ordersService.getOne(query, OrdersDTO.class);
+        orderDTO = ordersService.queryOne(query, OrdersDetailVO.class);
         System.out.println("new remark: " + orderDTO.getRemark());
         System.out.println("new provinceNo: " + orderDTO.getProvinceNo());
         System.out.println("new provinceName: " + orderDTO.getProvinceName());

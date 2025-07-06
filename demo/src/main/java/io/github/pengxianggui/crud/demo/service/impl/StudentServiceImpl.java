@@ -3,34 +3,25 @@ package io.github.pengxianggui.crud.demo.service.impl;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.github.pengxianggui.crud.BaseServiceImpl;
 import io.github.pengxianggui.crud.demo.domain.Student;
 import io.github.pengxianggui.crud.demo.mapper.StudentMapper;
 import io.github.pengxianggui.crud.demo.service.StudentService;
-import io.github.pengxianggui.crud.query.Pager;
 import io.github.pengxianggui.crud.query.PagerQuery;
 import io.github.pengxianggui.crud.query.QueryWrapperUtil;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.util.Map;
 
 @Service
 public class StudentServiceImpl extends BaseServiceImpl<Student, StudentMapper> implements StudentService {
 
-    @Resource
-    private StudentMapper studentMapper;
-
     @Override
-    public void init() {
-        this.baseMapper = studentMapper;
-        this.clazz = Student.class;
-    }
-
-    @Override
-    public Pager<Student> queryPage(PagerQuery query) {
-        Pager<Student> pager = new Pager<>(query.getCurrent(), query.getSize());
-        QueryWrapper<Student> wrapper = QueryWrapperUtil.build(query, clazz);
+    public IPage<Student> queryPage(PagerQuery query) {
+        Page<Student> page = new Page<>(query.getCurrent(), query.getSize());
+        QueryWrapper<Student> wrapper = QueryWrapperUtil.build(query, getEntityClass());
         String keyword;
         Map<String, Object> extra = query.getExtra();
         if (CollectionUtil.isNotEmpty(extra) && extra.containsKey("keyword")) {
@@ -39,6 +30,6 @@ public class StudentServiceImpl extends BaseServiceImpl<Student, StudentMapper> 
             keyword = null;
         }
         wrapper.and(StrUtil.isNotBlank(keyword), w -> w.like("name", keyword).or().like("love_name", keyword));
-        return page(pager, wrapper);
+        return page(page, wrapper);
     }
 }

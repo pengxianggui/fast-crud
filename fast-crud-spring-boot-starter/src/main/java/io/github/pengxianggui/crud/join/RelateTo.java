@@ -56,7 +56,7 @@ public @interface RelateTo {
     String field() default "";
 
     /**
-     * 是否是数据库字段。若标记为false，表示此注解修饰的字段不直接关联数据库字段，而通常是关联的集合(一对多)或者关联实体(一对一)。
+     * 是否是数据库字段。若标记为false，表示此注解修饰的字段不直接关联数据库字段
      *
      * @return
      */

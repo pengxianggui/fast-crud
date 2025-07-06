@@ -1,17 +1,21 @@
 package io.github.pengxianggui.crud.demo.domain.order;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import java.time.LocalDateTime;
+import io.github.pengxianggui.crud.demo.domain.BaseEntity;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @ApiModel(value = "Orders对象", description = "订单表")
-public class Orders {
+public class Orders extends BaseEntity {
+    /**
+     * 验证静态类对dto解析的影响
+     */
+    private static final String staticField = "staticField";
 
     @ApiModelProperty("订单编号")
     private String orderNo;
@@ -108,30 +112,6 @@ public class Orders {
 
     @ApiModelProperty("订单主流程状态")
     private Integer status;
-
-    @ApiModelProperty("创建人")
-    private Long createBy;
-
-    @ApiModelProperty("创建人姓名")
-    private String createName;
-
-    @ApiModelProperty("创建时间")
-    private LocalDateTime createTime;
-
-    @ApiModelProperty("更新人")
-    private Long updateBy;
-
-    @ApiModelProperty("更新人姓名")
-    private String updateName;
-
-    @ApiModelProperty("更新时间")
-    private LocalDateTime updateTime;
-
-    @ApiModelProperty("是否删除 0 否 1 是")
-    private Boolean deleted;
-
-    @TableId(value = "id", type = IdType.AUTO)
-    private Long id;
 
     @ApiModelProperty("物流单号")
     private String expressNo;

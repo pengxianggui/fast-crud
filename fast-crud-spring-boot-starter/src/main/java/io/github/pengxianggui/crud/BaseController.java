@@ -3,13 +3,14 @@ package io.github.pengxianggui.crud;
 import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.spring.SpringUtil;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.github.pengxianggui.crud.download.FileResourceHttpRequestHandler;
 import io.github.pengxianggui.crud.export.ExcelExportManager;
-import io.github.pengxianggui.crud.util.EntityUtil;
 import io.github.pengxianggui.crud.query.*;
+import io.github.pengxianggui.crud.util.EntityUtil;
+import io.github.pengxianggui.crud.util.ValidUtil;
 import io.github.pengxianggui.crud.valid.CrudInsert;
 import io.github.pengxianggui.crud.valid.CrudUpdate;
-import io.github.pengxianggui.crud.util.ValidUtil;
 import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -30,6 +31,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Validator;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.io.File;
 import java.io.IOException;
@@ -37,102 +39,99 @@ import java.io.Serializable;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
-public class BaseController<T> {
-    private BaseService<T> baseService;
-
+public class BaseController<M> {
+    private final BaseService baseService;
+    private final Class<M> mClazz;
+    private final Class<?> entityClazz;
     @Resource
     public Validator validator;
 
-    public BaseController(BaseService<T> baseService) {
+    public BaseController(BaseService baseService, Class<M> mClazz) {
         this.baseService = baseService;
+        this.mClazz = mClazz;
+        this.entityClazz = baseService.getEntityClass();
     }
 
     @ApiOperation("插入")
     @PostMapping("insert")
-    public T insert(@RequestBody @Validated(CrudInsert.class) T model) {
-        baseService.save(model);
-        return baseService.getById(EntityUtil.getPkVal(model));
+    public int insert(@RequestBody @Validated(CrudInsert.class) M model) {
+        return baseService.insert(model, mClazz);
     }
 
     @ApiOperation("批量插入")
     @PostMapping("insert/batch")
-    public List<T> insertBatch(@RequestBody @Validated(CrudInsert.class) List<T> models) {
-        baseService.saveBatch(models);
-        return baseService.listByIds(models.stream().map(EntityUtil::getPkVal).collect(Collectors.toList()));
+    public int insertBatch(@NotEmpty @RequestBody @Validated(CrudInsert.class) List<M> models) {
+        return baseService.insertBatch(models, mClazz);
     }
 
     @ApiOperation("编辑")
     @PostMapping("update")
-    public T update(@RequestBody UpdateModelWrapper<T> modelWrapper) throws BindException {
-        ValidUtil.valid(validator, modelWrapper, CrudUpdate.class);
-        baseService.updateById(modelWrapper);
-        return baseService.getById(EntityUtil.getPkVal(modelWrapper.getModel()));
+    public int update(@RequestBody UpdateModelWrapper<M> modelWrapper) throws BindException {
+        ValidUtil.valid(validator, modelWrapper.getModel(), CrudUpdate.class);
+        return baseService.updateById(modelWrapper.getModel(), mClazz, modelWrapper.get_updateNull());
     }
 
     @ApiOperation(value = "批量编辑", notes = "不支持个性化选择_updateNull")
     @PostMapping("update/batch")
     @Transactional(rollbackFor = Exception.class)
-    public List<T> updateBatch(@RequestBody List<T> models) throws BindException {
-        for (T model : models) {
-            ValidUtil.valid(validator, model, CrudUpdate.class);
+    public int updateBatch(@RequestBody List<M> models) throws BindException {
+        for (M model : models) {
+            ValidUtil.valid(validator, model.getClass(), CrudUpdate.class);
         }
-        List<T> result = new ArrayList<>(models.size());
-        for (T model : models) {
-            baseService.updateById(model);
-            result.add(baseService.getById(EntityUtil.getPkVal(model)));
-        }
-        return result;
+        return baseService.updateBatchById(models, mClazz, true);
     }
 
     @ApiOperation("列表查询")
     @PostMapping("list")
-    public List<T> list(@RequestBody @Validated Query query) {
-        return baseService.queryList(query);
+    public List<M> list(@RequestBody @Validated Query query) {
+        return baseService.queryList(query, mClazz);
     }
 
     @ApiOperation("分页查询")
     @PostMapping("page")
-    public PagerView<T> page(@RequestBody @Validated PagerQuery query) {
-        Pager<T> pager = baseService.queryPage(query);
+    public PagerView<M> page(@RequestBody @Validated PagerQuery query) {
+        IPage<M> pager = baseService.queryPage(query, mClazz);
         return new PagerView<>(pager.getCurrent(), pager.getSize(), pager.getTotal(), pager.getRecords());
     }
 
-    @ApiOperation("详情查询")
-    @PostMapping("detail")
-    public T detail(@NotNull @RequestBody T model) {
-        Serializable id = EntityUtil.getPkVal(model);
-        Assert.notNull(id, "无法获取主键值");
-        return baseService.getById(id);
+    @ApiOperation("详情")
+    @GetMapping("{id}/detail")
+    public M detail(@PathVariable Serializable id) {
+        return (M) baseService.getById(id, mClazz);
     }
 
     @ApiOperation("删除")
     @PostMapping("delete")
-    public boolean delete(@NotNull @RequestBody T model) {
-        Serializable id = EntityUtil.getPkVal(model);
+    public int delete(@NotNull @RequestBody M model) {
+        Serializable id = EntityUtil.getPkVal(model, entityClazz);
         Assert.notNull(id, "无法获取主键值");
-        return baseService.removeById(id);
+//        return baseService.removeById(id, mClazz); // 默认支持跨表删太危险，先改为仅删主表
+        return baseService.removeById(id) ? 1 : 0;
     }
 
     @ApiOperation("批量删除")
     @PostMapping("delete/batch")
-    public boolean deleteBatch(@NotBlank @NotNull @RequestBody List<T> models) {
+    public int deleteBatch(@NotBlank @NotNull @RequestBody List<M> models) {
         Set<Serializable> ids = new HashSet<>(models.size());
         for (int i = 0; i < models.size(); i++) {
-            T model = models.get(i);
-            Serializable id = EntityUtil.getPkVal(model);
+            M model = models.get(i);
+            Serializable id = EntityUtil.getPkVal(model, entityClazz);
             Assert.notNull(id, "第%d条数据无法获取主键值", i + 1);
             ids.add(id);
         }
-        return baseService.removeByIds(ids);
+//        return baseService.removeByIds(ids, mClazz); // 默认支持跨表删太危险，先改为仅删主表
+        return baseService.removeByIds(ids) ? ids.size() : 0;
     }
 
     @ApiOperation(value = "存在性查询", notes = "指定条件存在数据")
     @PostMapping("exists")
     public Boolean exists(@RequestBody List<Cond> conditions) {
-        return baseService.exists(conditions);
+        return baseService.exists(conditions, mClazz);
     }
 
     @ApiOperation(value = "上传", notes = "某个字段为图片/文件字段时需要使用上传接口")
@@ -176,9 +175,9 @@ public class BaseController<T> {
     @ApiOperation(value = "导出", notes = "数据导出")
     @PostMapping("export")
     public void export(@Validated @RequestBody ExportParam exportParam, HttpServletResponse response) {
-        List<T> data = exportParam.getAll()
-                ? baseService.queryList(exportParam.getPageQuery())
-                : baseService.queryPage(exportParam.getPageQuery()).getRecords();
+        List<M> data = exportParam.getAll()
+                ? baseService.queryList(exportParam.getPageQuery(), mClazz)
+                : baseService.queryPage(exportParam.getPageQuery(), mClazz).getRecords();
         ExcelExportManager excelExportManager = new ExcelExportManager();
         try {
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");

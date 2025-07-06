@@ -14,10 +14,10 @@ import java.util.function.Consumer;
  * @author pengxg
  * @date 2025/6/15 17:09
  */
-public class UpdateJoinWrapperBuilder<T, D> {
+public class UpdateJoinWrapperBuilder<T, DTO> {
     private Query query;
-    private Class<T> mainClazz;
-    private Class<D> dtoClazz;
+    private final Class<T> mainClazz;
+    private final DtoInfo dtoInfo;
     private Consumer<UpdateJoinWrapper<T>> customSet;
     private Consumer<UpdateJoinWrapper<T>> customJoin;
     private Consumer<UpdateJoinWrapper<T>> customWhere;
@@ -28,7 +28,7 @@ public class UpdateJoinWrapperBuilder<T, D> {
      * @param query    查询条件
      * @param dtoClazz dto类
      */
-    public UpdateJoinWrapperBuilder(Query query, Class<D> dtoClazz) {
+    public UpdateJoinWrapperBuilder(Query query, Class<DTO> dtoClazz) {
         this(query, null, dtoClazz);
     }
 
@@ -39,10 +39,14 @@ public class UpdateJoinWrapperBuilder<T, D> {
      * @param mainClazz 主类
      * @param dtoClazz  dto类
      */
-    public UpdateJoinWrapperBuilder(Query query, Class<T> mainClazz, Class<D> dtoClazz) {
+    public UpdateJoinWrapperBuilder(Query query, Class<T> mainClazz, Class<DTO> dtoClazz) {
         this.query = query;
-        this.mainClazz = mainClazz;
-        this.dtoClazz = dtoClazz;
+        DtoInfo dtoInfo = JoinWrapperUtil.getDtoInfo(dtoClazz);
+        if (dtoInfo == null) {
+            throw new ClassJoinParseException(dtoClazz, "Can not found dtoInfo of dtoClazz:" + dtoClazz.getName());
+        }
+        this.dtoInfo = dtoInfo;
+        this.mainClazz = mainClazz == null ? (Class<T>) dtoInfo.getMainEntityClazz() : mainClazz;
     }
 
     /**
@@ -51,7 +55,7 @@ public class UpdateJoinWrapperBuilder<T, D> {
      * @param customSet
      * @return
      */
-    public UpdateJoinWrapperBuilder<T, D> set(Consumer<UpdateJoinWrapper<T>> customSet) {
+    public UpdateJoinWrapperBuilder<T, DTO> set(Consumer<UpdateJoinWrapper<T>> customSet) {
         this.customSet = customSet;
         return this;
     }
@@ -62,7 +66,7 @@ public class UpdateJoinWrapperBuilder<T, D> {
      * @param customJoin
      * @return
      */
-    public UpdateJoinWrapperBuilder<T, D> join(Consumer<UpdateJoinWrapper<T>> customJoin) {
+    public UpdateJoinWrapperBuilder<T, DTO> join(Consumer<UpdateJoinWrapper<T>> customJoin) {
         this.customJoin = customJoin;
         return this;
     }
@@ -73,7 +77,7 @@ public class UpdateJoinWrapperBuilder<T, D> {
      * @param customWhere
      * @return
      */
-    public UpdateJoinWrapperBuilder<T, D> where(Consumer<UpdateJoinWrapper<T>> customWhere) {
+    public UpdateJoinWrapperBuilder<T, DTO> where(Consumer<UpdateJoinWrapper<T>> customWhere) {
         this.customWhere = customWhere;
         return this;
     }
@@ -88,20 +92,15 @@ public class UpdateJoinWrapperBuilder<T, D> {
         return build((UpdateModelWrapper) null);
     }
 
-    public UpdateJoinWrapper<T> build(D dto) {
-        return build(new UpdateModelWrapper<>(dto));
+    public UpdateJoinWrapper<T> build(DTO dto) {
+        return build(UpdateModelWrapper.create(dto));
     }
 
-    public UpdateJoinWrapper<T> build(D dto, boolean updateNull) {
-        return build(new UpdateModelWrapper<>(dto, updateNull));
+    public UpdateJoinWrapper<T> build(DTO dto, boolean updateNull) {
+        return build(UpdateModelWrapper.create(dto, updateNull));
     }
 
-    private UpdateJoinWrapper<T> build(UpdateModelWrapper<D> dtoWrapper) {
-        DtoInfo dtoInfo = JoinWrapperUtil.getDtoInfo(dtoClazz);
-        if (dtoInfo == null) {
-            throw new ClassJoinParseException(dtoClazz, "Can not found dtoInfo of dtoClass:" + dtoClazz.getName());
-        }
-        Class<T> mainClazz = this.mainClazz == null ? (Class<T>) dtoInfo.getMainEntityClazz() : this.mainClazz;
+    private UpdateJoinWrapper<T> build(UpdateModelWrapper<DTO> dtoWrapper) {
         UpdateJoinWrapper<T> wrapper = JoinWrappers.update(mainClazz);
         if (customSet != null) {
             customSet.accept(wrapper);

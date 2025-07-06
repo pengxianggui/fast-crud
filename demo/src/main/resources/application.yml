@@ -21,6 +21,7 @@ spring:
 logging:
   level:
     root: info
+    io.github.pengxianggui: debug
 
 mybatis-plus:
   configuration:
