@@ -93,7 +93,7 @@ public interface BaseService<T> extends IService<T> {
     <DTO> DTO getById(Serializable id, Class<DTO> dtoClazz);
 
     /**
-     * 新增(支持跨表)
+     * 新增(支持跨表), 只支持平级的子表
      *
      * @param model    待插入的对象
      * @param dtoClazz 待插入对象的类型
@@ -103,7 +103,7 @@ public interface BaseService<T> extends IService<T> {
     <DTO> int insert(DTO model, Class<DTO> dtoClazz);
 
     /**
-     * 批量新增(支持跨表)
+     * 批量新增(支持跨表)，只支持平级的子表
      *
      * @param modelList  待插入的DTO列表
      * @param dtoClazz DTO类型
