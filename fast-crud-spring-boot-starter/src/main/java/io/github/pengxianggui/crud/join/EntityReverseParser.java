@@ -14,30 +14,37 @@ import java.util.stream.Collectors;
  */
 public class EntityReverseParser {
 
-    public static <DTO> Object createMainInstance(DTO model) throws InstantiationException, IllegalAccessException {
+    public static <DTO> Object createMainInstance(DTO model) {
         DtoInfo dtoInfo = JoinWrapperUtil.getDtoInfo(model.getClass());
         Class entityClass = dtoInfo.getMainEntityClazz();
-        return createEntityInstance(entityClass, model, dtoInfo);
+        try {
+            return createEntityInstance(entityClass, model, dtoInfo);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public static <DTO> List<Object> createJoinInstance(DTO model, Object mainEntity) throws InstantiationException, IllegalAccessException {
+    public static <DTO> List<Object> createJoinInstance(DTO model, Object mainEntity) {
         DtoInfo dtoInfo = JoinWrapperUtil.getDtoInfo(model.getClass());
         List<DtoInfo.JoinInfo> joinInfos = new ArrayList<>();
         joinInfos.addAll(dtoInfo.getInnerJoinInfo());
         joinInfos.addAll(dtoInfo.getLeftJoinInfo());
         joinInfos.addAll(dtoInfo.getRightJoinInfo());
         List<Object> entities = new ArrayList<>();
-        for (DtoInfo.JoinInfo joinInfo : joinInfos) {
-            Object entity = createEntityInstance(joinInfo.getJoinEntityClass(), model, dtoInfo);
-            entities.add(entity);
-            // 回填关联字段
-            for (DtoInfo.OnCondition condFieldRelate : joinInfo.getCondFieldRelates()) {
-                Object value = ReflectUtil.getFieldValue(mainEntity, condFieldRelate.getTargetField());
-                ReflectUtil.setFieldValue(entity, condFieldRelate.getField(), value);
+        try {
+            for (DtoInfo.JoinInfo joinInfo : joinInfos) {
+                Object entity = createEntityInstance(joinInfo.getJoinEntityClass(), model, dtoInfo);
+                entities.add(entity);
+                // 回填关联字段
+                for (DtoInfo.OnCondition condFieldRelate : joinInfo.getCondFieldRelates()) {
+                    Object value = ReflectUtil.getFieldValue(mainEntity, condFieldRelate.getTargetField());
+                    ReflectUtil.setFieldValue(entity, condFieldRelate.getField(), value);
+                }
             }
-
+            return entities;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        return entities;
     }
 
     /**

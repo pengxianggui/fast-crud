@@ -1,11 +1,12 @@
 package io.github.pengxianggui.crud.join;
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.Assert;
 import com.github.yulichang.toolkit.JoinWrappers;
 import com.github.yulichang.wrapper.UpdateJoinWrapper;
-import io.github.pengxianggui.crud.query.Query;
-import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
+import io.github.pengxianggui.crud.query.Cond;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 /**
@@ -14,50 +15,30 @@ import java.util.function.Consumer;
  * @author pengxg
  * @date 2025/6/15 17:09
  */
-public class UpdateJoinWrapperBuilder<T, DTO> {
-    private Query query;
-    private final Class<T> mainClazz;
-    private final DtoInfo dtoInfo;
-    private Consumer<UpdateJoinWrapper<T>> customSet;
+public class UpdateJoinWrapperBuilder<T> {
+    private Class<T> mainClazz;
+    private Class<?> dtoClazz;
+    private DtoInfo dtoInfo;
+    private List<Cond> conditions;
     private Consumer<UpdateJoinWrapper<T>> customJoin;
     private Consumer<UpdateJoinWrapper<T>> customWhere;
-
-    /**
-     * 将从dto类解析泛型({@link JoinMain})，若不匹配可能抛出异常
-     *
-     * @param query    查询条件
-     * @param dtoClazz dto类
-     */
-    public UpdateJoinWrapperBuilder(Query query, Class<DTO> dtoClazz) {
-        this(query, null, dtoClazz);
-    }
+    private boolean updateNull = false;
 
     /**
      * 构建UpdateJoinWrapper实例
      *
-     * @param query     查询条件
-     * @param mainClazz 主类
-     * @param dtoClazz  dto类
+     * @param entityClass dto类
      */
-    public UpdateJoinWrapperBuilder(Query query, Class<T> mainClazz, Class<DTO> dtoClazz) {
-        this.query = query;
-        DtoInfo dtoInfo = JoinWrapperUtil.getDtoInfo(dtoClazz);
+    public UpdateJoinWrapperBuilder(Class<T> entityClass, Class<?> dtoClass) {
+        this.mainClazz = entityClass;
+        this.dtoClazz = dtoClass;
+        DtoInfo dtoInfo = JoinWrapperUtil.getDtoInfo(dtoClass);
         if (dtoInfo == null) {
-            throw new ClassJoinParseException(dtoClazz, "Can not found dtoInfo of dtoClazz:" + dtoClazz.getName());
+            throw new ClassJoinParseException(entityClass, "Can not found dtoInfo of entityClass:" + entityClass.getName());
         }
         this.dtoInfo = dtoInfo;
-        this.mainClazz = mainClazz == null ? (Class<T>) dtoInfo.getMainEntityClazz() : mainClazz;
-    }
-
-    /**
-     * 自定义set，会覆盖内置set组装
-     *
-     * @param customSet
-     * @return
-     */
-    public UpdateJoinWrapperBuilder<T, DTO> set(Consumer<UpdateJoinWrapper<T>> customSet) {
-        this.customSet = customSet;
-        return this;
+        Assert.equals(dtoInfo.getMainEntityClazz(), entityClass,
+                "The main type is inconsistent with the main type declared in the dto");
     }
 
     /**
@@ -66,7 +47,7 @@ public class UpdateJoinWrapperBuilder<T, DTO> {
      * @param customJoin
      * @return
      */
-    public UpdateJoinWrapperBuilder<T, DTO> join(Consumer<UpdateJoinWrapper<T>> customJoin) {
+    public UpdateJoinWrapperBuilder<T> join(Consumer<UpdateJoinWrapper<T>> customJoin) {
         this.customJoin = customJoin;
         return this;
     }
@@ -77,8 +58,18 @@ public class UpdateJoinWrapperBuilder<T, DTO> {
      * @param customWhere
      * @return
      */
-    public UpdateJoinWrapperBuilder<T, DTO> where(Consumer<UpdateJoinWrapper<T>> customWhere) {
+    public UpdateJoinWrapperBuilder<T> where(Consumer<UpdateJoinWrapper<T>> customWhere) {
         this.customWhere = customWhere;
+        return this;
+    }
+
+    public UpdateJoinWrapperBuilder<T> where(List<Cond> conditions) {
+        this.conditions = conditions;
+        return this;
+    }
+
+    public UpdateJoinWrapperBuilder<T> updateNull(boolean updateNull) {
+        this.updateNull = updateNull;
         return this;
     }
 
@@ -87,26 +78,21 @@ public class UpdateJoinWrapperBuilder<T, DTO> {
      *
      * @return
      */
-    public UpdateJoinWrapper<T> build() {
-        Assert.notNull(this.customSet != null, "Please call set function to custom set!");
-        return build((UpdateModelWrapper) null);
-    }
-
-    public UpdateJoinWrapper<T> build(DTO dto) {
-        return build(UpdateModelWrapper.create(dto));
-    }
-
-    public UpdateJoinWrapper<T> build(DTO dto, boolean updateNull) {
-        return build(UpdateModelWrapper.create(dto, updateNull));
-    }
-
-    private UpdateJoinWrapper<T> build(UpdateModelWrapper<DTO> dtoWrapper) {
+    public UpdateJoinWrapper<T> build(Consumer<UpdateJoinWrapper<T>> setConsumer) {
         UpdateJoinWrapper<T> wrapper = JoinWrappers.update(mainClazz);
-        if (customSet != null) {
-            customSet.accept(wrapper);
-        } else {
-            JoinWrapperUtil.addSet(wrapper, dtoInfo, dtoWrapper);
-        }
+        setConsumer.accept(wrapper);
+        buildWrapper(wrapper);
+        return wrapper;
+    }
+
+    public UpdateJoinWrapper<T> build(Object dto) {
+        UpdateJoinWrapper<T> wrapper = JoinWrappers.update(mainClazz);
+        JoinWrapperUtil.addSet(wrapper, dtoInfo, dto, updateNull);
+        buildWrapper(wrapper);
+        return wrapper;
+    }
+
+    private void buildWrapper(UpdateJoinWrapper<T> wrapper) {
         if (customJoin != null) {
             customJoin.accept(wrapper);
         } else {
@@ -114,9 +100,9 @@ public class UpdateJoinWrapperBuilder<T, DTO> {
         }
         if (customWhere != null) {
             customWhere.accept(wrapper);
-        } else {
-            JoinWrapperUtil.addConditions(wrapper, query.getConds(), dtoInfo);
         }
-        return wrapper;
+        if (CollectionUtil.isNotEmpty(conditions)) {
+            JoinWrapperUtil.addConditions(wrapper, conditions, dtoInfo);
+        }
     }
 }

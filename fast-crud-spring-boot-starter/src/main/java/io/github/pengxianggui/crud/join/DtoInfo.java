@@ -156,6 +156,8 @@ class DtoInfo {
                 this.targetClazz = entityClazz;
                 if (EntityUtil.isMarkAsNotDbField(field)) {
                     this.isDbField = false;
+                } else {
+                    this.isDbField = true;
                 }
             }
             this.targetField = ReflectUtil.getField(this.targetClazz, targetFieldName);

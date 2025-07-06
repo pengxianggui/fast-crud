@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.github.yulichang.wrapper.UpdateJoinWrapper;
 import com.google.common.collect.Lists;
 import io.github.pengxianggui.crud.demo.controller.order.dto.OrdersDetailVO;
+import io.github.pengxianggui.crud.demo.controller.order.dto.OrdersPageVO;
 import io.github.pengxianggui.crud.demo.domain.order.OrderAddress;
 import io.github.pengxianggui.crud.demo.domain.order.Orders;
 import io.github.pengxianggui.crud.demo.mapper.order.OrdersMapper;
@@ -112,23 +113,21 @@ public class OrderServiceTest {
     @Test
     public void testUpdateJoin1() {
         Query query = new Query("orderNo", "MD202312040001");
-        OrdersDetailVO orderDTO = ordersService.queryOne(query, OrdersDetailVO.class);
-        System.out.println("old remark: " + orderDTO.getRemark());
-        System.out.println("old provinceNo: " + orderDTO.getProvinceNo());
-        System.out.println("old provinceName: " + orderDTO.getProvinceName());
-        System.out.println("old provinceName in address: " + orderDTO.getAddress().getProvinceName());
+        OrdersPageVO ordersPageVO = ordersService.queryOne(query, OrdersPageVO.class);
+        System.out.println("old remark: " + ordersPageVO.getRemark());
+        System.out.println("old provinceNo: " + ordersPageVO.getProvinceNo());
+        System.out.println("old provinceName: " + ordersPageVO.getProvinceName());
         // 更新
-        UpdateJoinWrapper<Orders> wrapper = new UpdateJoinWrapperBuilder<>(query, Orders.class, OrdersDetailVO.class)
-                .set(w -> w.set(Orders::getRemark, "我是更新后的备注值")
+        UpdateJoinWrapper<Orders> wrapper = new UpdateJoinWrapperBuilder<>(Orders.class, OrdersPageVO.class)
+                .where(w -> w.eq(Orders::getOrderNo, "MD202312040001"))
+                .build(w -> w.set(Orders::getRemark, "我是更新后的备注值")
                         .set(OrderAddress::getProvinceNo, null)
-                        .set(OrderAddress::getProvinceName, "浙江省1"))
-                .build();
+                        .set(OrderAddress::getProvinceName, "浙江省1"));
         int updateCount = ordersMapper.updateJoin(null, wrapper);
         Assertions.assertTrue(updateCount == 2);
-        orderDTO = ordersService.queryOne(query, OrdersDetailVO.class);
-        System.out.println("new remark: " + orderDTO.getRemark());
-        System.out.println("new provinceNo: " + orderDTO.getProvinceNo());
-        System.out.println("new provinceName: " + orderDTO.getProvinceName());
-        System.out.println("new provinceName in address: " + orderDTO.getAddress().getProvinceName());
+        ordersPageVO = ordersService.queryOne(query, OrdersPageVO.class);
+        System.out.println("new remark: " + ordersPageVO.getRemark());
+        System.out.println("new provinceNo: " + ordersPageVO.getProvinceNo());
+        System.out.println("new provinceName: " + ordersPageVO.getProvinceName());
     }
 }

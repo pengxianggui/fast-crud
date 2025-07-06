@@ -2,6 +2,7 @@ package io.github.pengxianggui.crud;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.Assert;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
@@ -23,7 +24,9 @@ import io.github.pengxianggui.crud.query.PagerQuery;
 import io.github.pengxianggui.crud.query.Query;
 import io.github.pengxianggui.crud.query.QueryWrapperUtil;
 import io.github.pengxianggui.crud.util.EntityUtil;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
@@ -31,8 +34,6 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Nullable;
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -40,15 +41,20 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Slf4j
 public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends ServiceImpl<M, T> implements BaseService<T> {
-    @Resource
+    // 以下三个通过属性注入，为避免spring bean代理影响，当前类中使用必须用get方法(参考ServiceImpl中对baseMapper的使用)
+    @Getter
+    @Autowired
     protected FileManager fileManager;
-    @Resource
-    private CommonRepo commonRepo;
-    @Resource
+    @Getter
+    @Autowired
+    protected CommonRepo commonRepo;
+    @Getter
+    @Autowired(required = false)
     private PlatformTransactionManager transactionManager;
 
     protected String getPkName() {
@@ -176,24 +182,35 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
             return save((T) model) ? 1 : 0;
         }
 
+        AtomicInteger count = new AtomicInteger();
+        Object mainEntity = EntityReverseParser.createMainInstance(model);
+        executeInTransaction(() -> {
+            count.addAndGet(getCommonRepo().saveOrUpdate(clazz, mainEntity));
+            List<Object> joinEntities = EntityReverseParser.createJoinInstance(model, mainEntity);
+            for (Object joinEntity : joinEntities) {
+                count.addAndGet(getCommonRepo().saveOrUpdate(joinEntity.getClass(), joinEntity));
+            }
+        });
+        return count.get();
+    }
+
+    private void executeInTransaction(Runnable runnable) {
+        PlatformTransactionManager transactionManager = getTransactionManager();
+        boolean enableTransaction = transactionManager != null;
+        if (enableTransaction == Boolean.FALSE) {
+            runnable.run();
+            return;
+        }
+
         DefaultTransactionDefinition def = new DefaultTransactionDefinition();
         def.setIsolationLevel(TransactionDefinition.ISOLATION_DEFAULT);
         def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
         TransactionStatus status = transactionManager.getTransaction(def);
-
         try {
-            int count = 0;
-            Object mainEntity = EntityReverseParser.createMainInstance(model);
-            count += commonRepo.saveOrUpdate(clazz, mainEntity);
-            List<Object> joinEntities = EntityReverseParser.createJoinInstance(model, mainEntity);
-            for (Object joinEntity : joinEntities) {
-                count += commonRepo.saveOrUpdate(joinEntity.getClass(), joinEntity);
-            }
+            runnable.run();
             transactionManager.commit(status);
-            return count;
         } catch (Throwable e) {
             transactionManager.rollback(status);
-            throw new RuntimeException(e);
         }
     }
 
@@ -221,8 +238,10 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
         String pkName = getPkName();
         Serializable pkValue = EntityUtil.getPkVal(model, clazz);
         Assert.isTrue(pkValue != null, "主键不能为空[{}={}]", pkName, pkValue);
-        Query query = new Query("t." + pkName, pkValue);
-        UpdateJoinWrapper<T> wrapper = new UpdateJoinWrapperBuilder<>(query, clazz, dtoClazz).build(model, updateNull);
+        UpdateJoinWrapper<T> wrapper = new UpdateJoinWrapperBuilder<>(clazz, dtoClazz)
+                .where(w -> w.eq(MethodReferenceRegistry.getFunction(clazz, pkName), pkValue))
+                .updateNull(ObjectUtil.defaultIfNull(updateNull, false))
+                .build(model);
         return getBaseMapper().updateJoin(null, wrapper);
     }
 
@@ -237,20 +256,13 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
             updateBatchById((Collection<T>) models);
             return models.size();
         }
-        int count = 0;
-        DefaultTransactionDefinition def = new DefaultTransactionDefinition();
-        def.setIsolationLevel(TransactionDefinition.ISOLATION_DEFAULT);
-        def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
-        TransactionStatus status = transactionManager.getTransaction(def);
-        try {
+        AtomicInteger count = new AtomicInteger();
+        executeInTransaction(() -> {
             for (DTO model : models) {
-                count += updateById(model, dtoClazz, updateNull);
+                count.addAndGet(updateById(model, dtoClazz, updateNull));
             }
-            transactionManager.commit(status);
-        } catch (Throwable e) {
-            transactionManager.rollback(status);
-        }
-        return count;
+        });
+        return count.get();
     }
 
     @Override
@@ -300,12 +312,12 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
 
     @Override
     public String upload(String row, String col, MultipartFile file) throws IOException {
-        return fileManager.getFileService().upload(file);
+        return getFileManager().getFileService().upload(file);
     }
 
     @Override
     public File download(String path) {
-        return fileManager.getFileService().getFile(path);
+        return getFileManager().getFileService().getFile(path);
     }
 
 }

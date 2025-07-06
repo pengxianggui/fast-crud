@@ -387,7 +387,7 @@ public class JoinWrapperUtil {
         addOrders(wrapper, orders, dtoInfo);
     }
 
-    static <T> void addSet(UpdateJoinWrapper<T> wrapper, DtoInfo dtoInfo, UpdateModelWrapper<?> dtoWrapper) {
+    static <T> void addSet(UpdateJoinWrapper<T> wrapper, DtoInfo dtoInfo, Object dto, boolean updateNull) {
         List<DtoInfo.DtoField> dtoFields = dtoInfo.getFields();
         for (DtoInfo.DtoField field : dtoFields) {
             if (field.isJoinIgnoreForUpdate() || field.targetFieldNotExist() || field.isPk()) {
@@ -396,9 +396,9 @@ public class JoinWrapperUtil {
 
             try {
                 field.getField().setAccessible(true);
-                Object fieldValue = field.getField().get(dtoWrapper.getModel());
+                Object fieldValue = field.getField().get(dto);
 
-                if (!EntityUtil.fieldNeedUpdate(field.getTargetField(), fieldValue, dtoWrapper.get_updateNull())) {
+                if (!EntityUtil.fieldNeedUpdate(field.getTargetField(), fieldValue, updateNull)) {
                     continue;
                 }
                 if (field.isDbField()) { // 无论是什么类型(简单类型、集合、对象类型),标记为数据库字段则直接set

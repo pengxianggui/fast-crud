@@ -14,14 +14,10 @@ import java.time.LocalDateTime;
  * @date 2025/5/23 09:34
  */
 @JoinMain(Orders.class)
-@InnerJoin(value = OrderAddress.class, on = {@OnCond(field = "orderNo", targetField = "orderNo")})
+@LeftJoin(value = OrderAddress.class, on = {@OnCond(field = "orderNo", targetField = "orderNo")})
 @Data
 @ApiModel(value = "Orders分页对象")
 public class OrdersPageVO {
-    /**
-     * 验证静态类对dto解析的影响
-     */
-//    private static final String staticField = "staticField";
 
     private Long id;
 

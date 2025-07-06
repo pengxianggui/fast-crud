@@ -25,6 +25,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -47,14 +48,13 @@ import java.util.Set;
 public class BaseController<M> {
     private final BaseService baseService;
     private final Class<M> mClazz;
-    private final Class<?> entityClazz;
+//    private Class<?> entityClazz;
     @Resource
     public Validator validator;
 
     public BaseController(BaseService baseService, Class<M> mClazz) {
         this.baseService = baseService;
         this.mClazz = mClazz;
-        this.entityClazz = baseService.getEntityClass();
     }
 
     @ApiOperation("插入")
@@ -108,7 +108,7 @@ public class BaseController<M> {
     @ApiOperation("删除")
     @PostMapping("delete")
     public int delete(@NotNull @RequestBody M model) {
-        Serializable id = EntityUtil.getPkVal(model, entityClazz);
+        Serializable id = EntityUtil.getPkVal(model, baseService.getEntityClass());
         Assert.notNull(id, "无法获取主键值");
 //        return baseService.removeById(id, mClazz); // 默认支持跨表删太危险，先改为仅删主表
         return baseService.removeById(id) ? 1 : 0;
@@ -120,7 +120,7 @@ public class BaseController<M> {
         Set<Serializable> ids = new HashSet<>(models.size());
         for (int i = 0; i < models.size(); i++) {
             M model = models.get(i);
-            Serializable id = EntityUtil.getPkVal(model, entityClazz);
+            Serializable id = EntityUtil.getPkVal(model, baseService.getEntityClass());
             Assert.notNull(id, "第%d条数据无法获取主键值", i + 1);
             ids.add(id);
         }

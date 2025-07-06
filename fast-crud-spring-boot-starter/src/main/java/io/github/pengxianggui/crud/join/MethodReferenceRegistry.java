@@ -4,8 +4,8 @@ import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Field;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author pengxg
@@ -13,7 +13,7 @@ import java.util.Map;
  */
 @Slf4j
 public class MethodReferenceRegistry {
-    private static final Map<String, SFunction<?, ?>> registry = new HashMap<>();
+    private static final Map<String, SFunction<?, ?>> registry = new ConcurrentHashMap<>();
 
     public static <T, R> void register(String key, SFunction<T, R> function) {
         log.debug("Put a mapping from field to methodReference into registry! {} -> {}", key, function.toString());
@@ -22,7 +22,11 @@ public class MethodReferenceRegistry {
 
     @SuppressWarnings("unchecked")
     public static <T, R> SFunction<T, R> getFunction(Class<?> clazz, Field field) {
-        String key = getKey(clazz.getName(), field.getName());
+        return getFunction(clazz, field.getName());
+    }
+
+    public static <T, R> SFunction<T, R> getFunction(Class<?> clazz, String fieldName) {
+        String key = getKey(clazz.getName(), fieldName);
         if (!registry.containsKey(key)) {
             throw new ClassJoinParseException(clazz, "No method reference found for " + key);
         }
