@@ -1,17 +1,19 @@
 package io.github.pengxianggui.crud.join;
 
+import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.ClassUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.core.util.TypeUtil;
 import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
-import com.github.yulichang.wrapper.*;
-import com.github.yulichang.wrapper.interfaces.QueryJoin;
+import com.github.yulichang.wrapper.JoinAbstractLambdaWrapper;
+import com.github.yulichang.wrapper.JoinAbstractWrapper;
+import com.github.yulichang.wrapper.MPJLambdaWrapper;
+import com.github.yulichang.wrapper.UpdateJoinWrapper;
 import io.github.pengxianggui.crud.query.Cond;
 import io.github.pengxianggui.crud.query.Order;
 import io.github.pengxianggui.crud.query.Query;
 import io.github.pengxianggui.crud.query.Rel;
 import io.github.pengxianggui.crud.util.EntityUtil;
-import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -56,6 +58,8 @@ public class JoinWrapperUtil {
         if (dtoInfo == null) {
             throw new ClassJoinParseException(dtoClazz, "Can not found dtoInfo of dtoClass:" + dtoClazz.getName());
         }
+        Assert.equals(dtoInfo.getMainEntityClazz(), clazz,
+                "Type inconsistency: The main type declared in the dto is inconsistent");
         MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapper<>(clazz);
         // 查询字段
         addSelect(wrapper, query.getCols(), query.isDistinct(), dtoInfo);
@@ -132,8 +136,10 @@ public class JoinWrapperUtil {
         }
     }
 
-    static <T> void addJoin(QueryJoin<? extends JoinAbstractLambdaWrapper<T, ? extends JoinAbstractLambdaWrapper>, T> wrapper,
+    static <T> void addJoin(JoinAbstractLambdaWrapper<T, ? extends JoinAbstractLambdaWrapper<T, ?>> wrapper,
                             DtoInfo dtoInfo) {
+        Assert.equals(dtoInfo.getMainEntityClazz(), wrapper.getEntityClass(),
+                "Type inconsistency: The main type declared in the dto is inconsistent");
         List<DtoInfo.JoinInfo> innerJoins = dtoInfo.getInnerJoinInfo();
         if (innerJoins != null && !innerJoins.isEmpty()) {
             innerJoins.forEach(join -> wrapper.innerJoin(join.getJoinEntityClass(), on -> {
@@ -157,7 +163,14 @@ public class JoinWrapperUtil {
         }
     }
 
-    public static <T> void addJoin(DeleteJoinWrapper<T> wrapper, Class<?> dtoClazz) {
+    /**
+     * 从dtoClazz中解析join信息，配置到wrapper中
+     *
+     * @param wrapper
+     * @param dtoClazz
+     * @param <T>
+     */
+    public static <T> void addJoin(JoinAbstractLambdaWrapper<T, ? extends JoinAbstractLambdaWrapper<T, ?>> wrapper, Class<?> dtoClazz) {
         DtoInfo dtoInfo = getDtoInfo(dtoClazz);
         addJoin(wrapper, dtoInfo);
     }

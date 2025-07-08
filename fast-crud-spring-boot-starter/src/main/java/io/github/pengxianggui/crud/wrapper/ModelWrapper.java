@@ -10,6 +10,7 @@ import javax.validation.constraints.NotNull;
 @Data
 public class ModelWrapper<T> {
 
+    @NotNull
     @JsonUnwrapped
     @Valid
     private T model;

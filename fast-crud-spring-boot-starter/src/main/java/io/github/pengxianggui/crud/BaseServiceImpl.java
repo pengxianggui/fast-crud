@@ -2,10 +2,8 @@ package io.github.pengxianggui.crud;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.Assert;
-import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.core.util.StrUtil;
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -30,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -46,7 +45,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends ServiceImpl<M, T> implements BaseService<T> {
-    // 以下三个通过属性注入，为避免spring bean代理影响，当前类中使用必须用get方法(参考ServiceImpl中对baseMapper的使用)
+    // 以下三个通过属性注入，为避免spring代理影响，当前类中使用必须用get方法(参考ServiceImpl中对baseMapper的使用)
     @Getter
     @Autowired
     protected FileManager fileManager;
@@ -65,50 +64,177 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
         return pkName;
     }
 
+    /**
+     * 插入前的钩子。通常用于自定义数据校验，以及生成主键值(UUID/雪花ID)、某些编码字段值、关联冗余字段值
+     *
+     * @param entity
+     * @return 若返回false则不触发后续插入
+     */
+    protected boolean beforeInsert(T entity) {
+        return true;
+    }
+
+    @Transactional(rollbackFor = Throwable.class)
+    @Override
+    public int insert(T entity) {
+        if (this.beforeInsert(entity) == Boolean.FALSE) {
+            return 0;
+        }
+        boolean flag = this.save(entity);
+        if (flag) {
+            this.afterInsert(entity);
+        }
+        return flag ? 1 : 0;
+    }
+
+    /**
+     * 插入成功后的钩子。通常用于触发一些级联操作
+     *
+     * @param entity
+     */
+    protected void afterInsert(T entity) {
+    }
+
+    @Transactional(rollbackFor = Throwable.class)
+    @Override
+    public int insertBatch(List<T> entities) {
+        if (CollectionUtils.isEmpty(entities)) {
+            return 0;
+        }
+        List<T> insertEntities = entities.stream().filter(this::beforeInsert).collect(Collectors.toList());
+        this.saveBatch(insertEntities); // saveBatch返回的true严格意义上讲不代表全部执行成功，这里视为全成功也是无奈之举
+        insertEntities.forEach(entity -> this.afterInsert(entity));
+        return insertEntities.size();
+    }
+
+    /**
+     * 列表查询前的钩子。注意: query已被解析进wrapper，除了扩展字段{@link Query#getExtra()}, 通常你继承此方法实现扩展字段的查询逻辑
+     *
+     * @param query
+     * @param wrapper
+     */
+    protected void beforeQueryList(Query query, QueryWrapper<T> wrapper) {
+    }
+
     @Override
     public List<T> queryList(Query query) {
         Assert.notNull(query, "query can not be null!");
-        return list(QueryWrapperUtil.build(query, getEntityClass()));
+        QueryWrapper<T> wrapper = QueryWrapperUtil.build(query, getEntityClass());
+        this.beforeQueryList(query, wrapper);
+        return list(wrapper);
+    }
+
+    @Override
+    public T queryOne(Query query) {
+        QueryWrapper<T> queryWrapper = QueryWrapperUtil.build(query, getEntityClass());
+        queryWrapper.last(" LIMIT 1");
+        List<T> list = list(queryWrapper);
+        return CollectionUtil.isNotEmpty(list) ? list.get(0) : null;
+    }
+
+    /**
+     * 分页列表查询前的钩子。注意: query已被解析进wrapper，除了扩展字段{@link Query#getExtra()}, 通常你继承此方法实现扩展字段的查询逻辑
+     *
+     * @param query
+     * @param wrapper
+     */
+    protected void beforeQueryPage(PagerQuery query, QueryWrapper<T> wrapper) {
     }
 
     @Override
     public IPage<T> queryPage(PagerQuery query) {
         Assert.notNull(query, "query can not be null!");
         Page<T> pager = new Page<>(query.getCurrent(), query.getSize());
-        Wrapper<T> wrapper = QueryWrapperUtil.build(query, getEntityClass());
+        QueryWrapper<T> wrapper = QueryWrapperUtil.build(query, getEntityClass());
+        this.beforeQueryPage(query, wrapper);
         return page(pager, wrapper);
     }
 
+    /**
+     * 更新前的钩子。通常用于自定义数据校验，以及设置某些值
+     *
+     * @param entity
+     * @return 若返回false则不触发后续更新
+     */
+    protected boolean beforeUpdateById(T entity) {
+        return true;
+    }
+
+    @Transactional(rollbackFor = Throwable.class)
     @Override
-    public boolean updateById(T entity, Boolean updateNull) {
+    public int updateById(T entity, Boolean updateNull) {
         Assert.notNull(entity, "entity can not be null!");
+        if (this.beforeUpdateById(entity) == Boolean.FALSE) {
+            return 0;
+        }
+        boolean flag;
         if (updateNull == null) {
-            return updateById(entity);
+            flag = updateById(entity);
+        } else {
+            String pkName = getPkName();
+            Serializable pkValue = EntityUtil.getPkVal(entity);
+            Assert.isTrue(pkValue != null, "主键不能为空: {}={}", pkName, pkValue);
+            UpdateWrapper<T> updateWrapper = new UpdateWrapper<>();
+            updateWrapper.eq(pkName, pkValue);
+            List<Field> fields = Arrays.stream(ReflectUtil.getFields(getEntityClass()))
+                    .filter(field -> !EntityUtil.isMarkAsNotDbField(field)).collect(Collectors.toList());
+            for (Field field : fields) {
+                field.setAccessible(true);
+                String fieldName = field.getName();
+                if (fieldName.equals(pkName)) { // 主键不更
+                    continue;
+                }
+                try {
+                    Object fieldValue = field.get(entity);
+                    if (EntityUtil.fieldNeedUpdate(field, fieldValue, updateNull)) {
+                        updateWrapper.set(EntityUtil.getDbFieldName(entity, fieldName), fieldValue);
+                    }
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            flag = this.update(updateWrapper);
+        }
+        if (flag) {
+            this.afterUpdateById(entity);
+            return 1;
+        }
+        return 0;
+    }
+
+    /**
+     * 更新成功后的钩子。通常用于触发一些级联操作
+     *
+     * @param entity
+     */
+    protected void afterUpdateById(T entity) {
+    }
+
+    @Transactional(rollbackFor = Throwable.class)
+    @Override
+    public int updateBatchById(List<T> entities, @Nullable Boolean updateNull) {
+        if (CollectionUtil.isEmpty(entities)) {
+            return 0;
         }
 
-        String pkName = getPkName();
-        Serializable pkValue = EntityUtil.getPkVal(entity);
-        Assert.isTrue(pkValue != null, "主键不能为空: {}={}", pkName, pkValue);
-        UpdateWrapper<T> updateWrapper = new UpdateWrapper<>();
-        updateWrapper.eq(pkName, pkValue);
-        List<Field> fields = Arrays.stream(ReflectUtil.getFields(getEntityClass()))
-                .filter(field -> !EntityUtil.isMarkAsNotDbField(field)).collect(Collectors.toList());
-        for (Field field : fields) {
-            field.setAccessible(true);
-            String fieldName = field.getName();
-            if (fieldName.equals(pkName)) { // 主键不更
-                continue;
+        List<T> updateEntities = entities.stream().filter(this::beforeUpdateById).collect(Collectors.toList());
+        int count = 0;
+        if (updateNull == null) {
+            boolean flag = this.updateBatchById(updateEntities);
+            count = flag ? updateEntities.size() : 0;
+            if (flag) {
+                updateEntities.forEach(entity -> this.afterUpdateById(entity));
             }
-            try {
-                Object fieldValue = field.get(entity);
-                if (EntityUtil.fieldNeedUpdate(field, fieldValue, updateNull)) {
-                    updateWrapper.set(EntityUtil.getDbFieldName(entity, fieldName), fieldValue);
+        } else {
+            for (T entity : updateEntities) {
+                int updateCount = this.updateById(entity, updateNull);
+                count += updateCount;
+                if (updateCount > 0) {
+                    this.afterUpdateById(entity);
                 }
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
             }
         }
-        return this.update(updateWrapper);
+        return count;
     }
 
     public boolean exists(List<Cond> conditions) {
@@ -123,9 +249,6 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
         Assert.notNull(query, "query can not be null!");
         Assert.notNull(dtoClazz, "dtoClazz can not be null!");
         Class<T> clazz = getEntityClass();
-        if (clazz.equals(dtoClazz)) {
-            return (List<DTO>) queryList(query);
-        }
         MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder<>(query, clazz, dtoClazz).build();
         return getBaseMapper().selectJoinList(dtoClazz, wrapper);
     }
@@ -135,12 +258,6 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
         Assert.notNull(query, "query can not be null!");
         Assert.notNull(dtoClazz, "dtoClazz can not be null!");
         Class<T> clazz = getEntityClass();
-        if (clazz.equals(dtoClazz)) {
-            QueryWrapper<T> queryWrapper = QueryWrapperUtil.build(query, clazz);
-            queryWrapper.last(" LIMIT 1");
-            List<T> list = list(queryWrapper);
-            return CollectionUtil.isNotEmpty(list) ? (DTO) list.get(0) : null;
-        }
         MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder<>(query, clazz, dtoClazz).build();
         wrapper.last(" LIMIT 1");
         List<DTO> list = getBaseMapper().selectJoinList(dtoClazz, wrapper);
@@ -152,9 +269,6 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
         Assert.notNull(query, "query can not be null!");
         Assert.notNull(dtoClazz, "dtoClazz can not be null!");
         Class<T> clazz = getEntityClass();
-        if (clazz.equals(dtoClazz)) {
-            return (IPage<DTO>) queryPage(query);
-        }
         Page<DTO> pager = new Page<>(query.getCurrent(), query.getSize());
         MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder(query, clazz, dtoClazz).build();
         return getBaseMapper().selectJoinPage(pager, dtoClazz, wrapper);
@@ -165,9 +279,6 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
         Assert.notNull(id, "id can not be null!");
         Assert.notNull(dtoClazz, "dtoClazz can not be null!");
         Class<T> clazz = getEntityClass();
-        if (clazz.equals(dtoClazz)) {
-            return (DTO) getById(id);
-        }
         MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder<>(new Query(), clazz, dtoClazz).build();
         wrapper.eq("t." + getPkName(), id);
         return getBaseMapper().selectJoinOne(dtoClazz, wrapper);
@@ -178,10 +289,6 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
         Assert.notNull(model, "model can not be null!");
         Assert.notNull(dtoClazz, "dtoClazz can not be null!");
         Class<T> clazz = getEntityClass();
-        if (clazz.equals(dtoClazz)) {
-            return save((T) model) ? 1 : 0;
-        }
-
         AtomicInteger count = new AtomicInteger();
         Object mainEntity = EntityReverseParser.createMainInstance(model);
         executeInTransaction(() -> {
@@ -192,6 +299,97 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
             }
         });
         return count.get();
+    }
+
+    @Override
+    final public <DTO> int insertBatch(Collection<DTO> modelList, Class<DTO> dtoClazz) {
+        if (CollectionUtil.isEmpty(modelList)) {
+            return 0;
+        }
+        Assert.notNull(dtoClazz, "dtoClazz can not be null!");
+        AtomicInteger count = new AtomicInteger();
+        executeInTransaction(() -> {
+            count.addAndGet(modelList.stream().mapToInt(m -> this.insert(m, dtoClazz)).sum());
+        });
+        return count.get();
+    }
+
+    @Override
+    final public <DTO> int updateById(DTO model, Class<DTO> dtoClazz, boolean updateNull) {
+        Assert.notNull(model, "model can not be null!");
+        Assert.notNull(dtoClazz, "dtoClazz can not be null!");
+        Class<T> clazz = getEntityClass();
+        String pkName = getPkName();
+        Serializable pkValue = EntityUtil.getPkVal(model, clazz);
+        Assert.isTrue(pkValue != null, "Primary key can't be null![{}={}]", pkName, pkValue);
+        UpdateJoinWrapper<T> wrapper = new UpdateJoinWrapperBuilder<>(clazz, dtoClazz)
+                .where(w -> w.eq(MethodReferenceRegistry.getFunction(clazz, pkName), pkValue))
+                .updateNull(updateNull)
+                .build(model);
+        return getBaseMapper().updateJoin(null, wrapper);
+    }
+
+    @Override
+    final public <DTO> int updateBatchById(List<DTO> models, Class<DTO> dtoClazz, boolean updateNull) {
+        if (CollectionUtil.isEmpty(models)) {
+            return 0;
+        }
+        Assert.notNull(dtoClazz, "dtoClazz can not be null!");
+        AtomicInteger count = new AtomicInteger();
+        executeInTransaction(() -> {
+            for (DTO model : models) {
+                count.addAndGet(updateById(model, dtoClazz, updateNull));
+            }
+        });
+        return count.get();
+    }
+
+    @Override
+    final public <DTO> int removeById(Serializable id, Class<DTO> dtoClazz) {
+        Assert.notNull(id, "id can not be null!");
+        Assert.notNull(dtoClazz, "dtoClazz can not be null!");
+        Class<T> clazz = getEntityClass();
+        DeleteJoinWrapper<T> wrapper = JoinWrappers.delete(clazz)
+                .deleteAll()
+                .eq("t." + getPkName(), id);
+        JoinWrapperUtil.addJoin(wrapper, dtoClazz);
+        return getBaseMapper().deleteJoin(wrapper);
+    }
+
+    @Override
+    final public <DTO> int removeByIds(Collection<? extends Serializable> ids, Class<DTO> dtoClazz) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return 0;
+        }
+        Assert.notNull(dtoClazz, "dtoClazz can not be null!");
+        Class<T> clazz = getEntityClass();
+        DeleteJoinWrapper<T> wrapper = JoinWrappers.delete(clazz)
+                .deleteAll()
+                .in("t." + getPkName(), ids);
+        JoinWrapperUtil.addJoin(wrapper, dtoClazz);
+        return getBaseMapper().deleteJoin(wrapper);
+    }
+
+    @Override
+    final public <DTO> boolean exists(List<Cond> conditions, Class<DTO> dtoClazz) {
+        Assert.notNull(dtoClazz, "dtoClazz can not be null!");
+        Class<T> clazz = getEntityClass();
+        Query query = new Query();
+        query.setConds(conditions);
+        MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapper<>(clazz);
+        JoinWrapperUtil.addJoin(wrapper, dtoClazz);
+        JoinWrapperUtil.addConditions(wrapper, conditions, dtoClazz);
+        return getBaseMapper().selectJoinCount(wrapper) > 0;
+    }
+
+    @Override
+    public String upload(String row, String col, MultipartFile file) throws IOException {
+        return getFileManager().getFileService().upload(file);
+    }
+
+    @Override
+    public File download(String path) {
+        return getFileManager().getFileService().getFile(path);
     }
 
     private void executeInTransaction(Runnable runnable) {
@@ -212,112 +410,6 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
         } catch (Throwable e) {
             transactionManager.rollback(status);
         }
-    }
-
-    @Override
-    final public <DTO> int insertBatch(Collection<DTO> modelList, Class<DTO> dtoClazz) {
-        if (CollectionUtil.isEmpty(modelList)) {
-            return 0;
-        }
-        Assert.notNull(dtoClazz, "dtoClazz can not be null!");
-        Class<T> clazz = getEntityClass();
-        if (clazz.equals(dtoClazz)) {
-            return saveBatch((Collection<T>) modelList) ? modelList.size() : 0;
-        }
-        return modelList.stream().mapToInt(m -> this.insert(m, dtoClazz)).sum();
-    }
-
-    @Override
-    final public <DTO> int updateById(DTO model, Class<DTO> dtoClazz, Boolean updateNull) {
-        Assert.notNull(model, "model can not be null!");
-        Assert.notNull(dtoClazz, "dtoClazz can not be null!");
-        Class<T> clazz = getEntityClass();
-        if (clazz.equals(dtoClazz)) {
-            return updateById((T) model, updateNull) ? 1 : 0;
-        }
-        String pkName = getPkName();
-        Serializable pkValue = EntityUtil.getPkVal(model, clazz);
-        Assert.isTrue(pkValue != null, "主键不能为空[{}={}]", pkName, pkValue);
-        UpdateJoinWrapper<T> wrapper = new UpdateJoinWrapperBuilder<>(clazz, dtoClazz)
-                .where(w -> w.eq(MethodReferenceRegistry.getFunction(clazz, pkName), pkValue))
-                .updateNull(ObjectUtil.defaultIfNull(updateNull, false))
-                .build(model);
-        return getBaseMapper().updateJoin(null, wrapper);
-    }
-
-    @Override
-    final public <DTO> int updateBatchById(List<DTO> models, Class<DTO> dtoClazz, @Nullable Boolean updateNull) {
-        if (CollectionUtil.isEmpty(models)) {
-            return 0;
-        }
-        Assert.notNull(dtoClazz, "dtoClazz can not be null!");
-        Class<T> clazz = getEntityClass();
-        if (clazz.equals(dtoClazz)) {
-            updateBatchById((Collection<T>) models);
-            return models.size();
-        }
-        AtomicInteger count = new AtomicInteger();
-        executeInTransaction(() -> {
-            for (DTO model : models) {
-                count.addAndGet(updateById(model, dtoClazz, updateNull));
-            }
-        });
-        return count.get();
-    }
-
-    @Override
-    final public <DTO> int removeById(Serializable id, Class<DTO> dtoClazz) {
-        Assert.notNull(id, "id can not be null!");
-        Assert.notNull(dtoClazz, "dtoClazz can not be null!");
-        Class<T> clazz = getEntityClass();
-        if (clazz.equals(dtoClazz)) {
-            return removeById(id) ? 1 : 0;
-        }
-        DeleteJoinWrapper<T> wrapper = JoinWrappers.delete(clazz)
-                .deleteAll()
-                .eq("t." + getPkName(), id);
-        JoinWrapperUtil.addJoin(wrapper, dtoClazz);
-        return getBaseMapper().deleteJoin(wrapper);
-    }
-
-    @Override
-    final public <DTO> int removeByIds(Collection<? extends Serializable> ids, Class<DTO> dtoClazz) {
-        if (CollectionUtils.isEmpty(ids)) {
-            return 0;
-        }
-        Assert.notNull(dtoClazz, "dtoClazz can not be null!");
-        Class<T> clazz = getEntityClass();
-        if (clazz.equals(dtoClazz)) {
-            return removeByIds(ids) ? ids.size() : 0;
-        }
-        DeleteJoinWrapper<T> wrapper = JoinWrappers.delete(clazz)
-                .deleteAll()
-                .in("t." + getPkName(), ids);
-        JoinWrapperUtil.addJoin(wrapper, dtoClazz);
-        return getBaseMapper().deleteJoin(wrapper);
-    }
-
-    @Override
-    final public <DTO> boolean exists(List<Cond> conditions, Class<DTO> dtoClazz) {
-        Assert.notNull(dtoClazz, "dtoClazz can not be null!");
-        Class<T> clazz = getEntityClass();
-        if (clazz.equals(dtoClazz)) {
-            return exists(conditions);
-        }
-        Query query = new Query();
-        query.setConds(conditions);
-        MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder<>(query, clazz, dtoClazz).build();
-        return getBaseMapper().selectJoinCount(wrapper) > 0;
-    }
-
-    @Override
-    public String upload(String row, String col, MultipartFile file) throws IOException {
-        return getFileManager().getFileService().upload(file);
-    }
-
-    @Override
-    public File download(String path) {
-        return getFileManager().getFileService().getFile(path);
     }
 
 }

@@ -17,12 +17,36 @@ import java.util.List;
 
 public interface BaseService<T> extends IService<T> {
     /**
+     * 插入一条记录
+     *
+     * @param entity
+     * @return
+     */
+    int insert(T entity);
+
+    /**
+     * 插入多条记录
+     *
+     * @param entities
+     * @return
+     */
+    int insertBatch(List<T> entities);
+
+    /**
      * 列表查询
      *
      * @param query
      * @return
      */
     List<T> queryList(Query query);
+
+    /**
+     * 查询单个记录，若查询条件多个则返回第一个
+     *
+     * @param query
+     * @return
+     */
+    T queryOne(Query query);
 
     /**
      * 分页查询
@@ -42,7 +66,16 @@ public interface BaseService<T> extends IService<T> {
      * @param updateNull 是否更新null值字段
      * @return
      */
-    boolean updateById(T entity, @Nullable Boolean updateNull);
+    int updateById(T entity, @Nullable Boolean updateNull);
+
+    /**
+     * 批量更新多条记录
+     *
+     * @param entities
+     * @param updateNull
+     * @return
+     */
+    int updateBatchById(List<T> entities, @Nullable Boolean updateNull);
 
     /**
      * 判断指定条件是否存在数据
@@ -105,8 +138,8 @@ public interface BaseService<T> extends IService<T> {
     /**
      * 批量新增(支持跨表)，只支持平级的子表
      *
-     * @param modelList  待插入的DTO列表
-     * @param dtoClazz DTO类型
+     * @param modelList 待插入的DTO列表
+     * @param dtoClazz  DTO类型
      * @param <DTO>
      * @return
      */
@@ -117,11 +150,11 @@ public interface BaseService<T> extends IService<T> {
      *
      * @param model      待更新的对象
      * @param dtoClazz   待更新对象的类型
-     * @param updateNull 是否更新空值(null), 如果此值为null则表示不干预，由mybatis决定;
+     * @param updateNull model中的null值是否更新
      * @param <DTO>
      * @return 返回更新数量
      */
-    <DTO> int updateById(DTO model, Class<DTO> dtoClazz, @Nullable Boolean updateNull);
+    <DTO> int updateById(DTO model, Class<DTO> dtoClazz, boolean updateNull);
 
     /**
      * 批量更新(支持跨表)
@@ -132,7 +165,7 @@ public interface BaseService<T> extends IService<T> {
      * @param <DTO>
      * @return
      */
-    <DTO> int updateBatchById(List<DTO> models, Class<DTO> mClazz, @Nullable Boolean updateNull);
+    <DTO> int updateBatchById(List<DTO> models, Class<DTO> mClazz, @Nullable boolean updateNull);
 
     /**
      * 删除(支持跨表) 谨慎! 会级联删除mClazz中@*Join声明关联的子表数据

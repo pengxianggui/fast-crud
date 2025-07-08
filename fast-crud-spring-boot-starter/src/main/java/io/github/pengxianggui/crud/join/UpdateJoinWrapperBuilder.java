@@ -22,7 +22,7 @@ public class UpdateJoinWrapperBuilder<T> {
     private List<Cond> conditions;
     private Consumer<UpdateJoinWrapper<T>> customJoin;
     private Consumer<UpdateJoinWrapper<T>> customWhere;
-    private boolean updateNull = false;
+    private boolean updateNull = true;
 
     /**
      * 构建UpdateJoinWrapper实例
