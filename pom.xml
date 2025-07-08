@@ -4,11 +4,11 @@
 
     <groupId>io.github.pengxianggui</groupId>
     <artifactId>fast-crud</artifactId>
-    <version>1.1.0-SNAPSHOT</version>
+    <version>1.5.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>fast-crud</name>
-    <url>https://github.com/pengxianggui/fast-crud-parent</url>
+    <url>https://github.com/pengxianggui/fast-crud</url>
     <modules>
         <module>fast-crud-auto-generator</module>
         <module>fast-crud-spring-boot-starter</module>
@@ -16,8 +16,10 @@
     </modules>
 
     <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <fast-crud.version>1.1.0-SNAPSHOT</fast-crud.version>
+        <fast-crud.version>1.5.0-SNAPSHOT</fast-crud.version>
         <spring-boot.version>2.6.8</spring-boot.version>
         <mybatis-plus.version>3.5.7</mybatis-plus.version>
         <mybatis-plus-joinTo.version>1.5.3</mybatis-plus-joinTo.version>
@@ -137,13 +139,17 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>versions-maven-plugin</artifactId>
-                <version>2.18.0</version>
             </plugin>
             <!-- 发布中央仓库还得申请, 后端部分就先不发布吧 -->
-            <!--            <plugin>-->
-            <!--                <groupId>org.apache.maven.plugins</groupId>-->
-            <!--                <artifactId>maven-gpg-plugin</artifactId>-->
-            <!--            </plugin>-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>1.6.7</version>
+            </plugin>
         </plugins>
         <pluginManagement>
             <plugins>
@@ -185,6 +191,12 @@
                         </execution>
                     </executions>
                 </plugin>
+                <!-- https://mvnrepository.com/artifact/org.codehaus.mojo/versions-maven-plugin -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>versions-maven-plugin</artifactId>
+                    <version>2.18.0</version>
+                </plugin>
                 <!-- gpg加密 -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -210,6 +222,17 @@
                         </execution>
                     </executions>
                 </plugin>
+                <plugin>
+                    <groupId>org.sonatype.plugins</groupId>
+                    <artifactId>nexus-staging-maven-plugin</artifactId>
+                    <version>1.6.7</version>
+                    <extensions>true</extensions>
+                    <configuration>
+                        <serverId>ossrh</serverId>
+                        <nexusUrl>https://ossrh-staging-api.central.sonatype.com/</nexusUrl>
+                        <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
@@ -219,12 +242,12 @@
         <snapshotRepository>
             <id>ossrh</id>
             <name>Sonatype Nexus Snapshots</name>
-            <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
         </snapshotRepository>
         <repository>
             <id>ossrh</id>
             <name>Nexus Release Repository</name>
-            <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+            <url>https://ossrh-staging-api.central.sonatype.com/service/local/</url>
         </repository>
     </distributionManagement>
 </project>

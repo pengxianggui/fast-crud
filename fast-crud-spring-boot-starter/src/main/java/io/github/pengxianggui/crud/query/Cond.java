@@ -46,6 +46,10 @@ public class Cond {
     @ApiModelProperty(value = "嵌套条件(若此值有内容, 则conds和rel生效，其余字段无效)")
     private List<Cond> conds;
 
+    public static Cond of(String col, Object val) {
+        return of(col, Opt.EQ, val);
+    }
+
     public static Cond of(String col, Opt opt, Object val) {
         Cond cond = new Cond();
         cond.setCol(col);
