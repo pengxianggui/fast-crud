@@ -17,11 +17,6 @@ import java.util.Map;
  * @date 2025/7/5 15:47
  */
 public class CommonRepo {
-    private MapperResolver mapperResolver;
-
-    public CommonRepo(MapperResolver mapperResolver) {
-        this.mapperResolver = mapperResolver;
-    }
 
     /**
      * 批量保存或更新。不限定类型
@@ -41,7 +36,7 @@ public class CommonRepo {
     }
 
     public int saveOrUpdate(Class<?> clazz, Object entity) {
-        BaseMapper mapper = mapperResolver.getMapperByEntityClass(clazz);
+        BaseMapper mapper = MapperResolver.getMapperByEntityClass(clazz);
         return mapper.insertOrUpdate(entity) ? 1 : 0;
     }
 
@@ -57,7 +52,7 @@ public class CommonRepo {
         if (CollectionUtil.isEmpty(entities)) {
             return 0;
         }
-        BaseMapper mapper = mapperResolver.getMapperByEntityClass(clazz);
+        BaseMapper mapper = MapperResolver.getMapperByEntityClass(clazz);
 //            if (mapper == null) {
 //                // 降级采用beanName拼接的方式? NO 舍确定而逐不确定
 //            }

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import io.github.pengxianggui.crud.join.CommonRepo;
 import org.apache.ibatis.session.SqlSession;
+import org.apache.ibatis.session.SqlSessionFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -14,7 +15,7 @@ import org.springframework.context.annotation.Configuration;
  * @author pengxg
  * @date 2025/7/5 14:21
  */
-@ConditionalOnClass(SqlSession.class)
+@ConditionalOnClass({SqlSession.class, SqlSessionFactory.class})
 @Configuration
 public class MybatisConfig {
 
@@ -32,11 +33,11 @@ public class MybatisConfig {
 
     @Bean
     public CommonRepo commonRepo() {
-        return new CommonRepo(mapperResolver());
+        return new CommonRepo();
     }
 
     @Bean
-    public MapperResolver mapperResolver() {
-        return new MapperResolver();
+    public MapperResolver mapperResolver(SqlSessionFactory sqlSessionFactory) {
+        return new MapperResolver(sqlSessionFactory);
     }
 }

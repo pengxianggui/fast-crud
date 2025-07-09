@@ -248,8 +248,11 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
     final public <DTO> List<DTO> queryList(Query query, Class<DTO> dtoClazz) {
         Assert.notNull(query, "query can not be null!");
         Assert.notNull(dtoClazz, "dtoClazz can not be null!");
-        Class<T> clazz = getEntityClass();
-        MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder<>(query, clazz, dtoClazz).build();
+        MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder<T>(dtoClazz)
+                .select(query.getCols())
+                .where(query.getConds())
+                .order(query.getOrders())
+                .build();
         return getBaseMapper().selectJoinList(dtoClazz, wrapper);
     }
 
@@ -257,8 +260,11 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
     final public <DTO> DTO queryOne(Query query, Class<DTO> dtoClazz) {
         Assert.notNull(query, "query can not be null!");
         Assert.notNull(dtoClazz, "dtoClazz can not be null!");
-        Class<T> clazz = getEntityClass();
-        MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder<>(query, clazz, dtoClazz).build();
+        MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder<T>(dtoClazz)
+                .select(query.getCols())
+                .where(query.getConds())
+                .order(query.getOrders())
+                .build();
         wrapper.last(" LIMIT 1");
         List<DTO> list = getBaseMapper().selectJoinList(dtoClazz, wrapper);
         return CollectionUtil.isNotEmpty(list) ? list.get(0) : null;
@@ -268,9 +274,12 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
     final public <DTO> IPage<DTO> queryPage(PagerQuery query, Class<DTO> dtoClazz) {
         Assert.notNull(query, "query can not be null!");
         Assert.notNull(dtoClazz, "dtoClazz can not be null!");
-        Class<T> clazz = getEntityClass();
         Page<DTO> pager = new Page<>(query.getCurrent(), query.getSize());
-        MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder(query, clazz, dtoClazz).build();
+        MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder(dtoClazz)
+                .select(query.getCols())
+                .where(query.getConds())
+                .order(query.getOrders())
+                .build();
         return getBaseMapper().selectJoinPage(pager, dtoClazz, wrapper);
     }
 
@@ -278,9 +287,9 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
     final public <DTO> DTO getById(Serializable id, Class<DTO> dtoClazz) {
         Assert.notNull(id, "id can not be null!");
         Assert.notNull(dtoClazz, "dtoClazz can not be null!");
-        Class<T> clazz = getEntityClass();
-        MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder<>(new Query(), clazz, dtoClazz).build();
-        wrapper.eq("t." + getPkName(), id);
+        MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder<T>(dtoClazz)
+                .where(w -> w.eq("t." + getPkName(), id))
+                .build();
         return getBaseMapper().selectJoinOne(dtoClazz, wrapper);
     }
 
@@ -288,11 +297,10 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
     final public <DTO> int insert(DTO model, Class<DTO> dtoClazz) {
         Assert.notNull(model, "model can not be null!");
         Assert.notNull(dtoClazz, "dtoClazz can not be null!");
-        Class<T> clazz = getEntityClass();
         AtomicInteger count = new AtomicInteger();
-        Object mainEntity = EntityReverseParser.createMainInstance(model);
+        T mainEntity = (T) EntityReverseParser.createMainInstance(model);
         executeInTransaction(() -> {
-            count.addAndGet(getCommonRepo().saveOrUpdate(clazz, mainEntity));
+            count.addAndGet(insert(mainEntity));
             List<Object> joinEntities = EntityReverseParser.createJoinInstance(model, mainEntity);
             for (Object joinEntity : joinEntities) {
                 count.addAndGet(getCommonRepo().saveOrUpdate(joinEntity.getClass(), joinEntity));
@@ -322,10 +330,11 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
         String pkName = getPkName();
         Serializable pkValue = EntityUtil.getPkVal(model, clazz);
         Assert.isTrue(pkValue != null, "Primary key can't be null![{}={}]", pkName, pkValue);
-        UpdateJoinWrapper<T> wrapper = new UpdateJoinWrapperBuilder<>(clazz, dtoClazz)
+        UpdateJoinWrapper<T> wrapper = new UpdateJoinWrapperBuilder<T, DTO>(dtoClazz)
+                .set(model)
                 .where(w -> w.eq(MethodReferenceRegistry.getFunction(clazz, pkName), pkValue))
                 .updateNull(updateNull)
-                .build(model);
+                .build();
         return getBaseMapper().updateJoin(null, wrapper);
     }
 

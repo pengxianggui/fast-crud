@@ -9,12 +9,15 @@ import com.github.yulichang.wrapper.JoinAbstractLambdaWrapper;
 import com.github.yulichang.wrapper.JoinAbstractWrapper;
 import com.github.yulichang.wrapper.MPJLambdaWrapper;
 import com.github.yulichang.wrapper.UpdateJoinWrapper;
+import io.github.pengxianggui.crud.config.MapperResolver;
 import io.github.pengxianggui.crud.query.Cond;
 import io.github.pengxianggui.crud.query.Order;
 import io.github.pengxianggui.crud.query.Query;
 import io.github.pengxianggui.crud.query.Rel;
 import io.github.pengxianggui.crud.util.EntityUtil;
 
+import javax.annotation.Nullable;
+import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.List;
@@ -72,7 +75,7 @@ public class JoinWrapperUtil {
         return wrapper;
     }
 
-    static <T> void addSelect(MPJLambdaWrapper<T> wrapper, List<String> cols, boolean distinct, DtoInfo dtoInfo) {
+    static <T> void addSelect(MPJLambdaWrapper<T> wrapper, List<String> cols, @Nullable Boolean distinct, DtoInfo dtoInfo) {
         List<DtoInfo.DtoField> dtoFields = dtoInfo.getFields();
         dtoFields.stream().filter(field -> cols == null || cols.size() == 0 || cols.contains(field.getField().getName()))
                 .forEach(field -> {
@@ -131,7 +134,7 @@ public class JoinWrapperUtil {
                         }
                     }
                 });
-        if (distinct) {
+        if (distinct == Boolean.TRUE) {
             wrapper.distinct();
         }
     }
@@ -410,12 +413,18 @@ public class JoinWrapperUtil {
             try {
                 field.getField().setAccessible(true);
                 Object fieldValue = field.getField().get(dto);
+                Field targetField = field.getTargetField();
 
-                if (!EntityUtil.fieldNeedUpdate(field.getTargetField(), fieldValue, updateNull)) {
+                if (!EntityUtil.fieldNeedUpdate(targetField, fieldValue, updateNull)) {
                     continue;
                 }
                 if (field.isDbField()) { // 无论是什么类型(简单类型、集合、对象类型),标记为数据库字段则直接set
-                    wrapper.set(field.getTargetFieldGetter(), fieldValue);
+                    String mapping = MapperResolver.getMapping(targetField);
+                    if (StrUtil.isBlank(mapping)) {
+                        wrapper.set(field.getTargetFieldGetter(), fieldValue);
+                    } else {
+                        wrapper.set(field.getTargetFieldGetter(), fieldValue, mapping);
+                    }
                     continue;
                 }
                 if (Collection.class.isAssignableFrom(field.getField().getType())) { // 一对多

@@ -1,14 +1,12 @@
 package io.github.pengxianggui.crud.join;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * @author pengxg
  * @date 2025/5/28 16:11
  */
+@Repeatable(RightJoins.class)
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RightJoin {

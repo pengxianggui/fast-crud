@@ -19,6 +19,13 @@ public class StudentServiceTest {
     @Resource
     private StudentService studentService;
 
+    public static void main(String[] args) {
+        System.out.println(int.class.getCanonicalName());
+        System.out.println(int.class.getName());
+        System.out.println(int.class.getSimpleName());
+        System.out.println(int.class.getTypeName());
+    }
+
     /**
      * 查询 属国="蜀" and (性别 = "男" or 年龄 >= 20) 的学生
      */

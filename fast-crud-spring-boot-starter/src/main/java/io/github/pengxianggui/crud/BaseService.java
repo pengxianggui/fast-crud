@@ -146,7 +146,11 @@ public interface BaseService<T> extends IService<T> {
     <DTO> int insertBatch(Collection<DTO> modelList, Class<DTO> dtoClazz);
 
     /**
-     * 更新(支持跨表)。注意一对多关联的子表不更新
+     * 更新(支持跨表)。注意，以下情形子表不更新:
+     * <p>
+     * 1. 一对多关联的子表不会更新, 只会更新model中声明映射为子表实体的那些字段;
+     * <p>
+     * 2. 如果子表对应的记录不存在，也不会插入(否则只要更新，即产生子表记录，显然这不符合大多数场景)，这种时候只能自行处理。
      *
      * @param model      待更新的对象
      * @param dtoClazz   待更新对象的类型
@@ -157,7 +161,11 @@ public interface BaseService<T> extends IService<T> {
     <DTO> int updateById(DTO model, Class<DTO> dtoClazz, boolean updateNull);
 
     /**
-     * 批量更新(支持跨表)
+     * 批量更新(支持跨表)。注意，以下情形子表不更新:
+     * <p>
+     * 1. 一对多关联的子表不会更新, 只会更新model中声明映射为子表实体的那些字段;
+     * <p>
+     * 2. 如果子表对应的记录不存在，也不会插入(否则只要更新，即产生子表记录，显然这不符合大多数场景)，这种时候只能自行处理。
      *
      * @param models     待更新对象列表
      * @param mClazz     待更新对象的类型

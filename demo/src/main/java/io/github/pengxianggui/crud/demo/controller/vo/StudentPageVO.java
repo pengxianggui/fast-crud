@@ -1,30 +1,36 @@
-package io.github.pengxianggui.crud.demo.domain;
+package io.github.pengxianggui.crud.demo.controller.vo;
 
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableName;
-import io.github.pengxianggui.crud.dao.typehandler.FileItemTypeHandler;
+import io.github.pengxianggui.crud.demo.domain.Student;
+import io.github.pengxianggui.crud.demo.domain.StudentSensitive;
 import io.github.pengxianggui.crud.file.FileItem;
-import io.swagger.annotations.ApiModel;
+import io.github.pengxianggui.crud.join.JoinMain;
+import io.github.pengxianggui.crud.join.LeftJoin;
+import io.github.pengxianggui.crud.join.OnCond;
+import io.github.pengxianggui.crud.join.RelateTo;
 import io.swagger.annotations.ApiModelProperty;
-import lombok.Getter;
-import lombok.Setter;
-import org.apache.ibatis.type.JdbcType;
+import lombok.Data;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
-@Getter
-@Setter
-@ApiModel(value = "Student对象", description = "学生")
-@TableName(value = "student", autoResultMap = true)
-public class Student extends IdEntity {
+/**
+ * 学生分页视图模型
+ *
+ * @author pengxg
+ * @date 2025/7/9 10:16
+ */
+@Data
+@JoinMain(Student.class)
+@LeftJoin(value = StudentSensitive.class, on = {@OnCond(field = "studentId", targetField = "id")})
+public class StudentPageVO {
+
+    private Integer id;
 
     @ApiModelProperty("头像地址")
     private String avatarUrl;
 
-    @TableField(typeHandler = FileItemTypeHandler.class, jdbcType = JdbcType.VARCHAR)
     @ApiModelProperty("相册")
     private List<FileItem> gallery;
 
@@ -59,7 +65,6 @@ public class Student extends IdEntity {
     private LocalTime luckTime;
 
     @ApiModelProperty("简历地址")
-    @TableField(typeHandler = FileItemTypeHandler.class, jdbcType = JdbcType.VARCHAR)
     private List<FileItem> resumeUrl;
 
     @ApiModelProperty("创建时间")
@@ -67,4 +72,17 @@ public class Student extends IdEntity {
 
     @ApiModelProperty("更新时间")
     private LocalDateTime updateTime;
+
+    // ------------------ 关联子表
+    @ApiModelProperty("身份证号")
+    @RelateTo(value = StudentSensitive.class)
+    private String idCard;
+
+    @ApiModelProperty("地址")
+    @RelateTo(value = StudentSensitive.class)
+    private String address;
+
+    @ApiModelProperty("联系电话")
+    @RelateTo(value = StudentSensitive.class)
+    private String phone;
 }
