@@ -3,6 +3,7 @@ package io.github.pengxianggui.crud.join;
 import com.github.yulichang.wrapper.MPJLambdaWrapper;
 import io.github.pengxianggui.crud.query.Cond;
 import io.github.pengxianggui.crud.query.Order;
+import io.github.pengxianggui.crud.query.PagerQuery;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -113,6 +114,19 @@ public class MPJLambdaWrapperBuilder<T> {
      */
     public MPJLambdaWrapperBuilder<T> order(List<Order> orders) {
         this.customOrder = w -> JoinWrapperUtil.addOrders(w, orders, dtoInfo);
+        return this;
+    }
+
+    /**
+     * 批量设置查询参数: 同时自定义select、where、order
+     *
+     * @param query
+     * @return
+     */
+    public MPJLambdaWrapperBuilder<T> query(PagerQuery query) {
+        this.select(query.getCols());
+        this.where(query.getConds());
+        this.order(query.getOrders());
         return this;
     }
 
