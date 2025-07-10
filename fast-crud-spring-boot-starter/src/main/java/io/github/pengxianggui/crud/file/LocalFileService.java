@@ -1,5 +1,6 @@
 package io.github.pengxianggui.crud.file;
 
+import cn.hutool.core.lang.Assert;
 import com.google.common.base.Joiner;
 import io.github.pengxianggui.crud.FastCrudProperty;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,8 @@ public class LocalFileService implements FileService {
 
     @Override
     public String upload(MultipartFile file, String... splitMarkers) throws IOException {
+        Assert.notNull(local, () -> new IllegalStateException("Please config fast-crud.upload.local!"));
+        Assert.notBlank(local.getDir(), () -> new IllegalStateException("Please config fast-crud.upload.local.dir!"));
         String destPath = Joiner.on(File.separator).skipNulls().join(splitMarkers);
         File targetFile = toTargetFile(local.getDir() + File.separator + destPath, file);
         return targetFile.getAbsolutePath();
