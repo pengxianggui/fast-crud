@@ -35,7 +35,7 @@ public class ExcelExportManager {
         List<Map<String, Object>> filteredColumns = columns.stream()
                 .filter(column -> Boolean.TRUE.equals(column.get("exportable"))).collect(Collectors.toList());
         for (int i = 0; i < filteredColumns.size(); i++) {
-            Map<String, Object> column = columns.get(i);
+            Map<String, Object> column = filteredColumns.get(i);
             String col = (String) column.get("col");
             String label = (String) column.get("label");
             cols.add(col);
@@ -61,6 +61,7 @@ public class ExcelExportManager {
                 .registerConverter(new LocalDateTimeStringConverter())
                 .registerConverter(new LocalDateTimeDateConverter())
                 .registerConverter(new LocalDateDateConverter())
+                .registerConverter(new ArrayListConverter())
                 .registerConverter(new LocalTimeConverter())
                 .build();
         WriteSheet sheet = EasyExcel.writerSheet("Sheet1").build();
@@ -82,8 +83,6 @@ public class ExcelExportManager {
             case "FastTableColumnDatePicker":
             case "fast-table-column-date-picker":
                 return new DateColumnHandler(columnType, columnConfig);
-//            case "FastTableColumnTimePicker":
-//                return new TimeColumnHandler(columnType, columnConfig);
             case "FastTableColumnImg":
             case "fast-table-column-img":
                 return new ImageColumnHandler(columnType, columnConfig);
@@ -104,6 +103,8 @@ public class ExcelExportManager {
             case "fast-table-column-input":
             case "FastTableColumnTextarea":
             case "fast-table-column-textarea":
+            case "FastTableColumnTimePicker":
+            case "fast-table-column-time-picker":
             default:
                 return new TextColumnHandler(columnType, columnConfig);
         }

@@ -16,11 +16,9 @@ import io.github.pengxianggui.crud.valid.CrudUpdate;
 import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.http.HttpHeaders;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.MediaTypeFactory;
-import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -28,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Validator;
@@ -44,6 +43,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+@Slf4j
 public class BaseController<M> {
     private final BaseService baseService;
     private final Class<M> dtoClazz;
@@ -234,28 +234,27 @@ public class BaseController<M> {
 
     @ApiOperation(value = "导出", notes = "数据导出")
     @PostMapping("export")
-    public void export(@Validated @RequestBody ExportParam exportParam, HttpServletResponse response) {
-        List<M> data = exportParam.getAll()
-                ? baseService.queryList(exportParam.getPageQuery(), dtoClazz)
-                : baseService.queryPage(exportParam.getPageQuery(), dtoClazz).getRecords();
+    public void export(@Validated @RequestBody ExportParam exportParam, HttpServletResponse response) throws IOException {
+        List<M> data = exportParam.getAll() ? list(exportParam.getPageQuery()) : page(exportParam.getPageQuery()).getRecords();
         ExcelExportManager excelExportManager = new ExcelExportManager();
-        try {
+        try (ServletOutputStream out = response.getOutputStream()) {
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setHeader("Content-Disposition", String.format("attachment; filename=export.xlsx"));
-            excelExportManager.exportByConfig(data, exportParam.getColumns(), response.getOutputStream());
+            excelExportManager.exportByConfig(data, exportParam.getColumns(), out);
+            out.flush();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    protected ResponseEntity<FileSystemResource> responseFile(File file) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Cache-Control", "no-cache, no-store, must-revalidate");
-        headers.add("Content-Disposition", String.format("attachment; filename=\"%s\"", file.getName()));
-        headers.add("Pragma", "no-cache");
-        headers.add("Expires", "0");
-
-        MediaType mediaType = MediaTypeFactory.getMediaType(file.getName()).orElse(MediaType.APPLICATION_OCTET_STREAM);
-        return ResponseEntity.ok().headers(headers).contentType(mediaType).body(new FileSystemResource(file));
-    }
+//    protected ResponseEntity<FileSystemResource> responseFile(File file) {
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.add("Cache-Control", "no-cache, no-store, must-revalidate");
+//        headers.add("Content-Disposition", String.format("attachment; filename=\"%s\"", file.getName()));
+//        headers.add("Pragma", "no-cache");
+//        headers.add("Expires", "0");
+//
+//        MediaType mediaType = MediaTypeFactory.getMediaType(file.getName()).orElse(MediaType.APPLICATION_OCTET_STREAM);
+//        return ResponseEntity.ok().headers(headers).contentType(mediaType).body(new FileSystemResource(file));
+//    }
 }

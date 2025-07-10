@@ -22,7 +22,7 @@ public class SelectColumnHandler extends ColumnHandler {
     public SelectColumnHandler(String component, Map<String, Object> columnConfig) {
         super(component, columnConfig);
         this.options = new HashMap<>();
-        if ("fast-table-column-switch".equals(component)) {
+        if ("fast-table-column-switch".equals(component) || "FastTableColumnSwitch".equals(component)) {
             this.options.put(this.props.get("activeValue"), (String) this.props.get("activeText"));
             this.options.put(this.props.get("inactiveValue"), (String) this.props.get("inactiveText"));
         } else {
