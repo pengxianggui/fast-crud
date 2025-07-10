@@ -1,11 +1,14 @@
 package io.github.pengxianggui.crud.demo.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.github.pengxianggui.crud.BaseController;
 import io.github.pengxianggui.crud.CrudExclude;
 import io.github.pengxianggui.crud.CrudMethod;
 import io.github.pengxianggui.crud.demo.controller.vo.StudentDetailVO;
 import io.github.pengxianggui.crud.demo.controller.vo.StudentPageVO;
 import io.github.pengxianggui.crud.demo.service.StudentService;
+import io.github.pengxianggui.crud.query.PagerQuery;
+import io.github.pengxianggui.crud.query.PagerView;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -53,5 +56,11 @@ public class StudentController extends BaseController<StudentPageVO> {
     @Override
     public int updateBatch(List<StudentPageVO> models) {
         return models.stream().mapToInt(m -> update(m, null)).sum();
+    }
+
+    @Override
+    protected PagerView<StudentPageVO> page(PagerQuery query) {
+        IPage<StudentPageVO> page = studentService.pageVO(query);
+        return new PagerView<>(page.getCurrent(), page.getSize(), page.getTotal(), page.getRecords());
     }
 }
