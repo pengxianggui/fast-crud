@@ -3,7 +3,7 @@ package io.github.pengxianggui.crud.join;
 import com.github.yulichang.wrapper.MPJLambdaWrapper;
 import io.github.pengxianggui.crud.query.Cond;
 import io.github.pengxianggui.crud.query.Order;
-import io.github.pengxianggui.crud.query.PagerQuery;
+import io.github.pengxianggui.crud.query.Query;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -21,6 +21,7 @@ public class MPJLambdaWrapperBuilder<T> {
     private Consumer<MPJLambdaWrapper<T>> customJoin;
     private Consumer<MPJLambdaWrapper<T>> customWhere;
     private Consumer<MPJLambdaWrapper<T>> customOrder;
+    private Consumer<MPJLambdaWrapper<T>> customDistinct;
 
     /**
      * 将从dto类解析构造MPJLambdaWrapper。
@@ -117,16 +118,26 @@ public class MPJLambdaWrapperBuilder<T> {
         return this;
     }
 
+    public MPJLambdaWrapperBuilder<T> distinct(boolean distinct) {
+        this.customDistinct = w -> {
+            if (distinct) {
+                w.distinct();
+            }
+        };
+        return this;
+    }
+
     /**
      * 批量设置查询参数: 同时自定义select、where、order
      *
      * @param query
      * @return
      */
-    public MPJLambdaWrapperBuilder<T> query(PagerQuery query) {
+    public MPJLambdaWrapperBuilder<T> query(Query query) {
         this.select(query.getCols());
         this.where(query.getConds());
         this.order(query.getOrders());
+        this.distinct(query.isDistinct());
         return this;
     }
 
@@ -139,6 +150,9 @@ public class MPJLambdaWrapperBuilder<T> {
         }
         if (customOrder != null) {
             customOrder.accept(wrapper);
+        }
+        if (customDistinct != null) {
+            customDistinct.accept(wrapper);
         }
         return wrapper;
     }

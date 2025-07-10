@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Slf4j
-public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends ServiceImpl<M, T> implements BaseService<T> {
+public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends ServiceImpl<M, T> implements BaseService<T> {
     // 以下三个通过属性注入，为避免spring代理影响，当前类中使用必须用get方法(参考ServiceImpl中对baseMapper的使用)
     @Getter
     @Autowired
@@ -249,9 +249,7 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
         Assert.notNull(query, "query can not be null!");
         Assert.notNull(dtoClazz, "dtoClazz can not be null!");
         MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder<T>(dtoClazz)
-                .select(query.getCols())
-                .where(query.getConds())
-                .order(query.getOrders())
+                .query(query)
                 .build();
         return getBaseMapper().selectJoinList(dtoClazz, wrapper);
     }
@@ -261,9 +259,7 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
         Assert.notNull(query, "query can not be null!");
         Assert.notNull(dtoClazz, "dtoClazz can not be null!");
         MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder<T>(dtoClazz)
-                .select(query.getCols())
-                .where(query.getConds())
-                .order(query.getOrders())
+                .query(query)
                 .build();
         wrapper.last(" LIMIT 1");
         List<DTO> list = getBaseMapper().selectJoinList(dtoClazz, wrapper);
@@ -276,9 +272,7 @@ public abstract class BaseServiceImpl<T, M extends BaseMapper<T>> extends Servic
         Assert.notNull(dtoClazz, "dtoClazz can not be null!");
         Page<DTO> pager = new Page<>(query.getCurrent(), query.getSize());
         MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder(dtoClazz)
-                .select(query.getCols())
-                .where(query.getConds())
-                .order(query.getOrders())
+                .query(query)
                 .build();
         return getBaseMapper().selectJoinPage(pager, dtoClazz, wrapper);
     }

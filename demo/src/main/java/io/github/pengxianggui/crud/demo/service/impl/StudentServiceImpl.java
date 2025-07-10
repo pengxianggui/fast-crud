@@ -21,7 +21,7 @@ import javax.annotation.Resource;
 import java.util.Map;
 
 @Service
-public class StudentServiceImpl extends BaseServiceImpl<Student, StudentMapper> implements StudentService {
+public class StudentServiceImpl extends BaseServiceImpl<StudentMapper, Student> implements StudentService {
     @Resource
     private StudentSensitiveMapper studentSensitiveMapper;
 

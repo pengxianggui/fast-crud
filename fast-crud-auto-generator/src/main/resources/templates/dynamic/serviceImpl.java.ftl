@@ -7,6 +7,6 @@ import ${package.Service}.${table.serviceName};
 import org.springframework.stereotype.Service;
 
 @Service
-public class ${table.serviceImplName} extends BaseServiceImpl<${entity}, ${table.mapperName}> implements ${table.serviceName} {
+public class ${table.serviceImplName} extends BaseServiceImpl<${table.mapperName}, ${entity}> implements ${table.serviceName} {
 
 }
