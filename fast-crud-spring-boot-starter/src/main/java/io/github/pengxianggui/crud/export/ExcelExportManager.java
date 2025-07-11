@@ -6,8 +6,10 @@ import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.converters.localdate.LocalDateDateConverter;
 import com.alibaba.excel.converters.localdatetime.LocalDateTimeDateConverter;
 import com.alibaba.excel.converters.localdatetime.LocalDateTimeStringConverter;
+import com.alibaba.excel.write.builder.ExcelWriterBuilder;
 import com.alibaba.excel.write.metadata.WriteSheet;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.ClassUtils;
 
 import java.io.OutputStream;
 import java.util.*;
@@ -53,20 +55,27 @@ public class ExcelExportManager {
             return rowData;
         }).collect(Collectors.toList());
 
-        ExcelWriter excelWriter = EasyExcel.write(outputStream)
+        ExcelWriterBuilder writerBuilder = EasyExcel.write(outputStream)
                 .head(head)
                 .includeColumnFieldNames(cols)
                 .registerWriteHandler(new CustomSheetWriteHandler(widths, handlerMapping))
                 .registerWriteHandler(new CustomCellWriteHandler(handlerMapping))
-                .registerConverter(new LocalDateTimeStringConverter())
-                .registerConverter(new LocalDateTimeDateConverter())
-                .registerConverter(new LocalDateDateConverter())
                 .registerConverter(new ArrayListConverter())
-                .registerConverter(new LocalTimeConverter())
-                .build();
+                .registerConverter(new LocalTimeConverter());
+        ClassLoader classLoader = this.getClass().getClassLoader();
+        if (ClassUtils.isPresent("com.alibaba.excel.converters.localdatetime.LocalDateTimeStringConverter", classLoader)) {
+            writerBuilder.registerConverter(new LocalDateTimeStringConverter());
+        }
+        if (ClassUtils.isPresent("com.alibaba.excel.converters.localdatetime.LocalDateTimeDateConverter", classLoader)) {
+            writerBuilder.registerConverter(new LocalDateTimeDateConverter());
+        }
+        if (ClassUtils.isPresent("com.alibaba.excel.converters.localdate.LocalDateDateConverter", classLoader)) {
+            writerBuilder.registerConverter(new LocalDateDateConverter());
+        }
+        ExcelWriter writer = writerBuilder.build();
         WriteSheet sheet = EasyExcel.writerSheet("Sheet1").build();
-        excelWriter.write(dataList, sheet);
-        excelWriter.finish();
+        writer.write(dataList, sheet);
+        writer.finish();
     }
 
     // TODO 大表时需要分页追加写入
