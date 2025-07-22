@@ -72,11 +72,11 @@ class DtoInfo {
         this.dtoClazz = dtoClazz;
         this.mainEntityClazz = mainEntityClazz;
         this.innerJoinInfo = Arrays.stream(dtoClazz.getAnnotationsByType(InnerJoin.class))
-                .map(join -> new JoinInfo(join.value(), this.mainEntityClazz, join.on())).collect(Collectors.toList());
+                .map(join -> new JoinInfo(join.value(), this, join.on())).collect(Collectors.toList());
         this.leftJoinInfo = Arrays.stream(dtoClazz.getAnnotationsByType(LeftJoin.class))
-                .map(join -> new JoinInfo(join.value(), this.mainEntityClazz, join.on())).collect(Collectors.toList());
+                .map(join -> new JoinInfo(join.value(), this, join.on())).collect(Collectors.toList());
         this.rightJoinInfo = Arrays.stream(dtoClazz.getAnnotationsByType(RightJoin.class))
-                .map(join -> new JoinInfo(join.value(), this.mainEntityClazz, join.on())).collect(Collectors.toList());
+                .map(join -> new JoinInfo(join.value(), this, join.on())).collect(Collectors.toList());
         this.fields = Arrays.stream(ReflectUtil.getFields(dtoClazz))
                 .filter(field -> !EntityUtil.isMarkAsNotDbField(field))
                 .map(field -> new DtoField(this.dtoClazz, field, this.mainEntityClazz)).collect(Collectors.toList());
@@ -99,13 +99,15 @@ class DtoInfo {
         private OnCondition[] condFieldRelates;
 
         /**
-         * @param joinEntityClass   join的entity类
-         * @param targetEntityClass join目标类
-         * @param onConds           on条件
+         * @param joinEntityClass join的entity类
+         * @param dtoInfo         dtoInfo
+         * @param onConds         on条件
          */
-        JoinInfo(Class<?> joinEntityClass, Class<?> targetEntityClass, OnCond[] onConds) {
+        JoinInfo(Class<?> joinEntityClass, DtoInfo dtoInfo, OnCond[] onConds) {
+            Assert.isTrue(onConds.length > 0,
+                    "There must be at least one OnCond in Class: {}", dtoInfo.dtoClazz.getName());
             this.joinEntityClass = joinEntityClass;
-            this.targetEntityClass = targetEntityClass;
+            this.targetEntityClass = onConds[0].targetClazz() == Void.class ? dtoInfo.mainEntityClazz : onConds[0].targetClazz();
             this.condFieldRelates = new OnCondition[onConds.length];
             for (int i = 0; i < onConds.length; i++) {
                 OnCondition condFieldRelate = new OnCondition(this, onConds[i]);

@@ -40,8 +40,6 @@ demo/src/main/java/io/github/pengxianggui/crud/demo/controller/order
 demo/src/main/java/io/github/pengxianggui/crud/demo/domain/order
 demo/src/main/java/io/github/pengxianggui/crud/demo/mapper/order
 demo/src/main/java/io/github/pengxianggui/crud/demo/service/order
-demo/src/main/resources/mapper/OrdersMapper.xml
-demo/src/main/resources/mapper/OrderItemMapper.xml
-demo/src/main/resources/mapper/OrderAddressMapper.xml
+demo/src/main/resources/mapper/Order*Mapper.xml
 demo/src/main/resources/mapper/StoreMapper.xml
 demo/src/test/java/io/github/pengxianggui/crud/demo/service/OrderServiceTest.java

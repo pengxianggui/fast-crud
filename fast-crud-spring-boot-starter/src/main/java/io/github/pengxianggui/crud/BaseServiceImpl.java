@@ -270,7 +270,6 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
         MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder<T>(dtoClazz)
                 .query(query)
                 .build();
-        wrapper.last(" LIMIT 1");
         List<DTO> list = getBaseMapper().selectJoinList(dtoClazz, wrapper);
         return CollectionUtil.isNotEmpty(list) ? list.get(0) : null;
     }

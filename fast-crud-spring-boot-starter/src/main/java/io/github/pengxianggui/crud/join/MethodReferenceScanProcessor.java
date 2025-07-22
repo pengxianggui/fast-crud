@@ -135,19 +135,48 @@ public class MethodReferenceScanProcessor extends AbstractProcessor {
         }
     }
 
-
     private void processRepeatableJoin(TypeElement dtoType, String annotationClassName, Map<String, String> registry) {
         for (AnnotationMirror mirror : dtoType.getAnnotationMirrors()) {
-            if (!annotationClassName.equals(mirror.getAnnotationType().toString())) {
-                continue;
+            String mirrorType = mirror.getAnnotationType().toString();
+            if (!annotationClassName.equals(mirrorType)) {
+                // 新增：同时支持容器注解（例如 InnerJoins 包含多个 InnerJoin）
+                // 如果 annotationClassName = InnerJoin.class.getName()，则容器类名是 InnerJoins
+                if (!mirrorType.equals(annotationClassName + "s")) {
+                    continue;
+                }
             }
-            Map<? extends ExecutableElement, ? extends AnnotationValue> values = mirror.getElementValues();
-            for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : values.entrySet()) {
-                if ("value".equals(entry.getKey().getSimpleName().toString())) {
-                    Object value = entry.getValue().getValue();
-                    if (value instanceof TypeMirror) {
-                        collectFields((TypeMirror) value, registry);
+
+            // 如果是容器注解（InnerJoins），则取出其 value 数组中的每一个 InnerJoin
+            if (mirrorType.endsWith("s")) { // 例如 InnerJoins、LeftJoins、RightJoins
+                for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : mirror.getElementValues().entrySet()) {
+                    if ("value".equals(entry.getKey().getSimpleName().toString())) {
+                        Object value = entry.getValue().getValue();
+                        if (value instanceof Iterable) {
+                            for (Object o : (Iterable<?>) value) {
+                                if (o instanceof AnnotationMirror) {
+                                    processSingleJoinAnnotation((AnnotationMirror) o, registry);
+                                }
+                            }
+                        }
                     }
+                }
+            } else {
+                // 单个 InnerJoin、LeftJoin、RightJoin
+                processSingleJoinAnnotation(mirror, registry);
+            }
+        }
+    }
+
+    /**
+     * 处理单个 InnerJoin/LeftJoin/RightJoin 注解，提取其 value 属性
+     */
+    private void processSingleJoinAnnotation(AnnotationMirror mirror, Map<String, String> registry) {
+        Map<? extends ExecutableElement, ? extends AnnotationValue> values = mirror.getElementValues();
+        for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : values.entrySet()) {
+            if ("value".equals(entry.getKey().getSimpleName().toString())) {
+                Object value = entry.getValue().getValue();
+                if (value instanceof TypeMirror) {
+                    collectFields((TypeMirror) value, registry);
                 }
             }
         }

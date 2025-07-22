@@ -1,15 +1,5 @@
 # Fast-Crud
 
-这是一个很强大的开发神器！帮助你5分钟实现一个功能强大、扩展性强的CRUD数据维护组件。
-
-这是一个简单的demo:
-![简单demo](./doc/easy_demo.png)
-
-这是一个相对复杂点的demo(包括了如何扩展演示):
-![完整demo](./doc/full_demo.png)
-
-无论简单、还是复杂，这都只需要5分钟！
-
 ## 介绍
 
 > 基于spring-boot、spring-mvc、mybatis-plus的代码生成式 + 动态crud注册的快速开发框架。
@@ -39,7 +29,7 @@
 </template>
 
 <script>
-import {FastTableOption} from "../../../packages";
+import {FastTableOption} from "fast-crud-ui3";
 
 export default {
   name: "EasyDemo",
@@ -53,7 +43,7 @@ export default {
   methods: {
     expandButton({choseRow, checkedRows, editRows}, type) {
       if (type === 'code') {
-        window.open('https://github.com/pengxianggui/fast-crud/blob/main/fast-crud-ui/src/example/easy/EasyDemo.vue', '_blank')
+        window.open('https://github.com/pengxianggui/fast-crud-demo/blob/main/web-ui/src/example/easy/EasyDemo.vue', '_blank')
       } else if (type === 'doc') {
         window.open('http://pengxg.cc/tags/fast-crud', '_blank')
       }
@@ -73,7 +63,6 @@ export default {
 
 - **fast-crud-spring-boot-starter**: 主要引入此依赖
 - **fast-crud-auto-generator**: 基于mybatis-plus-generator封装的controller、service、serviceImpl、mapper、entity代码生成包，非必须。
-- **fast-crud-ui**: 前端组件库, README文档详见: [这里](./fast-crud-ui/README.md)
 - **demo**: 后端示例项目
 
 ## 版本
@@ -98,6 +87,7 @@ export default {
         <artifactId>fast-crud-spring-boot-starter</artifactId>
         <version>${version}</version>
     </dependency>
+    <!-- 可选 -->
     <dependency>
         <groupId>io.github.pengxianggui</groupId>
         <artifactId>fast-crud-auto-generator</artifactId>
@@ -131,9 +121,7 @@ public class CodeGenerator {
 > 运行这个main方法，会交互式询问要针对哪个表生成代码文件，可选择性生成对应的controller、service、serviceImpl、mapper以及mapper.xml。
 > 且生成的controller方法已具备crud相关接口(由于几个标准接口是动态注册的, 所以controller类里不会体现, 可在swagger中查看)
 
-### 前端引入(可选)
-
-详见[这里](./fast-crud-ui/README.md)
+### 前端引入
 
 ## Roadmap
 
@@ -189,7 +177,7 @@ public class CodeGenerator {
 ### 2.x 版本：CRUD的外围扩展
 
 - [ ]  批量修改: 选择要修改的行，弹窗输入要修改的字段和值, 批量更新这些行(输入一次值即可作用所有选中行)
-- [ ]  xlsx数据导出功能: 导出当前筛选条件下的当前页数据/全部数据，可勾选字段
+- [x]  xlsx数据导出功能: 导出当前筛选条件下的当前页数据/全部数据，可勾选字段
 - [ ]  **存筛**：应用已保存的筛选条件进行筛选，下拉按钮菜单，特点：针对已保存的组合筛选条件进行筛选。
   - [ ]  可针对当前搜索条件进行前端保存并加入到存筛菜单按钮里
   - [ ]  点击存筛中的下拉菜单，可快速基于其所保存的筛选条件进行过滤
