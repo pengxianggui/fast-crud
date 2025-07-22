@@ -25,6 +25,15 @@ public class MethodReferenceRegistry {
         return getFunction(clazz, field.getName());
     }
 
+    /**
+     * 根据字段名获取对应的方法引用
+     *
+     * @param clazz     类class
+     * @param fieldName 属性名
+     * @param <T>
+     * @param <R>
+     * @return
+     */
     public static <T, R> SFunction<T, R> getFunction(Class<?> clazz, String fieldName) {
         String key = getKey(clazz.getName(), fieldName);
         if (!registry.containsKey(key)) {

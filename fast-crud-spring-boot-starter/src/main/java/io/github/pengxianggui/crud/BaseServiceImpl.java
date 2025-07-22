@@ -3,7 +3,6 @@ package io.github.pengxianggui.crud;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.ReflectUtil;
-import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -33,6 +32,7 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Nullable;
+import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -56,12 +56,22 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
     @Autowired(required = false)
     private PlatformTransactionManager transactionManager;
 
-    protected String getPkName() {
+    /**
+     * 实体类中主键字段名
+     */
+    @Getter
+    protected String pkName;
+    /**
+     * 数据表中主键字段名
+     */
+    @Getter
+    protected String dbPkName;
+
+    @PostConstruct
+    public void init() {
         Class<T> clazz = this.getEntityClass();
-        String pkName = EntityUtil.getPkName(clazz);
-        Assert.isTrue(pkName != null && StrUtil.isNotBlank(pkName),
-                "Can't find the primary key of entity: {}", clazz.getName());
-        return pkName;
+        this.pkName = EntityUtil.getPkName(clazz);
+        this.dbPkName = EntityUtil.getDbPkName(clazz);
     }
 
     /**
@@ -171,17 +181,16 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
         if (updateNull == null) {
             flag = updateById(entity);
         } else {
-            String pkName = getPkName();
             Serializable pkValue = EntityUtil.getPkVal(entity);
-            Assert.isTrue(pkValue != null, "主键不能为空: {}={}", pkName, pkValue);
+            Assert.isTrue(pkValue != null, "主键不能为空: {}={}", getPkName(), pkValue);
             UpdateWrapper<T> updateWrapper = new UpdateWrapper<>();
-            updateWrapper.eq(pkName, pkValue);
+            updateWrapper.eq(getDbPkName(), pkValue);
             List<Field> fields = Arrays.stream(ReflectUtil.getFields(getEntityClass()))
                     .filter(field -> !EntityUtil.isMarkAsNotDbField(field)).collect(Collectors.toList());
             for (Field field : fields) {
                 field.setAccessible(true);
                 String fieldName = field.getName();
-                if (fieldName.equals(pkName)) { // 主键不更
+                if (fieldName.equals(getPkName())) { // 主键不更
                     continue;
                 }
                 try {
@@ -282,7 +291,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
         Assert.notNull(id, "id can not be null!");
         Assert.notNull(dtoClazz, "dtoClazz can not be null!");
         MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder<T>(dtoClazz)
-                .where(w -> w.eq("t." + getPkName(), id))
+                .where(w -> w.eq("t." + getDbPkName(), id))
                 .build();
         return getBaseMapper().selectJoinOne(dtoClazz, wrapper);
     }
@@ -354,7 +363,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
         Class<T> clazz = getEntityClass();
         DeleteJoinWrapper<T> wrapper = JoinWrappers.delete(clazz)
                 .deleteAll()
-                .eq("t." + getPkName(), id);
+                .eq("t." + getDbPkName(), id);
         JoinWrapperUtil.addJoin(wrapper, dtoClazz);
         return getBaseMapper().deleteJoin(wrapper);
     }
@@ -368,7 +377,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
         Class<T> clazz = getEntityClass();
         DeleteJoinWrapper<T> wrapper = JoinWrappers.delete(clazz)
                 .deleteAll()
-                .in("t." + getPkName(), ids);
+                .in("t." + getDbPkName(), ids);
         JoinWrapperUtil.addJoin(wrapper, dtoClazz);
         return getBaseMapper().deleteJoin(wrapper);
     }

@@ -32,6 +32,13 @@ public class EntityUtil {
         return getPkName(entity.getClass());
     }
 
+    /**
+     * 获取类主键属性名称，注意是类属性名，而不是映射的数据库字段名
+     *
+     * @param clazz
+     * @param <T>
+     * @return
+     */
     public static <T> String getPkName(Class<T> clazz) {
         TableInfo tableInfo = TableInfoHelper.getTableInfo(clazz);
         Assert.notNull(tableInfo, "无法获取entity的tableInfo,请确保entity是一个映射有数据库表的类: " + clazz.getName());
@@ -94,6 +101,22 @@ public class EntityUtil {
             return true;
         }
         return false;
+    }
+
+    /**
+     * 获取主键数据库里字段名
+     *
+     * @param clazz
+     * @param <T>
+     * @return
+     */
+    public static <T> String getDbPkName(Class<T> clazz) {
+        TableInfo tableInfo = TableInfoHelper.getTableInfo(clazz);
+        Assert.notNull(tableInfo, "无法获取entity的tableInfo,请确保entity是一个映射有数据库表的类: " + clazz.getName());
+        if (StrUtil.isNotBlank(tableInfo.getKeyColumn())) {
+            return tableInfo.getKeyColumn();
+        }
+        return null;
     }
 
     /**
