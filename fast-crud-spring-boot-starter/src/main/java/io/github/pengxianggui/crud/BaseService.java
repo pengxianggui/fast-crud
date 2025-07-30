@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import io.github.pengxianggui.crud.query.Cond;
 import io.github.pengxianggui.crud.query.PagerQuery;
 import io.github.pengxianggui.crud.query.Query;
-import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Nullable;
@@ -57,25 +56,19 @@ public interface BaseService<T> extends IService<T> {
     IPage<T> queryPage(PagerQuery query);
 
     /**
-     * 更新单条记录。
-     * <p>
-     * 与{@link #updateById(T entity)}不同的是, 此方法能支持指定此次是否更新null值字段, 若{@link UpdateModelWrapper#get_updateNull()}
-     * 为null, 则等同于调用{@link #updateById(T entity)}
+     * 更新单条记录
      *
-     * @param entity     待更新的实体类
-     * @param updateNull 是否更新null值字段
      * @return
      */
-    int updateById(T entity, @Nullable Boolean updateNull);
+    boolean update(T entity);
 
     /**
      * 批量更新多条记录
      *
      * @param entities
-     * @param updateNull
      * @return
      */
-    int updateBatchById(List<T> entities, @Nullable Boolean updateNull);
+    boolean updateBatch(List<T> entities);
 
     /**
      * 判断指定条件是否存在数据
@@ -158,7 +151,7 @@ public interface BaseService<T> extends IService<T> {
      * @param <DTO>
      * @return 返回更新数量
      */
-    <DTO> int updateById(DTO model, Class<DTO> dtoClazz, boolean updateNull);
+    <DTO> int update(DTO model, Class<DTO> dtoClazz, boolean updateNull);
 
     /**
      * 批量更新(支持跨表)。注意，以下情形子表不更新:
@@ -173,7 +166,7 @@ public interface BaseService<T> extends IService<T> {
      * @param <DTO>
      * @return
      */
-    <DTO> int updateBatchById(List<DTO> models, Class<DTO> mClazz, @Nullable boolean updateNull);
+    <DTO> int updateBatch(List<DTO> models, Class<DTO> mClazz, @Nullable boolean updateNull);
 
     /**
      * 删除(支持跨表) 谨慎! 会级联删除mClazz中@*Join声明关联的子表数据

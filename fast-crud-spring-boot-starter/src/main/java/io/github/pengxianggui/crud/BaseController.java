@@ -138,16 +138,16 @@ public class BaseController<M> {
                 : baseService.insertBatch(models, dtoClazz);
     }
 
-    protected int update(M model, Boolean updateNull) throws BindException {
+    protected int update(M model, Boolean updateNull) {
         return dtoClazz.equals(entityClazz)
-                ? baseService.updateById(model, updateNull)
-                : baseService.updateById(model, dtoClazz, ObjectUtil.defaultIfNull(updateNull, true));
+                ? baseService.update(model) ? 1 : 0
+                : baseService.update(model, dtoClazz, ObjectUtil.defaultIfNull(updateNull, true));
     }
 
-    protected int updateBatch(List<M> models) throws BindException {
+    protected int updateBatch(List<M> models) {
         return dtoClazz.equals(entityClazz)
-                ? baseService.updateBatchById(models, true)
-                : baseService.updateBatchById(models, dtoClazz, true);
+                ? baseService.updateBatch(models) ? 1 : 0
+                : baseService.updateBatch(models, dtoClazz, true);
     }
 
     protected List<M> list(Query query) {

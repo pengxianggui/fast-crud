@@ -2,9 +2,7 @@ package io.github.pengxianggui.crud;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.Assert;
-import cn.hutool.core.util.ReflectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -31,13 +29,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.lang.reflect.Field;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -172,43 +167,14 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
 
     @Transactional(rollbackFor = Throwable.class)
     @Override
-    public int updateById(T entity, Boolean updateNull) {
+    public boolean update(T entity) {
         Assert.notNull(entity, "entity can not be null!");
         if (this.beforeUpdateById(entity) == Boolean.FALSE) {
-            return 0;
+            return false;
         }
-        boolean flag;
-        if (updateNull == null) {
-            flag = updateById(entity);
-        } else {
-            Serializable pkValue = EntityUtil.getPkVal(entity);
-            Assert.isTrue(pkValue != null, "主键不能为空: {}={}", getPkName(), pkValue);
-            UpdateWrapper<T> updateWrapper = new UpdateWrapper<>();
-            updateWrapper.eq(getDbPkName(), pkValue);
-            List<Field> fields = Arrays.stream(ReflectUtil.getFields(getEntityClass()))
-                    .filter(field -> !EntityUtil.isMarkAsNotDbField(field)).collect(Collectors.toList());
-            for (Field field : fields) {
-                field.setAccessible(true);
-                String fieldName = field.getName();
-                if (fieldName.equals(getPkName())) { // 主键不更
-                    continue;
-                }
-                try {
-                    Object fieldValue = field.get(entity);
-                    if (EntityUtil.fieldNeedUpdate(field, fieldValue, updateNull)) {
-                        updateWrapper.set(EntityUtil.getDbFieldName(entity, fieldName), fieldValue);
-                    }
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            flag = this.update(updateWrapper);
-        }
-        if (flag) {
-            this.afterUpdateById(entity);
-            return 1;
-        }
-        return 0;
+        boolean flag = super.updateById(entity);
+        this.afterUpdateById(entity);
+        return flag;
     }
 
     /**
@@ -221,29 +187,14 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
 
     @Transactional(rollbackFor = Throwable.class)
     @Override
-    public int updateBatchById(List<T> entities, @Nullable Boolean updateNull) {
+    public boolean updateBatch(List<T> entities) {
         if (CollectionUtil.isEmpty(entities)) {
-            return 0;
+            return false;
         }
-
         List<T> updateEntities = entities.stream().filter(this::beforeUpdateById).collect(Collectors.toList());
-        int count = 0;
-        if (updateNull == null) {
-            boolean flag = this.updateBatchById(updateEntities);
-            count = flag ? updateEntities.size() : 0;
-            if (flag) {
-                updateEntities.forEach(entity -> this.afterUpdateById(entity));
-            }
-        } else {
-            for (T entity : updateEntities) {
-                int updateCount = this.updateById(entity, updateNull);
-                count += updateCount;
-                if (updateCount > 0) {
-                    this.afterUpdateById(entity);
-                }
-            }
-        }
-        return count;
+        boolean flag = super.updateBatchById(updateEntities);
+        updateEntities.forEach(entity -> this.afterUpdateById(entity));
+        return flag;
     }
 
     public boolean exists(List<Cond> conditions) {
@@ -325,7 +276,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
     }
 
     @Override
-    final public <DTO> int updateById(DTO model, Class<DTO> dtoClazz, boolean updateNull) {
+    final public <DTO> int update(DTO model, Class<DTO> dtoClazz, boolean updateNull) {
         Assert.notNull(model, "model can not be null!");
         Assert.notNull(dtoClazz, "dtoClazz can not be null!");
         Class<T> clazz = getEntityClass();
@@ -341,7 +292,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
     }
 
     @Override
-    final public <DTO> int updateBatchById(List<DTO> models, Class<DTO> dtoClazz, boolean updateNull) {
+    final public <DTO> int updateBatch(List<DTO> models, Class<DTO> dtoClazz, boolean updateNull) {
         if (CollectionUtil.isEmpty(models)) {
             return 0;
         }
@@ -349,7 +300,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
         AtomicInteger count = new AtomicInteger();
         executeInTransaction(() -> {
             for (DTO model : models) {
-                count.addAndGet(updateById(model, dtoClazz, updateNull));
+                count.addAndGet(update(model, dtoClazz, updateNull));
             }
         });
         return count.get();

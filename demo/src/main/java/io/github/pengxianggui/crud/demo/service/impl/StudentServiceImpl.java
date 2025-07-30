@@ -36,7 +36,7 @@ public class StudentServiceImpl extends BaseServiceImpl<StudentMapper, Student> 
                 .query(query)
                 .build();
         if (StrUtil.isNotBlank(keyword)) {
-            wrapper.and(w -> w.like("name", keyword).or().like("love_name", keyword));
+            wrapper.and(w -> w.like(Student::getName, keyword).or().like(Student::getLoveName, keyword));
         }
         return getBaseMapper().selectJoinPage(pager, StudentPageVO.class, wrapper);
     }
@@ -56,13 +56,14 @@ public class StudentServiceImpl extends BaseServiceImpl<StudentMapper, Student> 
 
     @Override
     public int update(StudentPageVO model, Boolean updateNull) {
-        Student student = BeanUtil.copyProperties(model, Student.class);
-        int count = updateById(student, updateNull);
-        StudentSensitive studentSensitive = studentSensitiveMapper.selectJoinOne(new MPJLambdaWrapper<>(StudentSensitive.class)
-                .eq(StudentSensitive::getStudentId, student.getId()));
+        Student entity = getById(model.getId());
+        BeanUtil.copyProperties(model, entity);
+        int count = update(entity) ? 1 : 0;
+        StudentSensitive studentSensitive = studentSensitiveMapper.selectJoinOne(
+                new MPJLambdaWrapper<>(StudentSensitive.class).eq(StudentSensitive::getStudentId, entity.getId()));
         if (studentSensitive == null) {
             studentSensitive = new StudentSensitive();
-            studentSensitive.setStudentId(student.getId());
+            studentSensitive.setStudentId(entity.getId());
         }
         studentSensitive.setIdCard(model.getIdCard());
         studentSensitive.setAddress(model.getAddress());
