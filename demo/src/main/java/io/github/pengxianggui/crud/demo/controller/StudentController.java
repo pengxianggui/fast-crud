@@ -2,19 +2,18 @@ package io.github.pengxianggui.crud.demo.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.github.pengxianggui.crud.BaseController;
-import io.github.pengxianggui.crud.CrudExclude;
-import io.github.pengxianggui.crud.CrudMethod;
 import io.github.pengxianggui.crud.demo.controller.vo.StudentDetailVO;
 import io.github.pengxianggui.crud.demo.controller.vo.StudentPageVO;
 import io.github.pengxianggui.crud.demo.service.StudentService;
 import io.github.pengxianggui.crud.query.PagerQuery;
 import io.github.pengxianggui.crud.query.PagerView;
+import io.github.pengxianggui.crud.valid.CrudInsert;
+import io.github.pengxianggui.crud.valid.CrudUpdate;
+import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -38,28 +37,38 @@ public class StudentController extends BaseController<StudentPageVO> {
         return studentService.getById(id, StudentDetailVO.class);
     }
 
+    @ApiOperation("插入")
+    @PostMapping("insert")
     @Override
-    protected int insert(StudentPageVO model) {
+    public int insert(@RequestBody @Validated(CrudInsert.class) StudentPageVO model) {
         return studentService.insert(model);
     }
 
+    @ApiOperation("批量插入")
+    @PostMapping("insert/batch")
     @Override
-    protected int insertBatch(List<StudentPageVO> models) {
-        return models.stream().mapToInt(m -> insert(m)).sum();
+    public int insertBatch(@Validated(CrudInsert.class) @RequestBody List<StudentPageVO> models) {
+        return models.stream().mapToInt(m -> studentService.insert(m)).sum();
     }
 
+    @ApiOperation("编辑")
+    @PostMapping("update")
     @Override
-    public int update(StudentPageVO model, Boolean updateNull) {
-        return studentService.update(model, updateNull);
+    public int update(@Validated(CrudUpdate.class) @RequestBody UpdateModelWrapper<StudentPageVO> modelWrapper) {
+        return studentService.update(modelWrapper.getModel(), modelWrapper.get_updateNull());
     }
 
+    @ApiOperation(value = "批量编辑", notes = "不支持个性化选择_updateNull")
+    @PostMapping("update/batch")
     @Override
-    public int updateBatch(List<StudentPageVO> models) {
-        return models.stream().mapToInt(m -> update(m, null)).sum();
+    public int updateBatch(@Validated(CrudUpdate.class) @RequestBody List<StudentPageVO> models) {
+        return models.stream().mapToInt(m -> studentService.update(m, null)).sum();
     }
 
+    @ApiOperation("分页查询")
+    @PostMapping("page")
     @Override
-    protected PagerView<StudentPageVO> page(PagerQuery query) {
+    public PagerView<StudentPageVO> page(@Validated @RequestBody PagerQuery query) {
         IPage<StudentPageVO> page = studentService.pageVO(query);
         return new PagerView<>(page.getCurrent(), page.getSize(), page.getTotal(), page.getRecords());
     }

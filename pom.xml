@@ -228,7 +228,7 @@
                     <version>1.6.7</version>
                     <extensions>true</extensions>
                     <configuration>
-                        <serverId>ossrh</serverId>
+                        <serverId>nexus-central</serverId>
                         <nexusUrl>https://ossrh-staging-api.central.sonatype.com/</nexusUrl>
                         <autoReleaseAfterClose>true</autoReleaseAfterClose>
                     </configuration>
@@ -240,14 +240,14 @@
     <!-- 配置打包发布的远程仓库 -->
     <distributionManagement>
         <snapshotRepository>
-            <id>ossrh</id>
+            <id>${deploy.repo.snapshot.id}</id>
             <name>Sonatype Nexus Snapshots</name>
-            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+            <url>${deploy.repo.snapshot.url}</url>
         </snapshotRepository>
         <repository>
-            <id>ossrh</id>
+            <id>${deploy.repo.release.id}</id>
             <name>Nexus Release Repository</name>
-            <url>https://ossrh-staging-api.central.sonatype.com/service/local/</url>
+            <url>${deploy.repo.release.url}</url>
         </repository>
     </distributionManagement>
 </project>

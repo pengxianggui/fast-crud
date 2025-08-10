@@ -154,6 +154,20 @@ public class QueryWrapperUtil {
                     queryWrapper.or(effect, q -> q.like(dbField, cond.getVal()));
                 }
                 break;
+            case LLIKE:
+                if (rel == Rel.AND) {
+                    queryWrapper.likeLeft(effect, dbField, cond.getVal());
+                } else {
+                    queryWrapper.or(effect, q -> q.likeLeft(dbField, cond.getVal()));
+                }
+                break;
+            case RLIKE:
+                if (rel == Rel.AND) {
+                    queryWrapper.likeRight(effect, dbField, cond.getVal());
+                } else {
+                    queryWrapper.or(effect, q -> q.likeRight(dbField, cond.getVal()));
+                }
+                break;
             case NLIKE:
                 if (rel == Rel.AND) {
                     queryWrapper.notLike(effect, dbField, cond.getVal());

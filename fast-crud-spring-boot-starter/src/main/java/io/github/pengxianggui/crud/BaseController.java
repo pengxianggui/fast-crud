@@ -59,124 +59,81 @@ public class BaseController<M> {
 
     @ApiOperation("插入")
     @PostMapping("insert")
-    final public int _insert(@RequestBody @Validated(CrudInsert.class) M model) {
-        return this.insert(model);
-    }
-
-    @ApiOperation("批量插入")
-    @PostMapping("insert/batch")
-    final public int _insertBatch(@RequestBody List<M> models) throws BindException {
-        if (CollectionUtil.isEmpty(models)) return 0;
-        for (M model : models) {
-            ValidUtil.valid(validator, model, CrudInsert.class);
-        }
-        return this.insertBatch(models);
-    }
-
-    @ApiOperation("编辑")
-    @PostMapping("update")
-    final public int _update(@Validated(CrudUpdate.class) @RequestBody UpdateModelWrapper<M> modelWrapper) throws BindException {
-        return this.update(modelWrapper.getModel(), modelWrapper.get_updateNull());
-    }
-
-    @ApiOperation(value = "批量编辑", notes = "不支持个性化选择_updateNull")
-    @PostMapping("update/batch")
-    final public int _updateBatch(@RequestBody List<M> models) throws BindException {
-        if (CollectionUtil.isEmpty(models)) return 0;
-        for (M model : models) {
-            ValidUtil.valid(validator, model, CrudUpdate.class);
-        }
-        return this.updateBatch(models);
-    }
-
-    @ApiOperation("列表查询")
-    @PostMapping("list")
-    final public List<M> _list(@RequestBody @Validated Query query) {
-        return this.list(query);
-    }
-
-    @ApiOperation("分页查询")
-    @PostMapping("page")
-    final public PagerView<M> _page(@RequestBody @Validated PagerQuery query) {
-        return this.page(query);
-    }
-
-    @ApiOperation("详情")
-    @GetMapping("{id}/detail")
-    final public M _detail(@PathVariable Serializable id) {
-        return this.detail(id);
-    }
-
-    @ApiOperation("删除")
-    @PostMapping("delete")
-    final public int _delete(@NotNull @RequestBody M model) {
-        return this.delete(model);
-    }
-
-    @ApiOperation("批量删除")
-    @PostMapping("delete/batch")
-    final public int _deleteBatch(@NotBlank @NotNull @RequestBody List<M> models) {
-        return deleteBatch(models);
-    }
-
-    @ApiOperation(value = "存在性查询", notes = "指定条件存在数据")
-    @PostMapping("exists")
-    final public Boolean _exists(@RequestBody List<Cond> conditions) {
-        return this.exists(conditions);
-    }
-
-
-    protected int insert(M model) {
+    public int insert(@RequestBody @Validated(CrudInsert.class) M model) {
         return dtoClazz.equals(entityClazz)
                 ? baseService.insert(model)
                 : baseService.insert(model, dtoClazz);
     }
 
-    protected int insertBatch(List<M> models) {
+    @ApiOperation("批量插入")
+    @PostMapping("insert/batch")
+    public int insertBatch(@RequestBody List<M> models) throws BindException {
+        if (CollectionUtil.isEmpty(models)) return 0;
+        for (M model : models) {
+            ValidUtil.valid(validator, model, CrudInsert.class);
+        }
         return dtoClazz.equals(entityClazz)
                 ? baseService.insertBatch(models)
                 : baseService.insertBatch(models, dtoClazz);
     }
 
-    protected int update(M model, Boolean updateNull) {
+    @ApiOperation("编辑")
+    @PostMapping("update")
+    public int update(@Validated(CrudUpdate.class) @RequestBody UpdateModelWrapper<M> modelWrapper) throws BindException {
         return dtoClazz.equals(entityClazz)
-                ? baseService.update(model) ? 1 : 0
-                : baseService.update(model, dtoClazz, ObjectUtil.defaultIfNull(updateNull, true));
+                ? baseService.update(modelWrapper.getModel()) ? 1 : 0
+                : baseService.update(modelWrapper.getModel(), dtoClazz, ObjectUtil.defaultIfNull(modelWrapper.get_updateNull(), true));
     }
 
-    protected int updateBatch(List<M> models) {
+    @ApiOperation(value = "批量编辑", notes = "不支持个性化选择_updateNull")
+    @PostMapping("update/batch")
+    public int updateBatch(@RequestBody List<M> models) throws BindException {
+        if (CollectionUtil.isEmpty(models)) return 0;
+        for (M model : models) {
+            ValidUtil.valid(validator, model, CrudUpdate.class);
+        }
         return dtoClazz.equals(entityClazz)
                 ? baseService.updateBatch(models) ? 1 : 0
                 : baseService.updateBatch(models, dtoClazz, true);
     }
 
-    protected List<M> list(Query query) {
+    @ApiOperation("列表查询")
+    @PostMapping("list")
+    public List<M> list(@RequestBody @Validated Query query) {
         return dtoClazz.equals(entityClazz)
                 ? baseService.queryList(query)
                 : baseService.queryList(query, dtoClazz);
     }
 
-    protected PagerView<M> page(PagerQuery query) {
+    @ApiOperation("分页查询")
+    @PostMapping("page")
+    public PagerView<M> page(@RequestBody @Validated PagerQuery query) {
         IPage<M> pager = dtoClazz.equals(entityClazz)
                 ? baseService.queryPage(query)
                 : baseService.queryPage(query, dtoClazz);
         return new PagerView<>(pager.getCurrent(), pager.getSize(), pager.getTotal(), pager.getRecords());
     }
 
-    protected M detail(Serializable id) {
+    @ApiOperation("详情")
+    @GetMapping("{id}/detail")
+    public M detail(@PathVariable Serializable id) {
         return dtoClazz.equals(entityClazz)
                 ? (M) baseService.getById(id)
                 : (M) baseService.getById(id, dtoClazz);
     }
 
-    protected int delete(M model) {
+    @ApiOperation("删除")
+    @PostMapping("delete")
+    public int delete(@NotNull @RequestBody M model) {
         Serializable id = EntityUtil.getPkVal(model, this.entityClazz);
         Assert.notNull(id, "无法获取主键值");
 //        return baseService.removeById(id, mClazz); // 默认支持跨表删太危险，先改为仅删主表
         return baseService.removeById(id) ? 1 : 0;
     }
 
-    protected int deleteBatch(List<M> models) {
+    @ApiOperation("批量删除")
+    @PostMapping("delete/batch")
+    public int deleteBatch(@NotBlank @NotNull @RequestBody List<M> models) {
         Set<Serializable> ids = new HashSet<>(models.size());
         for (int i = 0; i < models.size(); i++) {
             M model = models.get(i);
@@ -188,7 +145,9 @@ public class BaseController<M> {
         return baseService.removeByIds(ids) ? ids.size() : 0;
     }
 
-    protected Boolean exists(List<Cond> conditions) {
+    @ApiOperation(value = "存在性查询", notes = "指定条件存在数据")
+    @PostMapping("exists")
+    public Boolean exists(@RequestBody List<Cond> conditions) {
         return dtoClazz.equals(entityClazz)
                 ? baseService.exists(conditions)
                 : baseService.exists(conditions, dtoClazz);
@@ -246,15 +205,4 @@ public class BaseController<M> {
             throw new RuntimeException(e);
         }
     }
-
-//    protected ResponseEntity<FileSystemResource> responseFile(File file) {
-//        HttpHeaders headers = new HttpHeaders();
-//        headers.add("Cache-Control", "no-cache, no-store, must-revalidate");
-//        headers.add("Content-Disposition", String.format("attachment; filename=\"%s\"", file.getName()));
-//        headers.add("Pragma", "no-cache");
-//        headers.add("Expires", "0");
-//
-//        MediaType mediaType = MediaTypeFactory.getMediaType(file.getName()).orElse(MediaType.APPLICATION_OCTET_STREAM);
-//        return ResponseEntity.ok().headers(headers).contentType(mediaType).body(new FileSystemResource(file));
-//    }
 }

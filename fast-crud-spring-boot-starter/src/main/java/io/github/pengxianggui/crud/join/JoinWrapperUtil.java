@@ -211,6 +211,12 @@ public class JoinWrapperUtil {
                 case LIKE:
                     on.like(fieldGetter, targetFieldGetter);
                     break;
+                case LLIKE:
+                    on.likeLeft(fieldGetter, targetFieldGetter);
+                    break;
+                case RLIKE:
+                    on.likeRight(fieldGetter, targetFieldGetter);
+                    break;
                 case NLIKE:
                     on.notLike(fieldGetter, targetFieldGetter);
                     break;
@@ -337,6 +343,20 @@ public class JoinWrapperUtil {
                     wrapper.like(effect, targetFieldGetter, cond.getVal());
                 } else {
                     wrapper.or(effect, q -> q.like(targetFieldGetter, cond.getVal()));
+                }
+                break;
+            case LLIKE:
+                if (rel == Rel.AND) {
+                    wrapper.likeLeft(effect, targetFieldGetter, cond.getVal());
+                } else {
+                    wrapper.or(effect, q -> q.likeLeft(targetFieldGetter, cond.getVal()));
+                }
+                break;
+            case RLIKE:
+                if (rel == Rel.AND) {
+                    wrapper.likeRight(effect, targetFieldGetter, cond.getVal());
+                } else {
+                    wrapper.or(effect, q -> q.likeRight(targetFieldGetter, cond.getVal()));
                 }
                 break;
             case NLIKE:

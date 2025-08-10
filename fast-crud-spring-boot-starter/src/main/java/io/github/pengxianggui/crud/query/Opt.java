@@ -21,6 +21,8 @@ public enum Opt {
     IN("in"),
     NIN("nin"),
     LIKE("like"),
+    LLIKE("llike"),
+    RLIKE("rlike"),
     NLIKE("nlike"),
     NULL("null"),
     EMPTY("empty"), // 空值，包括null和空字符串, 注意: 空格组成的字符串不视为空值

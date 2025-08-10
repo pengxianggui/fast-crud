@@ -1,11 +1,8 @@
 package io.github.pengxianggui.crud.join;
 
 import com.github.yulichang.wrapper.MPJLambdaWrapper;
-import io.github.pengxianggui.crud.query.Cond;
-import io.github.pengxianggui.crud.query.Order;
 import io.github.pengxianggui.crud.query.Query;
 
-import java.util.List;
 import java.util.function.Consumer;
 
 /**
@@ -17,11 +14,11 @@ import java.util.function.Consumer;
 public class MPJLambdaWrapperBuilder<T> {
     private final Class<T> mainClazz;
     private final DtoInfo dtoInfo;
-    private Consumer<MPJLambdaWrapper<T>> customSelect;
-    private Consumer<MPJLambdaWrapper<T>> customJoin;
-    private Consumer<MPJLambdaWrapper<T>> customWhere;
-    private Consumer<MPJLambdaWrapper<T>> customOrder;
-    private Consumer<MPJLambdaWrapper<T>> customDistinct;
+    private Consumer<MPJLambdaWrapper<T>> selectConsumer;
+    private Consumer<MPJLambdaWrapper<T>> joinConsumer;
+    private Consumer<MPJLambdaWrapper<T>> whereConsumer;
+    private Consumer<MPJLambdaWrapper<T>> orderConsumer;
+    private Consumer<MPJLambdaWrapper<T>> distinctConsumer;
 
     /**
      * 将从dto类解析构造MPJLambdaWrapper。
@@ -37,89 +34,122 @@ public class MPJLambdaWrapperBuilder<T> {
         }
         this.dtoInfo = dtoInfo;
         this.mainClazz = (Class<T>) dtoInfo.getMainEntityClazz();
-        this.customSelect = w -> JoinWrapperUtil.addSelect(w, null, null, dtoInfo); // 默认查dto中所有(符合条件的)字段
-        this.customJoin = w -> JoinWrapperUtil.addJoin(w, dtoInfo); // 默认从dto解析join信息
+        this.selectConsumer = w -> JoinWrapperUtil.addSelect(w, null, null, dtoInfo); // 默认查dto中所有(符合条件的)字段
+        this.joinConsumer = w -> JoinWrapperUtil.addJoin(w, dtoInfo); // 默认从dto解析join信息
     }
 
     /**
-     * 自定义select，会覆盖内置select组装
+     * 设置select
      *
-     * @param customSelect
+     * @param customSelect 自定义的select信息
      * @return
      */
     public MPJLambdaWrapperBuilder<T> select(Consumer<MPJLambdaWrapper<T>> customSelect) {
-        this.customSelect = customSelect;
+        this.selectConsumer = customSelect;
         return this;
     }
 
     /**
-     * 自定义select，会覆盖内置select组装
+     * 追加select
      *
-     * @param cols
+     * @param customSelect 自定义的select信息
      * @return
      */
-    public MPJLambdaWrapperBuilder<T> select(List<String> cols) {
-        this.customSelect = w -> JoinWrapperUtil.addSelect(w, cols, null, dtoInfo);
+    public MPJLambdaWrapperBuilder<T> appendSelect(Consumer<MPJLambdaWrapper<T>> customSelect) {
+        Consumer<MPJLambdaWrapper<T>> oldSelectConsumer = this.selectConsumer;
+        this.selectConsumer = w -> {
+            oldSelectConsumer.accept(w);
+            customSelect.accept(w);
+        };
         return this;
     }
 
     /**
-     * 自定义join，会覆盖内置join组装
+     * 设置join
      *
-     * @param customJoin
+     * @param customJoin 自定义的join信息
      * @return
      */
     public MPJLambdaWrapperBuilder<T> join(Consumer<MPJLambdaWrapper<T>> customJoin) {
-        this.customJoin = customJoin;
+        this.joinConsumer = customJoin;
         return this;
     }
 
     /**
-     * 自定义where，会覆盖内置where组装
+     * 追加join
      *
-     * @param customWhere
+     * @param customJoin 自定义的join信息
+     * @return
+     */
+    public MPJLambdaWrapperBuilder<T> appendJoin(Consumer<MPJLambdaWrapper<T>> customJoin) {
+        Consumer<MPJLambdaWrapper<T>> oldJoinConsumer = this.joinConsumer;
+        this.joinConsumer = w -> {
+            oldJoinConsumer.accept(w);
+            customJoin.accept(w);
+        };
+        return this;
+    }
+
+    /**
+     * 设置where条件
+     *
+     * @param customWhere 自定义的where信息
      * @return
      */
     public MPJLambdaWrapperBuilder<T> where(Consumer<MPJLambdaWrapper<T>> customWhere) {
-        this.customWhere = customWhere;
+        this.whereConsumer = customWhere;
         return this;
     }
 
     /**
-     * 自定义where，会覆盖内置where组装
+     * 追加where条件
      *
-     * @param conditions
+     * @param customWhere 自定义的where信息
      * @return
      */
-    public MPJLambdaWrapperBuilder<T> where(List<Cond> conditions) {
-        this.customWhere = w -> JoinWrapperUtil.addConditions(w, conditions, dtoInfo);
+    public MPJLambdaWrapperBuilder<T> appendWhere(Consumer<MPJLambdaWrapper<T>> customWhere) {
+        Consumer<MPJLambdaWrapper<T>> oldWhereConsumer = this.whereConsumer;
+        this.whereConsumer = w -> {
+            oldWhereConsumer.accept(w);
+            customWhere.accept(w);
+        };
         return this;
     }
 
     /**
-     * 自定义order，会覆盖内置order组装
+     * 设置order
      *
-     * @param customOrder
+     * @param customOrder 自定义的order信息
      * @return
      */
     public MPJLambdaWrapperBuilder<T> order(Consumer<MPJLambdaWrapper<T>> customOrder) {
-        this.customOrder = customOrder;
+        this.orderConsumer = customOrder;
         return this;
     }
 
     /**
-     * 自定义order，会覆盖内置order组装
+     * 追加order
      *
-     * @param orders
+     * @param customOrder 自定义的order信息
      * @return
      */
-    public MPJLambdaWrapperBuilder<T> order(List<Order> orders) {
-        this.customOrder = w -> JoinWrapperUtil.addOrders(w, orders, dtoInfo);
+    public MPJLambdaWrapperBuilder<T> appendOrder(Consumer<MPJLambdaWrapper<T>> customOrder) {
+        Consumer<MPJLambdaWrapper<T>> oldOrderConsumer = this.orderConsumer;
+        this.orderConsumer = w -> {
+            oldOrderConsumer.accept(w);
+            customOrder.accept(w);
+        };
         return this;
     }
 
+    /**
+     * 设置distinct
+     *
+     * @param distinct 是否针对select的字段进行distinct去重
+     * @return
+     */
     public MPJLambdaWrapperBuilder<T> distinct(boolean distinct) {
-        this.customDistinct = w -> {
+        this.distinctConsumer = w -> {
             if (distinct) {
                 w.distinct();
             }
@@ -128,31 +158,31 @@ public class MPJLambdaWrapperBuilder<T> {
     }
 
     /**
-     * 批量设置查询参数: 同时自定义select、where、order
+     * 批量设置查询参数: 同时自定义select、where、order、distinct，会覆盖之前的设置!
      *
      * @param query
      * @return
      */
     public MPJLambdaWrapperBuilder<T> query(Query query) {
-        this.select(query.getCols());
-        this.where(query.getConds());
-        this.order(query.getOrders());
+        this.selectConsumer = w -> JoinWrapperUtil.addSelect(w, query.getCols(), null, dtoInfo);
+        this.whereConsumer = w -> JoinWrapperUtil.addConditions(w, query.getConds(), dtoInfo);
+        this.orderConsumer = w -> JoinWrapperUtil.addOrders(w, query.getOrders(), dtoInfo);
         this.distinct(query.isDistinct());
         return this;
     }
 
     public MPJLambdaWrapper<T> build() {
         MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapper<>(mainClazz);
-        customSelect.accept(wrapper);
-        customJoin.accept(wrapper);
-        if (customWhere != null) {
-            customWhere.accept(wrapper);
+        selectConsumer.accept(wrapper);
+        joinConsumer.accept(wrapper);
+        if (whereConsumer != null) {
+            whereConsumer.accept(wrapper);
         }
-        if (customOrder != null) {
-            customOrder.accept(wrapper);
+        if (orderConsumer != null) {
+            orderConsumer.accept(wrapper);
         }
-        if (customDistinct != null) {
-            customDistinct.accept(wrapper);
+        if (distinctConsumer != null) {
+            distinctConsumer.accept(wrapper);
         }
         return wrapper;
     }

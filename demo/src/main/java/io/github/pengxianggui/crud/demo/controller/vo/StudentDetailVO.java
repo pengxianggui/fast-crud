@@ -11,7 +11,6 @@ import io.github.pengxianggui.crud.join.RelateTo;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -25,8 +24,8 @@ import java.util.List;
  */
 @Data
 @JoinMain(Student.class)
-@LeftJoin(value = StudentSensitive.class, on = {@OnCond(field = "studentId", targetField = "id")})
-@LeftJoin(value = StudentScore.class, on = {@OnCond(field = "studentId", targetField = "id")})
+@LeftJoin(value = StudentSensitive.class, on = {@OnCond(field = "studentId", targetClazz = Student.class, targetField = "id")})
+@LeftJoin(value = StudentScore.class, on = {@OnCond(field = "studentId", targetClazz = Student.class, targetField = "id")})
 public class StudentDetailVO {
 
     private Integer id;
@@ -89,12 +88,8 @@ public class StudentDetailVO {
     @RelateTo(value = StudentSensitive.class)
     private String phone;
 
-    // ------------------ 关联子表: StudentScore ------------------
+    // ------------------ 一对多关联子表: StudentScore ------------------
     @ApiModelProperty("学科")
-    @RelateTo(value = StudentScore.class)
-    private String subject;
-
-    @ApiModelProperty("得分")
-    @RelateTo(value = StudentScore.class)
-    private BigDecimal score;
+    @RelateTo(value = StudentScore.class, dbField = false)
+    private List<StudentScore> scores;
 }

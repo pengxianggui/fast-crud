@@ -3,10 +3,8 @@ package io.github.pengxianggui.crud.join;
 import cn.hutool.core.lang.Assert;
 import com.github.yulichang.toolkit.JoinWrappers;
 import com.github.yulichang.wrapper.UpdateJoinWrapper;
-import io.github.pengxianggui.crud.query.Cond;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.List;
 import java.util.function.Consumer;
 
 /**
@@ -19,9 +17,9 @@ import java.util.function.Consumer;
 public class UpdateJoinWrapperBuilder<T, DTO> {
     private Class<T> mainClazz;
     private DtoInfo dtoInfo;
-    private Consumer<UpdateJoinWrapper<T>> customJoin;
-    private Consumer<UpdateJoinWrapper<T>> customSet;
-    private Consumer<UpdateJoinWrapper<T>> customWhere;
+    private Consumer<UpdateJoinWrapper<T>> joinConsumer;
+    private Consumer<UpdateJoinWrapper<T>> setConsumer;
+    private Consumer<UpdateJoinWrapper<T>> whereConsumer;
     private boolean updateNull = true;
 
     /**
@@ -36,48 +34,91 @@ public class UpdateJoinWrapperBuilder<T, DTO> {
         }
         this.dtoInfo = dtoInfo;
         this.mainClazz = (Class<T>) dtoInfo.getMainEntityClazz();
-        this.customJoin = w -> JoinWrapperUtil.addJoin(w, dtoInfo);
+        this.joinConsumer = w -> JoinWrapperUtil.addJoin(w, dtoInfo);
     }
 
     /**
-     * 自定义join，会覆盖内置join组装
+     * 设置join
      *
-     * @param customJoin
+     * @param customJoin 自定义的join信息
      * @return
      */
     public UpdateJoinWrapperBuilder<T, DTO> join(Consumer<UpdateJoinWrapper<T>> customJoin) {
-        this.customJoin = customJoin;
-        return this;
-    }
-
-    public UpdateJoinWrapperBuilder<T, DTO> set(Consumer<UpdateJoinWrapper<T>> setConsumer) {
-        this.customSet = setConsumer;
-        return this;
-    }
-
-    public UpdateJoinWrapperBuilder<T, DTO> set(DTO model) {
-        Assert.notNull(model, "model can not be null");
-        Assert.equals(model.getClass(), dtoInfo.getDtoClazz(), "The class of model must be " + dtoInfo.getDtoClazz().getName());
-        this.customSet = w -> JoinWrapperUtil.addSet(w, dtoInfo, model, updateNull);
+        this.joinConsumer = customJoin;
         return this;
     }
 
     /**
-     * 自定义where，会覆盖内置where组装
+     * 追加join
      *
-     * @param customWhere
+     * @param customJoin 自定义的join信息
+     * @return
+     */
+    public UpdateJoinWrapperBuilder<T, DTO> appendJoin(Consumer<UpdateJoinWrapper<T>> customJoin) {
+        Consumer<UpdateJoinWrapper<T>> oldJoinConsumer = this.joinConsumer;
+        this.joinConsumer = w -> {
+            oldJoinConsumer.accept(w);
+            customJoin.accept(w);
+        };
+        return this;
+    }
+
+    /**
+     * 设置set
+     *
+     * @param model 根据model更新值
+     * @return
+     */
+    public UpdateJoinWrapperBuilder<T, DTO> set(DTO model) {
+        Assert.notNull(model, "model can not be null");
+        Assert.equals(model.getClass(), dtoInfo.getDtoClazz(), "The class of model must be " + dtoInfo.getDtoClazz().getName());
+        this.setConsumer = w -> JoinWrapperUtil.addSet(w, dtoInfo, model, updateNull);
+        return this;
+    }
+
+    /**
+     * 设置set
+     *
+     * @param customSet 自定义的set信息
+     * @return
+     */
+    public UpdateJoinWrapperBuilder<T, DTO> set(Consumer<UpdateJoinWrapper<T>> customSet) {
+        this.setConsumer = customSet;
+        return this;
+    }
+
+    /**
+     * 追加set
+     *
+     * @param customSet 自定义的set信息
+     * @return
+     */
+    public UpdateJoinWrapperBuilder<T, DTO> appendSet(Consumer<UpdateJoinWrapper<T>> customSet) {
+        Consumer<UpdateJoinWrapper<T>> oldSetConsumer = this.setConsumer;
+        this.setConsumer = w -> {
+            oldSetConsumer.accept(w);
+            customSet.accept(w);
+        };
+        return this;
+    }
+
+    /**
+     * 设置where条件
+     *
+     * @param customWhere 自定义的where信息
      * @return
      */
     public UpdateJoinWrapperBuilder<T, DTO> where(Consumer<UpdateJoinWrapper<T>> customWhere) {
-        this.customWhere = customWhere;
+        this.whereConsumer = customWhere;
         return this;
     }
 
-    public UpdateJoinWrapperBuilder<T, DTO> where(List<Cond> conditions) {
-        this.customWhere = w -> JoinWrapperUtil.addConditions(w, conditions, dtoInfo);
-        return this;
-    }
-
+    /**
+     * 设置是否更新null字段
+     *
+     * @param updateNull 是否更新null字段
+     * @return
+     */
     public UpdateJoinWrapperBuilder<T, DTO> updateNull(boolean updateNull) {
         this.updateNull = updateNull;
         return this;
@@ -90,13 +131,13 @@ public class UpdateJoinWrapperBuilder<T, DTO> {
      */
     public UpdateJoinWrapper<T> build() {
         UpdateJoinWrapper<T> wrapper = JoinWrappers.update(mainClazz);
-        Assert.notNull(this.customSet, "Please specify the set statement!");
-        this.customSet.accept(wrapper);
-        Assert.notNull(this.customJoin, "Please specify the join statement!");
-        this.customJoin.accept(wrapper);
-        // 保险起见，必须有where条件
-        Assert.isTrue(this.customWhere != null, "Please specify the where statement!");
-        this.customWhere.accept(wrapper);
+        Assert.notNull(this.setConsumer, "setConsumer can not be null!");
+        this.setConsumer.accept(wrapper);
+        this.joinConsumer.accept(wrapper);
+        Assert.notNull(this.whereConsumer, "whereConsumer can not be null!");
+        this.whereConsumer.accept(wrapper);
+        // 必须有where条件
+        Assert.isTrue(wrapper.isNonEmptyOfWhere(), "Please specify the where statement!");
         return wrapper;
     }
 }

@@ -2,6 +2,7 @@ package io.github.pengxianggui.crud;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.Assert;
+import com.alibaba.excel.util.DateUtils;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
@@ -34,6 +35,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -346,7 +348,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
 
     @Override
     public String upload(String row, String col, MultipartFile file) throws IOException {
-        return getFileManager().getFileService().upload(file);
+        return getFileManager().getFileService().upload(file, DateUtils.format(new Date(), "yyyyMMdd"));
     }
 
     @Override

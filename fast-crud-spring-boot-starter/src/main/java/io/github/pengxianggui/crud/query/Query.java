@@ -20,7 +20,7 @@ import java.util.Map;
 public class Query {
 
     /**
-     * 查询的字段
+     * 查询的字段, 为空时表示所有字段(依据dto声明的字段)
      */
     @ApiModelProperty("查询的字段")
     private List<String> cols;

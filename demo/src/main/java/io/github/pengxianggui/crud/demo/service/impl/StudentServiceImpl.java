@@ -3,6 +3,7 @@ package io.github.pengxianggui.crud.demo.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.excel.util.DateUtils;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.yulichang.wrapper.MPJLambdaWrapper;
@@ -16,8 +17,11 @@ import io.github.pengxianggui.crud.demo.service.StudentService;
 import io.github.pengxianggui.crud.join.MPJLambdaWrapperBuilder;
 import io.github.pengxianggui.crud.query.PagerQuery;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import java.io.IOException;
+import java.util.Date;
 import java.util.Map;
 
 @Service
@@ -32,7 +36,7 @@ public class StudentServiceImpl extends BaseServiceImpl<StudentMapper, Student> 
         String keyword = (CollectionUtil.isNotEmpty(extra) && extra.containsKey("keyword"))
                 ? StrUtil.toStringOrNull(extra.get("keyword"))
                 : null;
-        MPJLambdaWrapper<Student> wrapper = new MPJLambdaWrapperBuilder(StudentPageVO.class)
+        MPJLambdaWrapper<Student> wrapper = new MPJLambdaWrapperBuilder<Student>(StudentPageVO.class)
                 .query(query)
                 .build();
         if (StrUtil.isNotBlank(keyword)) {
@@ -70,5 +74,10 @@ public class StudentServiceImpl extends BaseServiceImpl<StudentMapper, Student> 
         studentSensitive.setPhone(model.getPhone());
         count += studentSensitiveMapper.insertOrUpdate(studentSensitive) ? 1 : 0;
         return count;
+    }
+
+    @Override
+    public String upload(String row, String col, MultipartFile file) throws IOException {
+        return fileManager.getFileService().upload(file, DateUtils.format(new Date(), "yyyyMMdd"));
     }
 }
