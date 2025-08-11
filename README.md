@@ -69,6 +69,7 @@ export default {
 
 - **spring-boot**: 2.6.8
 - **mybatis-plus**: 3.5.7, 更高版本会存在一些问题
+- **mybatis-plus-join**: 1.5.3
 - **knife4j**: 3.0.3
 - **hutool-core**: 5.8.8
 - **hutool-extra**: 5.8.8
