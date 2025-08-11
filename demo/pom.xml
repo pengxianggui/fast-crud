@@ -15,6 +15,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <fast-crud.version>1.5.1</fast-crud.version>
     </properties>
 
     <dependencies>
