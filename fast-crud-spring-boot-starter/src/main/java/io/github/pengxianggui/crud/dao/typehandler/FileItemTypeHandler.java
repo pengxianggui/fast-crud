@@ -5,14 +5,17 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.pengxianggui.crud.file.FileItem;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.ibatis.type.*;
+import org.apache.ibatis.type.JdbcType;
+import org.apache.ibatis.type.MappedJdbcTypes;
+import org.apache.ibatis.type.MappedTypes;
+import org.apache.ibatis.type.TypeHandler;
 
 import java.io.IOException;
 import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -67,7 +70,7 @@ public class FileItemTypeHandler implements TypeHandler<List<FileItem>> {
 
     private List<FileItem> parseJson(String json) throws SQLException {
         if (json == null || json.trim().isEmpty()) {
-            return Collections.emptyList();
+            return new ArrayList<>();
         }
         try {
             JavaType type = mapper.getTypeFactory().constructCollectionType(List.class, FileItem.class);
