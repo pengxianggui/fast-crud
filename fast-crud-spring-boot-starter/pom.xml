@@ -4,11 +4,12 @@
     <parent>
         <groupId>io.github.pengxianggui</groupId>
         <artifactId>fast-crud</artifactId>
-        <version>1.5.1-RELEASE</version>
+        <version>1.5.1</version>
     </parent>
 
     <artifactId>fast-crud-spring-boot-starter</artifactId>
     <packaging>jar</packaging>
+    <description>fast-crud is a component for build crud feature</description>
 
     <name>fast-crud-spring-boot-starter</name>
     <url>https://github.com/pengxianggui/fast-crud/tree/main/fast-crud-spring-boot-starter</url>

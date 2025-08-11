@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.github.pengxianggui</groupId>
         <artifactId>fast-crud</artifactId>
-        <version>1.5.1-RELEASE</version>
+        <version>1.5.1</version>
     </parent>
 
     <artifactId>fast-crud-auto-generator</artifactId>
@@ -12,6 +12,7 @@
 
     <name>fast-crud-auto-generator</name>
     <url>https://github.com/pengxianggui/fast-crud/tree/main/fast-crud-auto-generator</url>
+    <description>fast-crud is a component for build crud feature</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
