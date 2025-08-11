@@ -140,11 +140,6 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>versions-maven-plugin</artifactId>
             </plugin>
-            <!-- 发布中央仓库还得申请, 后端部分就先不发布吧 -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-gpg-plugin</artifactId>
-            </plugin>
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
@@ -250,4 +245,19 @@
             <url>${deploy.repo.release.url}</url>
         </repository>
     </distributionManagement>
+
+    <profiles>
+        <profile>
+            <id>central</id>
+            <build>
+                <plugins>
+                    <!-- 发布中央仓库还得申请, 后端部分就先不发布吧 -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
