@@ -128,7 +128,7 @@ public class BaseController<M> {
         Serializable id = EntityUtil.getPkVal(model, this.entityClazz);
         Assert.notNull(id, "无法获取主键值");
 //        return baseService.removeById(id, mClazz); // 默认支持跨表删太危险，先改为仅删主表
-        return baseService.removeById(id) ? 1 : 0;
+        return baseService.delete(id) ? 1 : 0;
     }
 
     @ApiOperation("批量删除")
@@ -142,7 +142,7 @@ public class BaseController<M> {
             ids.add(id);
         }
 //        return baseService.removeByIds(ids, mClazz); // 默认支持跨表删太危险，先改为仅删主表
-        return baseService.removeByIds(ids) ? ids.size() : 0;
+        return baseService.deleteBatch(ids) ? ids.size() : 0;
     }
 
     @ApiOperation(value = "存在性查询", notes = "指定条件存在数据")
