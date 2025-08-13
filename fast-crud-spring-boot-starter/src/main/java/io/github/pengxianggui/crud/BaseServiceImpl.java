@@ -225,7 +225,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
      * @param id
      * @return
      */
-    private boolean beforeDelete(Serializable id) {
+    protected boolean beforeDelete(Serializable id) {
         return true;
     }
 
@@ -246,7 +246,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
      *
      * @param id
      */
-    private void afterDelete(Serializable id) {
+    protected void afterDelete(Serializable id) {
     }
 
     @Override
