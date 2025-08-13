@@ -79,6 +79,22 @@ public interface BaseService<T> extends IService<T> {
     boolean exists(List<Cond> conditions);
 
     /**
+     * 删除单条记录
+     *
+     * @param id
+     * @return
+     */
+    boolean delete(Serializable id);
+
+    /**
+     * 批量删除
+     *
+     * @param ids
+     * @return
+     */
+    boolean deleteBatch(Collection<? extends Serializable> ids);
+
+    /**
      * 自定义跨表列表查询
      *
      * @param query    查询对象
