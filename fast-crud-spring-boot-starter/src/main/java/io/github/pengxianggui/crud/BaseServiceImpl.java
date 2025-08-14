@@ -206,6 +206,49 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
         return this.count(wrapper) > 0;
     }
 
+    @Transactional(rollbackFor = Throwable.class)
+    @Override
+    public boolean delete(Serializable id) {
+        if (beforeDelete(id) == Boolean.FALSE) {
+            return false;
+        }
+        boolean flag = removeById(id);
+        if (flag) {
+            afterDelete(id);
+        }
+        return flag;
+    }
+
+    /**
+     * 删除前的钩子。通常用于自定义数据校验。若返回false则不会触发后续流程
+     *
+     * @param id
+     * @return
+     */
+    protected boolean beforeDelete(Serializable id) {
+        return true;
+    }
+
+    @Override
+    public boolean deleteBatch(Collection<? extends Serializable> ids) {
+        if (ids.stream().anyMatch(id -> beforeDelete(id) == Boolean.FALSE)) {
+            return false;
+        }
+        boolean flag = removeByIds(ids);
+        if (flag) {
+            ids.forEach(id -> afterDelete(id));
+        }
+        return flag;
+    }
+
+    /**
+     * 删除成功后的钩子。通常用于触发一些级联操作
+     *
+     * @param id
+     */
+    protected void afterDelete(Serializable id) {
+    }
+
     @Override
     final public <DTO> List<DTO> queryList(Query query, Class<DTO> dtoClazz) {
         Assert.notNull(query, "query can not be null!");
