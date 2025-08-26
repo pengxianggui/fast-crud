@@ -1,6 +1,8 @@
 package io.github.pengxianggui.crud;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -10,18 +12,19 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "fast-crud")
 @Data
 public class FastCrudProperty {
+    private String host = "http://localhost:8080";
+    private Upload upload = new Upload("local", new Local(System.getProperty("user.dir") + "/upload"));
 
-    @Deprecated
-    private String uploadDir;
-    private String host;
-    private Upload upload;
-
+    @AllArgsConstructor
+    @NoArgsConstructor
     @Data
     public static class Upload {
         private String mode;
         private Local local;
     }
 
+    @AllArgsConstructor
+    @NoArgsConstructor
     @Data
     public static class Local {
         private String dir;

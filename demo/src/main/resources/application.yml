@@ -27,11 +27,11 @@ mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
-fast-crud:
-  upload-dir: ${UPLOAD_DIR:${user.dir}/upload}
-  # 服务地址(本地文件导出时等场景涉及)
-  host: ${HOST:http://localhost:8080}
-  upload:
-    mode: local
-    local:
-      dir: ${UPLOAD_DIR:${user.dir}/upload}
+# 以下是默认值，不配置亦可
+#fast-crud:
+#  # 服务地址(本地文件导出时等场景涉及)
+#  host: ${HOST:http://localhost:8080}
+#  upload:
+#    mode: local
+#    local:
+#      dir: ${user.dir}/upload
