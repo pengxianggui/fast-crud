@@ -182,56 +182,110 @@ public class JoinWrapperUtil {
                                                                            DtoInfo.OnCondition[] condFieldRelates) {
         for (DtoInfo.OnCondition condFieldRelate : condFieldRelates) {
             SFunction<?, ?> fieldGetter = condFieldRelate.getFieldGetter();
-            SFunction<?, ?> targetFieldGetter = condFieldRelate.getTargetFieldGetter();
-            switch (condFieldRelate.getOpt()) {
-                case EQ:
-                    on.eq(fieldGetter, targetFieldGetter);
-                    break;
-                case NE:
-                    on.ne(fieldGetter, targetFieldGetter);
-                    break;
-                case GT:
-                    on.gt(fieldGetter, targetFieldGetter);
-                    break;
-                case GE:
-                    on.ge(fieldGetter, targetFieldGetter);
-                    break;
-                case LT:
-                    on.lt(fieldGetter, targetFieldGetter);
-                    break;
-                case LE:
-                    on.le(fieldGetter, targetFieldGetter);
-                    break;
-                case IN:
-                    on.in(fieldGetter, targetFieldGetter);
-                    break;
-                case NIN:
-                    on.notIn(fieldGetter, targetFieldGetter);
-                    break;
-                case LIKE:
-                    on.like(fieldGetter, targetFieldGetter);
-                    break;
-                case LLIKE:
-                    on.likeLeft(fieldGetter, targetFieldGetter);
-                    break;
-                case RLIKE:
-                    on.likeRight(fieldGetter, targetFieldGetter);
-                    break;
-                case NLIKE:
-                    on.notLike(fieldGetter, targetFieldGetter);
-                    break;
-                case NULL:
-                    on.isNull(fieldGetter);
-                    break;
-                case NNULL:
-                    on.isNotNull(fieldGetter);
-                    break;
-                case EMPTY:
-                    on.nested(q -> q.isNull(fieldGetter).or().eq(fieldGetter, ""));
-                    break;
-                case NEMPTY:
-                    on.nested(q -> q.isNotNull(fieldGetter).ne(fieldGetter, ""));
-                    break;
+            if (condFieldRelate.isConst()) {
+                String constVal = condFieldRelate.getConstVal();
+                switch (condFieldRelate.getOpt()) {
+                    case EQ:
+                        on.eq(fieldGetter, constVal);
+                        break;
+                    case NE:
+                        on.ne(fieldGetter, constVal);
+                        break;
+                    case GT:
+                        on.gt(fieldGetter, constVal);
+                        break;
+                    case GE:
+                        on.ge(fieldGetter, constVal);
+                        break;
+                    case LT:
+                        on.lt(fieldGetter, constVal);
+                        break;
+                    case LE:
+                        on.le(fieldGetter, constVal);
+                        break;
+                    case IN:
+                        on.in(fieldGetter, constVal);
+                        break;
+                    case NIN:
+                        on.notIn(fieldGetter, constVal);
+                        break;
+                    case LIKE:
+                        on.like(fieldGetter, constVal);
+                        break;
+                    case LLIKE:
+                        on.likeLeft(fieldGetter, constVal);
+                        break;
+                    case RLIKE:
+                        on.likeRight(fieldGetter, constVal);
+                        break;
+                    case NLIKE:
+                        on.notLike(fieldGetter, constVal);
+                        break;
+                    case NULL:
+                        on.isNull(fieldGetter);
+                        break;
+                    case NNULL:
+                        on.isNotNull(fieldGetter);
+                        break;
+                    case EMPTY:
+                        on.nested(q -> q.isNull(fieldGetter).or().eq(fieldGetter, ""));
+                        break;
+                    case NEMPTY:
+                        on.nested(q -> q.isNotNull(fieldGetter).ne(fieldGetter, ""));
+                        break;
+                }
+            } else {
+                SFunction<?, ?> targetFieldGetter = condFieldRelate.getTargetFieldGetter();
+                switch (condFieldRelate.getOpt()) {
+                    case EQ:
+                        on.eq(fieldGetter, targetFieldGetter);
+                        break;
+                    case NE:
+                        on.ne(fieldGetter, targetFieldGetter);
+                        break;
+                    case GT:
+                        on.gt(fieldGetter, targetFieldGetter);
+                        break;
+                    case GE:
+                        on.ge(fieldGetter, targetFieldGetter);
+                        break;
+                    case LT:
+                        on.lt(fieldGetter, targetFieldGetter);
+                        break;
+                    case LE:
+                        on.le(fieldGetter, targetFieldGetter);
+                        break;
+                    case IN:
+                        on.in(fieldGetter, targetFieldGetter);
+                        break;
+                    case NIN:
+                        on.notIn(fieldGetter, targetFieldGetter);
+                        break;
+                    case LIKE:
+                        on.like(fieldGetter, targetFieldGetter);
+                        break;
+                    case LLIKE:
+                        on.likeLeft(fieldGetter, targetFieldGetter);
+                        break;
+                    case RLIKE:
+                        on.likeRight(fieldGetter, targetFieldGetter);
+                        break;
+                    case NLIKE:
+                        on.notLike(fieldGetter, targetFieldGetter);
+                        break;
+                    case NULL:
+                        on.isNull(fieldGetter);
+                        break;
+                    case NNULL:
+                        on.isNotNull(fieldGetter);
+                        break;
+                    case EMPTY:
+                        on.nested(q -> q.isNull(fieldGetter).or().eq(fieldGetter, ""));
+                        break;
+                    case NEMPTY:
+                        on.nested(q -> q.isNotNull(fieldGetter).ne(fieldGetter, ""));
+                        break;
+                }
             }
         }
     }

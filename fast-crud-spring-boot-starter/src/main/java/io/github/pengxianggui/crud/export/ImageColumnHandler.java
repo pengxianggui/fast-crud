@@ -31,7 +31,6 @@ public class ImageColumnHandler extends ColumnHandler {
     @Override
     public void handleHead(WriteSheetHolder writeSheetHolder, CellStyle cellStyle, int columnIndex) {
         super.handleHead(writeSheetHolder, cellStyle, columnIndex);
-        // TODO 设置图片列样式
     }
 
     @Override

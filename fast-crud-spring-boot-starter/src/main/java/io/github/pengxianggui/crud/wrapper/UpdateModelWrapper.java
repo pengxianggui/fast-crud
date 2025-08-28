@@ -17,7 +17,6 @@ public class UpdateModelWrapper<T> extends ModelWrapper<T> {
     public UpdateModelWrapper() {
     }
 
-    // TODO 添加一个IEntity接口，参数为IEntity
     public static UpdateModelWrapper create(Object model) {
         return create(model, false);
     }

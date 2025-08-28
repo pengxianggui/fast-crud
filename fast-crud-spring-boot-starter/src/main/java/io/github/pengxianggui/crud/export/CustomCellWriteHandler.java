@@ -7,6 +7,7 @@ import com.alibaba.excel.write.handler.CellWriteHandler;
 import com.alibaba.excel.write.handler.context.CellWriteHandlerContext;
 import com.alibaba.excel.write.metadata.holder.WriteSheetHolder;
 import com.alibaba.excel.write.metadata.holder.WriteTableHolder;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 
@@ -14,9 +15,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author
+ * @author pengxg
  * @date 2025/5/6 08:43
  */
+@Slf4j
 public class CustomCellWriteHandler implements CellWriteHandler {
     private final Map<Integer, ColumnHandler> handlerMapping;
 
@@ -41,15 +43,20 @@ public class CustomCellWriteHandler implements CellWriteHandler {
             return; // 只处理数据行, 表头不处理
         }
 
-        Cell cell = context.getCell();
-        int columnIndex = cell.getColumnIndex();
-        if (columnIndex < handlerMapping.size()) {
-            ColumnHandler handler = handlerMapping.get(columnIndex);
-            List<WriteCellData<?>> cellDataList = context.getCellDataList();
-            if (handler != null) {
-                Object value = getCellValue(cellDataList);
-                handler.handleData(context, value);
+        try {
+            Cell cell = context.getCell();
+            int columnIndex = cell.getColumnIndex();
+            if (columnIndex < handlerMapping.size()) {
+                ColumnHandler handler = handlerMapping.get(columnIndex);
+                List<WriteCellData<?>> cellDataList = context.getCellDataList();
+                if (handler != null) {
+                    Object value = getCellValue(cellDataList);
+                    handler.handleData(context, value);
+                }
             }
+        } catch (Exception e) {
+            log.error("单元格值写入错误", e);
+            context.getCell().setCellValue("[ERROR]");
         }
     }
 

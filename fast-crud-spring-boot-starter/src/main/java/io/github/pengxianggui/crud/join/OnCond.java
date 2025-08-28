@@ -1,5 +1,6 @@
 package io.github.pengxianggui.crud.join;
 
+import com.google.common.annotations.Beta;
 import io.github.pengxianggui.crud.query.Opt;
 
 import java.lang.annotation.ElementType;
@@ -16,11 +17,6 @@ import java.lang.annotation.Target;
  * </pre>
  * 则表示: select ... from A left join B on B.pid = A.id
  * <p>
- * 注意: 暂不支持 on条件中带有静态值，如下:
- * <pre>
- * B.pid = 1
- * B.pid is not null
- * </pre>
  *
  * @author pengxg
  * @date 2025/5/23 08:57
@@ -45,6 +41,14 @@ public @interface OnCond {
      * @return
      */
     Opt opt() default Opt.EQ;
+
+    /**
+     * 静态常量值。当此值不为空时, {@link #field()}、{@link #opt()}、{@link #constVal()}生效, 例如: `age > 30`, 此时{@link #targetClazz()}和{@link #targetField()}将无效
+     *
+     * @return
+     */
+    @Beta
+    String constVal() default "";
 
     /**
      * 目标类, 如果不设置则默认为主表对应的entity类

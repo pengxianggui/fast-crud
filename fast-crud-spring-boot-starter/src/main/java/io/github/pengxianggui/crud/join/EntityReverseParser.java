@@ -37,6 +37,9 @@ public class EntityReverseParser {
                 entities.add(entity);
                 // 回填关联字段
                 for (DtoInfo.OnCondition condFieldRelate : joinInfo.getCondFieldRelates()) {
+                    if (condFieldRelate.isConst()) {
+                        continue;
+                    }
                     Object value = ReflectUtil.getFieldValue(mainEntity, condFieldRelate.getTargetField());
                     ReflectUtil.setFieldValue(entity, condFieldRelate.getField(), value);
                 }

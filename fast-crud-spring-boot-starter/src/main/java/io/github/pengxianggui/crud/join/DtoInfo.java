@@ -282,6 +282,9 @@ class DtoInfo {
         private Class<?> clazz;
         private Field field;
         private Opt opt;
+        // 常量值
+        private String constVal;
+        // 关联目标字段
         protected Class<?> targetClazz;
         protected Field targetField;
 
@@ -289,13 +292,25 @@ class DtoInfo {
             this.clazz = joinInfo.getJoinEntityClass();
             this.field = ReflectUtil.getField(this.clazz, onCond.field());
             this.opt = onCond.opt();
-            this.targetClazz = joinInfo.getTargetEntityClass();
-            // TODO 如何实现类似: on B.deleted = false呢?
-            this.targetField = ReflectUtil.getField(this.targetClazz, StrUtil.blankToDefault(onCond.targetField(), onCond.field()));
+            if (StrUtil.isNotBlank(onCond.constVal())) {
+                this.constVal = onCond.constVal();
+            } else {
+                this.targetClazz = joinInfo.getTargetEntityClass();
+                this.targetField = ReflectUtil.getField(this.targetClazz, StrUtil.blankToDefault(onCond.targetField(), onCond.field()));
+            }
         }
 
         public <T, R> SFunction<T, R> getFieldGetter() {
             return MethodReferenceRegistry.getFunction(this.clazz, field);
+        }
+
+        /**
+         * 是否常量(条件)
+         *
+         * @return
+         */
+        public boolean isConst() {
+            return StrUtil.isNotBlank(this.constVal);
         }
 
         public <T, R> SFunction<T, R> getTargetFieldGetter() {
