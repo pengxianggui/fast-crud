@@ -2,7 +2,7 @@ package io.github.pengxianggui.crud.config;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.annotation.TableField;
-import io.github.pengxianggui.crud.dao.BaseMapper;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.type.JdbcType;
@@ -44,30 +44,69 @@ public class MapperResolver implements ApplicationContextAware {
 
     @PostConstruct
     public void init() {
-        initEntityClassToMapperRegistry();
-        initTypeHandlerRegistry();
+        try {
+            initEntityClassToMapperRegistry();
+            initTypeHandlerRegistry();
+        } catch (Exception e) {
+            log.error("MapperResolver init error", e);
+        }
     }
 
     private void initEntityClassToMapperRegistry() {
         log.debug("Init entityClassToMapperRegistry...");
-        Map<String, BaseMapper> mappers = applicationContext.getBeansOfType(BaseMapper.class);
-        for (BaseMapper mapper : mappers.values()) {
-            Class<?> mapperClass = findMapperInterface(mapper.getClass()); // 避免是代理类
-            Type[] interfaces = mapperClass.getGenericInterfaces();
+        String[] mapperBeanNames = applicationContext.getBeanNamesForType(BaseMapper.class);
+        for (String mapperBeanName : mapperBeanNames) {
+            BaseMapper mapper = applicationContext.getBean(mapperBeanName, BaseMapper.class);
+            Class mapperClass = applicationContext.getType(mapperBeanName);
 
-            for (Type type : interfaces) {
-                if (type instanceof ParameterizedType) {
-                    ParameterizedType pt = (ParameterizedType) type;
-                    if (BaseMapper.class.getName().equals(pt.getRawType().getTypeName())) {
-                        Type actualType = pt.getActualTypeArguments()[0];
-                        if (actualType instanceof Class) {
-                            log.debug("Put a mapping from entity to mapper into the registry!  {} -> {}", actualType, mapperClass);
-                            entityClassToMapperRegistry.put((Class<?>) actualType, mapper);
-                        }
+            Class<?> entityClass = resolveEntityClass(mapperClass);
+            if (entityClass != null) {
+                log.debug("Put a mapping from entity to mapper into the registry! {} -> {}", entityClass, mapperClass);
+                entityClassToMapperRegistry.put(entityClass, mapper);
+            } else {
+                log.warn("Cannot resolve entity class for mapper: {}", mapperClass);
+            }
+        }
+    }
+
+    /**
+     * 递归解析某个类/接口的泛型，找到 BaseMapper<Entity, ?> 的 Entity 类型
+     */
+    private Class<?> resolveEntityClass(Class<?> mapperClass) {
+        // 先检查当前类实现的接口
+        for (Type type : mapperClass.getGenericInterfaces()) {
+            if (type instanceof ParameterizedType) {
+                ParameterizedType pt = (ParameterizedType) type;
+                if (pt.getRawType() instanceof Class && BaseMapper.class.isAssignableFrom((Class<?>) pt.getRawType())) {
+                    Type actualType = pt.getActualTypeArguments()[0];
+                    if (actualType instanceof Class<?>) {
+                        return (Class<?>) actualType;
                     }
+                }
+            } else if (type instanceof Class) {
+                // 如果是普通接口，递归继续解析
+                Class<?> result = resolveEntityClass((Class<?>) type);
+                if (result != null) {
+                    return result;
                 }
             }
         }
+
+        // 再检查父类
+        Type superType = mapperClass.getGenericSuperclass();
+        if (superType instanceof ParameterizedType) {
+            ParameterizedType pt = (ParameterizedType) superType;
+            if (pt.getRawType() instanceof Class && BaseMapper.class.isAssignableFrom((Class<?>) pt.getRawType())) {
+                Type actualType = pt.getActualTypeArguments()[0];
+                if (actualType instanceof Class<?>) {
+                    return (Class<?>) actualType;
+                }
+            }
+        } else if (superType instanceof Class) {
+            return resolveEntityClass((Class<?>) superType);
+        }
+
+        return null;
     }
 
     private void initTypeHandlerRegistry() {
@@ -75,20 +114,6 @@ public class MapperResolver implements ApplicationContextAware {
             log.debug("Init typeHandlerRegistry...");
             MapperResolver.typeHandlerRegistry = this.sqlSessionFactory.getConfiguration().getTypeHandlerRegistry();
         }
-    }
-
-    private Class<?> findMapperInterface(Class<?> proxyClass) {
-        for (Class<?> iface : proxyClass.getInterfaces()) {
-            for (Type type : iface.getGenericInterfaces()) {
-                if (type instanceof ParameterizedType) {
-                    ParameterizedType pt = (ParameterizedType) type;
-                    if (pt.getRawType() instanceof Class && BaseMapper.class.equals(pt.getRawType())) {
-                        return iface;
-                    }
-                }
-            }
-        }
-        throw new IllegalStateException("Can't find interface of " + proxyClass.getName() + " that should be implemented to " + BaseMapper.class.getName());
     }
 
     /**

@@ -1,8 +1,8 @@
 package io.github.pengxianggui.crud.join;
 
 import cn.hutool.core.collection.CollectionUtil;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import io.github.pengxianggui.crud.config.MapperResolver;
-import io.github.pengxianggui.crud.dao.BaseMapper;
 import org.apache.ibatis.executor.BatchResult;
 import org.springframework.transaction.annotation.Transactional;
 

@@ -4,15 +4,16 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.Assert;
 import com.alibaba.excel.util.DateUtils;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.github.yulichang.base.MPJBaseMapper;
 import com.github.yulichang.toolkit.JoinWrappers;
 import com.github.yulichang.wrapper.DeleteJoinWrapper;
 import com.github.yulichang.wrapper.MPJLambdaWrapper;
 import com.github.yulichang.wrapper.UpdateJoinWrapper;
-import io.github.pengxianggui.crud.dao.BaseMapper;
 import io.github.pengxianggui.crud.file.FileManager;
 import io.github.pengxianggui.crud.join.*;
 import io.github.pengxianggui.crud.query.Cond;
@@ -256,7 +257,11 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
         MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder<T>(dtoClazz)
                 .query(query)
                 .build();
-        return getBaseMapper().selectJoinList(dtoClazz, wrapper);
+        BaseMapper<T> baseMapper = getBaseMapper();
+        if (!(baseMapper instanceof MPJBaseMapper)) {
+            throw new ClassCastException("baseMapper is not MPJBaseMapper, please extends MPJBaseMapper");
+        }
+        return ((MPJBaseMapper<T>) baseMapper).selectJoinList(dtoClazz, wrapper);
     }
 
     @Override
@@ -266,7 +271,12 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
         MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder<T>(dtoClazz)
                 .query(query)
                 .build();
-        List<DTO> list = getBaseMapper().selectJoinList(dtoClazz, wrapper);
+
+        BaseMapper<T> baseMapper = getBaseMapper();
+        if (!(baseMapper instanceof MPJBaseMapper)) {
+            throw new ClassCastException("baseMapper is not MPJBaseMapper, please extends MPJBaseMapper");
+        }
+        List<DTO> list = ((MPJBaseMapper<T>) baseMapper).selectJoinList(dtoClazz, wrapper);
         return CollectionUtil.isNotEmpty(list) ? list.get(0) : null;
     }
 
@@ -275,10 +285,15 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
         Assert.notNull(query, "query can not be null!");
         Assert.notNull(dtoClazz, "dtoClazz can not be null!");
         Page<DTO> pager = new Page<>(query.getCurrent(), query.getSize());
-        MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder(dtoClazz)
+        MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder<T>(dtoClazz)
                 .query(query)
                 .build();
-        return getBaseMapper().selectJoinPage(pager, dtoClazz, wrapper);
+
+        BaseMapper<T> baseMapper = getBaseMapper();
+        if (!(baseMapper instanceof MPJBaseMapper)) {
+            throw new ClassCastException("baseMapper is not MPJBaseMapper, please extends MPJBaseMapper");
+        }
+        return ((MPJBaseMapper<T>) baseMapper).selectJoinPage(pager, dtoClazz, wrapper);
     }
 
     @Override
@@ -288,7 +303,12 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
         MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder<T>(dtoClazz)
                 .where(w -> w.eq("t." + getDbPkName(), id))
                 .build();
-        return getBaseMapper().selectJoinOne(dtoClazz, wrapper);
+
+        BaseMapper<T> baseMapper = getBaseMapper();
+        if (!(baseMapper instanceof MPJBaseMapper)) {
+            throw new ClassCastException("baseMapper is not MPJBaseMapper, please extends MPJBaseMapper");
+        }
+        return ((MPJBaseMapper<T>) baseMapper).selectJoinOne(dtoClazz, wrapper);
     }
 
     @Override
@@ -333,7 +353,12 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
                 .where(w -> w.eq(MethodReferenceRegistry.getFunction(clazz, pkName), pkValue))
                 .updateNull(updateNull)
                 .build();
-        return getBaseMapper().updateJoin(null, wrapper);
+
+        BaseMapper<T> baseMapper = getBaseMapper();
+        if (!(baseMapper instanceof MPJBaseMapper)) {
+            throw new ClassCastException("baseMapper is not MPJBaseMapper, please extends MPJBaseMapper");
+        }
+        return ((MPJBaseMapper<T>) baseMapper).updateJoin(null, wrapper);
     }
 
     @Override
@@ -360,7 +385,12 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
                 .deleteAll()
                 .eq("t." + getDbPkName(), id);
         JoinWrapperUtil.addJoin(wrapper, dtoClazz);
-        return getBaseMapper().deleteJoin(wrapper);
+
+        BaseMapper<T> baseMapper = getBaseMapper();
+        if (!(baseMapper instanceof MPJBaseMapper)) {
+            throw new ClassCastException("baseMapper is not MPJBaseMapper, please extends MPJBaseMapper");
+        }
+        return ((MPJBaseMapper<T>) baseMapper).deleteJoin(wrapper);
     }
 
     @Override
@@ -374,7 +404,12 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
                 .deleteAll()
                 .in("t." + getDbPkName(), ids);
         JoinWrapperUtil.addJoin(wrapper, dtoClazz);
-        return getBaseMapper().deleteJoin(wrapper);
+
+        BaseMapper<T> baseMapper = getBaseMapper();
+        if (!(baseMapper instanceof MPJBaseMapper)) {
+            throw new ClassCastException("baseMapper is not MPJBaseMapper, please extends MPJBaseMapper");
+        }
+        return ((MPJBaseMapper<T>) baseMapper).deleteJoin(wrapper);
     }
 
     @Override
@@ -386,7 +421,12 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
         MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapper<>(clazz);
         JoinWrapperUtil.addJoin(wrapper, dtoClazz);
         JoinWrapperUtil.addConditions(wrapper, conditions, dtoClazz);
-        return getBaseMapper().selectJoinCount(wrapper) > 0;
+
+        BaseMapper<T> baseMapper = getBaseMapper();
+        if (!(baseMapper instanceof MPJBaseMapper)) {
+            throw new ClassCastException("baseMapper is not MPJBaseMapper, please extends MPJBaseMapper");
+        }
+        return ((MPJBaseMapper<T>) baseMapper).selectJoinCount(wrapper) > 0;
     }
 
     @Override

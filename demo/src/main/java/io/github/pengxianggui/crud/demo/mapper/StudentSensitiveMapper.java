@@ -1,8 +1,8 @@
 package io.github.pengxianggui.crud.demo.mapper;
 
-import io.github.pengxianggui.crud.dao.BaseMapper;
+import com.github.yulichang.base.MPJBaseMapper;
 import io.github.pengxianggui.crud.demo.domain.StudentSensitive;
 
-public interface StudentSensitiveMapper extends BaseMapper<StudentSensitive> {
+public interface StudentSensitiveMapper extends MPJBaseMapper<StudentSensitive> {
 
 }

@@ -1,6 +1,6 @@
 package io.github.pengxianggui.crud.demo.mapper;
 
-import io.github.pengxianggui.crud.dao.BaseMapper;
+import com.github.yulichang.base.MPJBaseMapper;
 import io.github.pengxianggui.crud.demo.domain.Student;
 
 /**
@@ -11,6 +11,6 @@ import io.github.pengxianggui.crud.demo.domain.Student;
  * @author pengxg
  * @since 2025-02-17
  */
-public interface StudentMapper extends BaseMapper<Student> {
+public interface StudentMapper extends MPJBaseMapper<Student> {
 
 }
