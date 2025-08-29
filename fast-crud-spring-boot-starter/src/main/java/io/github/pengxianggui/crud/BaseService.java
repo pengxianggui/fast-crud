@@ -145,7 +145,7 @@ public interface BaseService<T> extends IService<T> {
     <DTO> int insert(DTO model, Class<DTO> dtoClazz);
 
     /**
-     * 批量新增(支持跨表)，只支持平级的子表
+     * 批量新增(支持跨表)，只支持平级的子表和与主类直接关联的子表
      *
      * @param modelList 待插入的DTO列表
      * @param dtoClazz  DTO类型
