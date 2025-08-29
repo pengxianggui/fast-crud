@@ -1,5 +1,6 @@
 package io.github.pengxianggui.crud.join;
 
+import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.ReflectUtil;
 
 import java.util.*;
@@ -18,7 +19,9 @@ public class EntityReverseParser {
         DtoInfo dtoInfo = JoinWrapperUtil.getDtoInfo(model.getClass());
         Class entityClass = dtoInfo.getMainEntityClazz();
         try {
-            return createEntityInstance(entityClass, model, dtoInfo);
+            Object entity = createEntityInstance(entityClass, model, dtoInfo);
+            Assert.notNull(entity, "无法构造主类实例!请检查DTO类:{}", model.getClass().getName());
+            return entity;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -33,7 +36,14 @@ public class EntityReverseParser {
         List<Object> entities = new ArrayList<>();
         try {
             for (DtoInfo.JoinInfo joinInfo : joinInfos) {
+                // 只支持构造和主类直接关联的实体, 否则过于复杂, 暂不支持
+                if (joinInfo.getTargetEntityClass() != mainEntity.getClass()) {
+                    continue;
+                }
                 Object entity = createEntityInstance(joinInfo.getJoinEntityClass(), model, dtoInfo);
+                if (entity == null) {
+                    continue;
+                }
                 entities.add(entity);
                 // 回填关联字段
                 for (DtoInfo.OnCondition condFieldRelate : joinInfo.getCondFieldRelates()) {
@@ -65,6 +75,9 @@ public class EntityReverseParser {
                 .filter(f -> f.isDbField() && !f.targetFieldNotExist() && !f.isJoinIgnoreForInsert())
                 .filter(f -> Objects.equals(entityClass, f.getTargetClazz()))
                 .collect(Collectors.toList());
+        if (fields.isEmpty()) {
+            return null;
+        }
         T entity = entityClass.newInstance();
         fields.forEach(field -> field.copyValue(model, entity));
         return entity;

@@ -135,7 +135,7 @@ public interface BaseService<T> extends IService<T> {
     <DTO> DTO getById(Serializable id, Class<DTO> dtoClazz);
 
     /**
-     * 新增(支持跨表), 只支持平级的子表
+     * 新增(支持跨表), 只支持平级的子表和与主类直接关联的子表
      *
      * @param model    待插入的对象
      * @param dtoClazz 待插入对象的类型

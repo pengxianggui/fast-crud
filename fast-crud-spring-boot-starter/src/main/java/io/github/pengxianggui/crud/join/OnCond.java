@@ -1,6 +1,5 @@
 package io.github.pengxianggui.crud.join;
 
-import com.google.common.annotations.Beta;
 import io.github.pengxianggui.crud.query.Opt;
 
 import java.lang.annotation.ElementType;
@@ -47,7 +46,6 @@ public @interface OnCond {
      *
      * @return
      */
-    @Beta
     String constVal() default "";
 
     /**
