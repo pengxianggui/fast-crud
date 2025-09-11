@@ -1,8 +1,11 @@
 package io.github.pengxianggui.crud.query;
 
+import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.TableFieldInfo;
 import io.github.pengxianggui.crud.util.ColumnUtil;
+import io.github.pengxianggui.crud.util.EntityUtil;
 
 import java.util.Collection;
 import java.util.List;
@@ -84,8 +87,11 @@ public class QueryWrapperUtil {
     }
 
     private static <T> QueryWrapper addCondition(QueryWrapper<T> queryWrapper, Cond cond, Rel rel, Class<?> entityClazz) {
-        String dbField = ColumnUtil.toDbField(cond.getCol(), entityClazz);
-        boolean effect = true;
+        String field = cond.getCol();
+        TableFieldInfo fieldInfo = EntityUtil.getTableFieldInfo(entityClazz, field);
+        Assert.notNull(fieldInfo, "请检查字段是否正确：" + field + ", 并确保类(" + entityClazz.getName() + ")中含有此字段。");
+        String dbField = ColumnUtil.wrapper(fieldInfo.getColumn());
+        boolean effect = true; // 值是否有效
         if (cond.getVal() == null || (cond.getVal() instanceof CharSequence && StrUtil.isBlank((CharSequence) cond.getVal()))) {
             effect = false;
         }
@@ -191,16 +197,16 @@ public class QueryWrapperUtil {
                 break;
             case EMPTY:
                 if (rel == Rel.AND) {
-                    queryWrapper.nested(q -> q.isNull(dbField).or().eq(dbField, ""));
+                    queryWrapper.nested(q -> q.isNull(dbField).or().eq(fieldInfo.isCharSequence(), dbField, ""));
                 } else {
-                    queryWrapper.or(q -> q.nested(n -> n.isNull(dbField).or().eq(dbField, "")));
+                    queryWrapper.or(q -> q.nested(n -> n.isNull(dbField).or().eq(fieldInfo.isCharSequence(), dbField, "")));
                 }
                 break;
             case NEMPTY:
                 if (rel == Rel.AND) {
-                    queryWrapper.nested(q -> q.isNotNull(dbField).ne(dbField, ""));
+                    queryWrapper.nested(q -> q.isNotNull(dbField).ne(fieldInfo.isCharSequence(), dbField, ""));
                 } else {
-                    queryWrapper.or(q -> q.nested(n -> n.isNotNull(dbField).ne(dbField, "")));
+                    queryWrapper.or(q -> q.nested(n -> n.isNotNull(dbField).ne(fieldInfo.isCharSequence(), dbField, "")));
                 }
                 break;
         }

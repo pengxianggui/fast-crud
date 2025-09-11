@@ -69,4 +69,15 @@ public class Query {
         }
         this.conds.add(Cond.of(col, opt, val));
     }
+
+    public <T> T getExtra(String fieldName, Class<T> clazz) {
+        return getExtra(fieldName, (T) null);
+    }
+
+    public <T> T getExtra(String fieldName, T defaultVal) {
+        if (this.extra == null || this.extra.isEmpty()) {
+            return defaultVal;
+        }
+        return (T) this.extra.getOrDefault(fieldName, defaultVal);
+    }
 }

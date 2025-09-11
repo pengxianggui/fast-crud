@@ -4,16 +4,14 @@ import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.ClassUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.core.util.TypeUtil;
+import com.baomidou.mybatisplus.core.metadata.TableFieldInfo;
 import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
 import com.github.yulichang.wrapper.JoinAbstractLambdaWrapper;
 import com.github.yulichang.wrapper.JoinAbstractWrapper;
 import com.github.yulichang.wrapper.MPJLambdaWrapper;
 import com.github.yulichang.wrapper.UpdateJoinWrapper;
 import io.github.pengxianggui.crud.config.MapperResolver;
-import io.github.pengxianggui.crud.query.Cond;
-import io.github.pengxianggui.crud.query.Order;
-import io.github.pengxianggui.crud.query.Query;
-import io.github.pengxianggui.crud.query.Rel;
+import io.github.pengxianggui.crud.query.*;
 import io.github.pengxianggui.crud.util.EntityUtil;
 
 import javax.annotation.Nullable;
@@ -181,10 +179,15 @@ public class JoinWrapperUtil {
     static <T, C extends JoinAbstractWrapper<T, C>> void addJoinConditions(JoinAbstractWrapper<T, C> on,
                                                                            DtoInfo.OnCondition[] condFieldRelates) {
         for (DtoInfo.OnCondition condFieldRelate : condFieldRelates) {
+            Opt opt = condFieldRelate.getOpt();
             SFunction<?, ?> fieldGetter = condFieldRelate.getFieldGetter();
-            if (condFieldRelate.isConst()) {
+            if (condFieldRelate.isConst()
+                    || opt == Opt.EMPTY
+                    || opt == Opt.NULL
+                    || opt == Opt.NNULL
+                    || opt == Opt.NEMPTY) {
                 String constVal = condFieldRelate.getConstVal();
-                switch (condFieldRelate.getOpt()) {
+                switch (opt) {
                     case EQ:
                         on.eq(fieldGetter, constVal);
                         break;
@@ -228,15 +231,19 @@ public class JoinWrapperUtil {
                         on.isNotNull(fieldGetter);
                         break;
                     case EMPTY:
-                        on.nested(q -> q.isNull(fieldGetter).or().eq(fieldGetter, ""));
+                        TableFieldInfo fieldInfo = EntityUtil.getTableFieldInfo(condFieldRelate.getClazz(), condFieldRelate.getField().getName());
+                        Assert.notNull(fieldInfo, "请检查字段是否正确：" + condFieldRelate.getField().getName() + ", 并确保类(" + condFieldRelate.getClazz() + ")中含有此字段。");
+                        on.nested(q -> q.isNull(fieldGetter).or().eq(fieldInfo.isCharSequence(), fieldGetter, ""));
                         break;
                     case NEMPTY:
-                        on.nested(q -> q.isNotNull(fieldGetter).ne(fieldGetter, ""));
+                        TableFieldInfo fieldInfo1 = EntityUtil.getTableFieldInfo(condFieldRelate.getClazz(), condFieldRelate.getField().getName());
+                        Assert.notNull(fieldInfo1, "请检查字段是否正确：" + condFieldRelate.getField().getName() + ", 并确保类(" + condFieldRelate.getClazz() + ")中含有此字段。");
+                        on.nested(q -> q.isNotNull(fieldGetter).ne(fieldInfo1.isCharSequence(), fieldGetter, ""));
                         break;
                 }
             } else {
                 SFunction<?, ?> targetFieldGetter = condFieldRelate.getTargetFieldGetter();
-                switch (condFieldRelate.getOpt()) {
+                switch (opt) {
                     case EQ:
                         on.eq(fieldGetter, targetFieldGetter);
                         break;
@@ -272,18 +279,6 @@ public class JoinWrapperUtil {
                         break;
                     case NLIKE:
                         on.notLike(fieldGetter, targetFieldGetter);
-                        break;
-                    case NULL:
-                        on.isNull(fieldGetter);
-                        break;
-                    case NNULL:
-                        on.isNotNull(fieldGetter);
-                        break;
-                    case EMPTY:
-                        on.nested(q -> q.isNull(fieldGetter).or().eq(fieldGetter, ""));
-                        break;
-                    case NEMPTY:
-                        on.nested(q -> q.isNotNull(fieldGetter).ne(fieldGetter, ""));
                         break;
                 }
             }
@@ -435,17 +430,21 @@ public class JoinWrapperUtil {
                 }
                 break;
             case EMPTY:
+                TableFieldInfo fieldInfo = EntityUtil.getTableFieldInfo(dtoField.getTargetClazz(), dtoField.getTargetField().getName());
+                Assert.notNull(fieldInfo, "请检查字段是否正确：" + dtoField.getTargetField().getName() + ", 并确保类(" + dtoField.getTargetClazz() + ")中含有此字段。");
                 if (rel == Rel.AND) {
-                    wrapper.nested(q -> q.isNull(targetFieldGetter).or().eq(targetFieldGetter, ""));
+                    wrapper.nested(q -> q.isNull(targetFieldGetter).or().eq(fieldInfo.isCharSequence(), targetFieldGetter, ""));
                 } else {
-                    wrapper.or(q -> q.nested(n -> n.isNull(targetFieldGetter).or().eq(targetFieldGetter, "")));
+                    wrapper.or(q -> q.nested(n -> n.isNull(targetFieldGetter).or().eq(fieldInfo.isCharSequence(), targetFieldGetter, "")));
                 }
                 break;
             case NEMPTY:
+                TableFieldInfo fieldInfo1 = EntityUtil.getTableFieldInfo(dtoField.getTargetClazz(), dtoField.getTargetField().getName());
+                Assert.notNull(fieldInfo1, "请检查字段是否正确：" + dtoField.getTargetField().getName() + ", 并确保类(" + dtoField.getTargetClazz() + ")中含有此字段。");
                 if (rel == Rel.AND) {
-                    wrapper.nested(q -> q.isNotNull(targetFieldGetter).ne(targetFieldGetter, ""));
+                    wrapper.nested(q -> q.isNotNull(targetFieldGetter).ne(fieldInfo1.isCharSequence(), targetFieldGetter, ""));
                 } else {
-                    wrapper.or(q -> q.nested(n -> n.isNotNull(targetFieldGetter).ne(targetFieldGetter, "")));
+                    wrapper.or(q -> q.nested(n -> n.isNotNull(targetFieldGetter).ne(fieldInfo1.isCharSequence(), targetFieldGetter, "")));
                 }
                 break;
         }
