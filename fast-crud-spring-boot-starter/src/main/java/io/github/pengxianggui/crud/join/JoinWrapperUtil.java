@@ -13,6 +13,7 @@ import com.github.yulichang.wrapper.UpdateJoinWrapper;
 import io.github.pengxianggui.crud.config.MapperResolver;
 import io.github.pengxianggui.crud.query.*;
 import io.github.pengxianggui.crud.util.EntityUtil;
+import io.github.pengxianggui.crud.util.TableFieldInfoWrapper;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
@@ -231,12 +232,12 @@ public class JoinWrapperUtil {
                         on.isNotNull(fieldGetter);
                         break;
                     case EMPTY:
-                        TableFieldInfo fieldInfo = EntityUtil.getTableFieldInfo(condFieldRelate.getClazz(), condFieldRelate.getField().getName());
+                        TableFieldInfoWrapper fieldInfo = EntityUtil.getTableFieldInfo(condFieldRelate.getClazz(), condFieldRelate.getField().getName());
                         Assert.notNull(fieldInfo, "请检查字段是否正确：" + condFieldRelate.getField().getName() + ", 并确保类(" + condFieldRelate.getClazz() + ")中含有此字段。");
                         on.nested(q -> q.isNull(fieldGetter).or().eq(fieldInfo.isCharSequence(), fieldGetter, ""));
                         break;
                     case NEMPTY:
-                        TableFieldInfo fieldInfo1 = EntityUtil.getTableFieldInfo(condFieldRelate.getClazz(), condFieldRelate.getField().getName());
+                        TableFieldInfoWrapper fieldInfo1 = EntityUtil.getTableFieldInfo(condFieldRelate.getClazz(), condFieldRelate.getField().getName());
                         Assert.notNull(fieldInfo1, "请检查字段是否正确：" + condFieldRelate.getField().getName() + ", 并确保类(" + condFieldRelate.getClazz() + ")中含有此字段。");
                         on.nested(q -> q.isNotNull(fieldGetter).ne(fieldInfo1.isCharSequence(), fieldGetter, ""));
                         break;
@@ -430,7 +431,7 @@ public class JoinWrapperUtil {
                 }
                 break;
             case EMPTY:
-                TableFieldInfo fieldInfo = EntityUtil.getTableFieldInfo(dtoField.getTargetClazz(), dtoField.getTargetField().getName());
+                TableFieldInfoWrapper fieldInfo = EntityUtil.getTableFieldInfo(dtoField.getTargetClazz(), dtoField.getTargetField().getName());
                 Assert.notNull(fieldInfo, "请检查字段是否正确：" + dtoField.getTargetField().getName() + ", 并确保类(" + dtoField.getTargetClazz() + ")中含有此字段。");
                 if (rel == Rel.AND) {
                     wrapper.nested(q -> q.isNull(targetFieldGetter).or().eq(fieldInfo.isCharSequence(), targetFieldGetter, ""));
@@ -439,7 +440,7 @@ public class JoinWrapperUtil {
                 }
                 break;
             case NEMPTY:
-                TableFieldInfo fieldInfo1 = EntityUtil.getTableFieldInfo(dtoField.getTargetClazz(), dtoField.getTargetField().getName());
+                TableFieldInfoWrapper fieldInfo1 = EntityUtil.getTableFieldInfo(dtoField.getTargetClazz(), dtoField.getTargetField().getName());
                 Assert.notNull(fieldInfo1, "请检查字段是否正确：" + dtoField.getTargetField().getName() + ", 并确保类(" + dtoField.getTargetClazz() + ")中含有此字段。");
                 if (rel == Rel.AND) {
                     wrapper.nested(q -> q.isNotNull(targetFieldGetter).ne(fieldInfo1.isCharSequence(), targetFieldGetter, ""));

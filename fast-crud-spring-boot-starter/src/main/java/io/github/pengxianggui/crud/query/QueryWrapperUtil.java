@@ -3,9 +3,9 @@ package io.github.pengxianggui.crud.query;
 import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.TableFieldInfo;
 import io.github.pengxianggui.crud.util.ColumnUtil;
 import io.github.pengxianggui.crud.util.EntityUtil;
+import io.github.pengxianggui.crud.util.TableFieldInfoWrapper;
 
 import java.util.Collection;
 import java.util.List;
@@ -88,7 +88,7 @@ public class QueryWrapperUtil {
 
     private static <T> QueryWrapper addCondition(QueryWrapper<T> queryWrapper, Cond cond, Rel rel, Class<?> entityClazz) {
         String field = cond.getCol();
-        TableFieldInfo fieldInfo = EntityUtil.getTableFieldInfo(entityClazz, field);
+        TableFieldInfoWrapper fieldInfo = EntityUtil.getTableFieldInfo(entityClazz, field);
         Assert.notNull(fieldInfo, "请检查字段是否正确：" + field + ", 并确保类(" + entityClazz.getName() + ")中含有此字段。");
         String dbField = ColumnUtil.wrapper(fieldInfo.getColumn());
         boolean effect = true; // 值是否有效
