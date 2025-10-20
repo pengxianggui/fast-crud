@@ -251,7 +251,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
     }
 
     @Override
-    final public <DTO> List<DTO> queryList(Query query, Class<DTO> dtoClazz) {
+    public <DTO> List<DTO> queryList(Query query, Class<DTO> dtoClazz) {
         Assert.notNull(query, "query can not be null!");
         Assert.notNull(dtoClazz, "dtoClazz can not be null!");
         MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder<T>(dtoClazz)
@@ -265,23 +265,13 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
     }
 
     @Override
-    final public <DTO> DTO queryOne(Query query, Class<DTO> dtoClazz) {
-        Assert.notNull(query, "query can not be null!");
-        Assert.notNull(dtoClazz, "dtoClazz can not be null!");
-        MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder<T>(dtoClazz)
-                .query(query)
-                .build();
-
-        BaseMapper<T> baseMapper = getBaseMapper();
-        if (!(baseMapper instanceof MPJBaseMapper)) {
-            throw new ClassCastException("baseMapper is not MPJBaseMapper, please extends MPJBaseMapper");
-        }
-        List<DTO> list = ((MPJBaseMapper<T>) baseMapper).selectJoinList(dtoClazz, wrapper);
+    public <DTO> DTO queryOne(Query query, Class<DTO> dtoClazz) {
+        List<DTO> list = queryList(query, dtoClazz);
         return CollectionUtil.isNotEmpty(list) ? list.get(0) : null;
     }
 
     @Override
-    final public <DTO> IPage<DTO> queryPage(PagerQuery query, Class<DTO> dtoClazz) {
+    public <DTO> IPage<DTO> queryPage(PagerQuery query, Class<DTO> dtoClazz) {
         Assert.notNull(query, "query can not be null!");
         Assert.notNull(dtoClazz, "dtoClazz can not be null!");
         Page<DTO> pager = new Page<>(query.getCurrent(), query.getSize());
@@ -297,7 +287,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
     }
 
     @Override
-    final public <DTO> DTO getById(Serializable id, Class<DTO> dtoClazz) {
+    public <DTO> DTO getById(Serializable id, Class<DTO> dtoClazz) {
         Assert.notNull(id, "id can not be null!");
         Assert.notNull(dtoClazz, "dtoClazz can not be null!");
         MPJLambdaWrapper<T> wrapper = new MPJLambdaWrapperBuilder<T>(dtoClazz)
@@ -312,7 +302,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
     }
 
     @Override
-    final public <DTO> int insert(DTO model, Class<DTO> dtoClazz) {
+    public <DTO> int insert(DTO model, Class<DTO> dtoClazz) {
         Assert.notNull(model, "model can not be null!");
         Assert.notNull(dtoClazz, "dtoClazz can not be null!");
         AtomicInteger count = new AtomicInteger();
@@ -328,7 +318,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
     }
 
     @Override
-    final public <DTO> int insertBatch(Collection<DTO> modelList, Class<DTO> dtoClazz) {
+    public <DTO> int insertBatch(Collection<DTO> modelList, Class<DTO> dtoClazz) {
         if (CollectionUtil.isEmpty(modelList)) {
             return 0;
         }
@@ -341,7 +331,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
     }
 
     @Override
-    final public <DTO> int update(DTO model, Class<DTO> dtoClazz, boolean updateNull) {
+    public <DTO> int update(DTO model, Class<DTO> dtoClazz, boolean updateNull) {
         Assert.notNull(model, "model can not be null!");
         Assert.notNull(dtoClazz, "dtoClazz can not be null!");
         Class<T> clazz = getEntityClass();
@@ -362,7 +352,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
     }
 
     @Override
-    final public <DTO> int updateBatch(List<DTO> models, Class<DTO> dtoClazz, boolean updateNull) {
+    public <DTO> int updateBatch(List<DTO> models, Class<DTO> dtoClazz, boolean updateNull) {
         if (CollectionUtil.isEmpty(models)) {
             return 0;
         }
@@ -377,7 +367,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
     }
 
     @Override
-    final public <DTO> int removeById(Serializable id, Class<DTO> dtoClazz) {
+    public <DTO> int removeById(Serializable id, Class<DTO> dtoClazz) {
         Assert.notNull(id, "id can not be null!");
         Assert.notNull(dtoClazz, "dtoClazz can not be null!");
         Class<T> clazz = getEntityClass();
@@ -394,7 +384,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
     }
 
     @Override
-    final public <DTO> int removeByIds(Collection<? extends Serializable> ids, Class<DTO> dtoClazz) {
+    public <DTO> int removeByIds(Collection<? extends Serializable> ids, Class<DTO> dtoClazz) {
         if (CollectionUtils.isEmpty(ids)) {
             return 0;
         }
@@ -413,7 +403,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
     }
 
     @Override
-    final public <DTO> boolean exists(List<Cond> conditions, Class<DTO> dtoClazz) {
+    public <DTO> boolean exists(List<Cond> conditions, Class<DTO> dtoClazz) {
         Assert.notNull(dtoClazz, "dtoClazz can not be null!");
         Class<T> clazz = getEntityClass();
         Query query = new Query();
