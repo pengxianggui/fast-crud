@@ -62,7 +62,7 @@ public class StudentServiceImpl extends BaseServiceImpl<StudentMapper, Student> 
     public int update(StudentPageVO model, Boolean updateNull) {
         Student entity = getById(model.getId());
         BeanUtil.copyProperties(model, entity);
-        int count = update(entity) ? 1 : 0;
+        int count = updateById(entity) ? 1 : 0;
         StudentSensitive studentSensitive = studentSensitiveMapper.selectJoinOne(
                 new MPJLambdaWrapper<>(StudentSensitive.class).eq(StudentSensitive::getStudentId, entity.getId()));
         if (studentSensitive == null) {

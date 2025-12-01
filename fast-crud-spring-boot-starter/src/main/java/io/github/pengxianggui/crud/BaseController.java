@@ -81,7 +81,7 @@ public class BaseController<M> {
     @PostMapping("update")
     public int update(@Validated(CrudUpdate.class) @RequestBody UpdateModelWrapper<M> modelWrapper) throws BindException {
         return dtoClazz.equals(entityClazz)
-                ? baseService.update(modelWrapper.getModel()) ? 1 : 0
+                ? baseService.updateById(modelWrapper.getModel()) ? 1 : 0
                 : baseService.update(modelWrapper.getModel(), dtoClazz, ObjectUtil.defaultIfNull(modelWrapper.get_updateNull(), true));
     }
 
@@ -93,7 +93,7 @@ public class BaseController<M> {
             ValidUtil.valid(validator, model, CrudUpdate.class);
         }
         return dtoClazz.equals(entityClazz)
-                ? baseService.updateBatch(models) ? 1 : 0
+                ? baseService.updateBatchById(models) ? 1 : 0
                 : baseService.updateBatch(models, dtoClazz, true);
     }
 
@@ -127,8 +127,7 @@ public class BaseController<M> {
     public int delete(@NotNull @RequestBody M model) {
         Serializable id = EntityUtil.getPkVal(model, this.entityClazz);
         Assert.notNull(id, "无法获取主键值");
-//        return baseService.removeById(id, mClazz); // 默认支持跨表删太危险，先改为仅删主表
-        return baseService.delete(id) ? 1 : 0;
+        return baseService.deleteById(id) ? 1 : 0;
     }
 
     @ApiOperation("批量删除")
@@ -141,8 +140,7 @@ public class BaseController<M> {
             Assert.notNull(id, "第%d条数据无法获取主键值", i + 1);
             ids.add(id);
         }
-//        return baseService.removeByIds(ids, mClazz); // 默认支持跨表删太危险，先改为仅删主表
-        return baseService.deleteBatch(ids) ? ids.size() : 0;
+        return baseService.deleteBatchById(ids) ? ids.size() : 0;
     }
 
     @ApiOperation(value = "存在性查询", notes = "指定条件存在数据")

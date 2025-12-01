@@ -170,7 +170,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
 
     @Transactional(rollbackFor = Throwable.class)
     @Override
-    public boolean update(T entity) {
+    public boolean updateById(T entity) {
         Assert.notNull(entity, "entity can not be null!");
         if (this.beforeUpdateById(entity) == Boolean.FALSE) {
             return false;
@@ -190,13 +190,13 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
 
     @Transactional(rollbackFor = Throwable.class)
     @Override
-    public boolean updateBatch(List<T> entities) {
+    public boolean updateBatchById(Collection<T> entities) {
         if (CollectionUtil.isEmpty(entities)) {
             return false;
         }
         List<T> updateEntities = entities.stream().filter(this::beforeUpdateById).collect(Collectors.toList());
         boolean flag = super.updateBatchById(updateEntities);
-        updateEntities.forEach(entity -> this.afterUpdateById(entity));
+        updateEntities.forEach(this::afterUpdateById);
         return flag;
     }
 
@@ -209,13 +209,13 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
 
     @Transactional(rollbackFor = Throwable.class)
     @Override
-    public boolean delete(Serializable id) {
-        if (beforeDelete(id) == Boolean.FALSE) {
+    public boolean deleteById(Serializable id) {
+        if (beforeDeleteById(id) == Boolean.FALSE) {
             return false;
         }
         boolean flag = removeById(id);
         if (flag) {
-            afterDelete(id);
+            afterDeleteById(id);
         }
         return flag;
     }
@@ -226,18 +226,18 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
      * @param id
      * @return
      */
-    protected boolean beforeDelete(Serializable id) {
+    protected boolean beforeDeleteById(Serializable id) {
         return true;
     }
 
     @Override
-    public boolean deleteBatch(Collection<? extends Serializable> ids) {
-        if (ids.stream().anyMatch(id -> beforeDelete(id) == Boolean.FALSE)) {
+    public boolean deleteBatchById(Collection<? extends Serializable> ids) {
+        if (ids.stream().anyMatch(id -> beforeDeleteById(id) == Boolean.FALSE)) {
             return false;
         }
         boolean flag = removeByIds(ids);
         if (flag) {
-            ids.forEach(id -> afterDelete(id));
+            ids.forEach(this::afterDeleteById);
         }
         return flag;
     }
@@ -247,7 +247,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
      *
      * @param id
      */
-    protected void afterDelete(Serializable id) {
+    protected void afterDeleteById(Serializable id) {
     }
 
     @Override
@@ -366,6 +366,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
         return count.get();
     }
 
+    @Deprecated
     @Override
     public <DTO> int removeById(Serializable id, Class<DTO> dtoClazz) {
         Assert.notNull(id, "id can not be null!");
@@ -383,6 +384,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
         return ((MPJBaseMapper<T>) baseMapper).deleteJoin(wrapper);
     }
 
+    @Deprecated
     @Override
     public <DTO> int removeByIds(Collection<? extends Serializable> ids, Class<DTO> dtoClazz) {
         if (CollectionUtils.isEmpty(ids)) {

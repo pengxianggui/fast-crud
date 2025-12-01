@@ -4,7 +4,6 @@ import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.ClassUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.core.util.TypeUtil;
-import com.baomidou.mybatisplus.core.metadata.TableFieldInfo;
 import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
 import com.github.yulichang.wrapper.JoinAbstractLambdaWrapper;
 import com.github.yulichang.wrapper.JoinAbstractWrapper;
@@ -83,22 +82,22 @@ public class JoinWrapperUtil {
                     }
 
                     if (field.isDbField()) { // 无论是什么类型(简单类型、集合、对象类型),标记为数据库字段则直接select
-                        wrapper.selectAs(field.getTargetFieldGetter(), field.getFieldGetter());
+                        addSelectAs(wrapper, field);
                         return;
                     }
 
                     if (Collection.class.isAssignableFrom(field.getField().getType())) { // 一对多
                         Type type = TypeUtil.getTypeArgument(field.getField().getGenericType());
                         if (ClassUtil.isSimpleValueType(TypeUtil.getClass(type))) { // 单字段
-                            wrapper.selectCollection(field.getTargetClazz(), field.getFieldGetter(), map -> {
+                            wrapper.selectCollection(field.getAlias(), field.getTargetClazz(), field.getFieldGetter(), map -> {
                                 map.result(field.getTargetFieldGetter());
                                 return map;
                             });
                         } else {
                             if (field.getTargetClazz() == type) {
-                                wrapper.selectCollection(field.getTargetClazz(), field.getFieldGetter());
+                                wrapper.selectCollection(field.getAlias(), field.getTargetClazz(), field.getFieldGetter());
                             } else {
-                                wrapper.selectCollection(field.getTargetClazz(), field.getFieldGetter(), map -> {
+                                wrapper.selectCollection(field.getAlias(), field.getTargetClazz(), field.getFieldGetter(), map -> {
                                     DtoInfo subDtoInfo = new DtoInfo(TypeUtil.getClass(type));
                                     // 这里面暂不考虑递归情况, 否则太复杂, 还要牵扯子查询, mybatis-plus-join怕无法支撑
                                     subDtoInfo.getFields().forEach(field1 -> {
@@ -116,10 +115,10 @@ public class JoinWrapperUtil {
                             if (field.targetFieldNotExist()) {
                                 return;
                             }
-                            wrapper.selectAs(field.getTargetFieldGetter(), field.getFieldGetter());
+                            addSelectAs(wrapper, field);
                         } else { // 一对一映射实体
                             Type type = field.getField().getType();
-                            wrapper.selectAssociation(field.getTargetClazz(), field.getFieldGetter(), map -> {
+                            wrapper.selectAssociation(field.getAlias(), field.getTargetClazz(), field.getFieldGetter(), map -> {
                                 DtoInfo subDtoInfo = new DtoInfo(TypeUtil.getClass(type), field.getTargetClazz());
                                 // 这里面暂不考虑递归情况, 否则太复杂, 还要牵扯子查询, mybatis-plus-join怕无法支撑
                                 subDtoInfo.getFields().forEach(field1 -> {
@@ -144,21 +143,21 @@ public class JoinWrapperUtil {
                 "Type inconsistency: The main type declared in the dto is inconsistent");
         List<DtoInfo.JoinInfo> innerJoins = dtoInfo.getInnerJoinInfo();
         if (innerJoins != null && !innerJoins.isEmpty()) {
-            innerJoins.forEach(join -> wrapper.innerJoin(join.getJoinEntityClass(), on -> {
+            innerJoins.forEach(join -> wrapper.innerJoin(join.getJoinEntityClass(), join.getAlias(), on -> {
                 addJoinConditions(on, join.getCondFieldRelates());
                 return on;
             }));
         }
         List<DtoInfo.JoinInfo> leftJoins = dtoInfo.getLeftJoinInfo();
         if (leftJoins != null && !leftJoins.isEmpty()) {
-            leftJoins.forEach(join -> wrapper.leftJoin(join.getJoinEntityClass(), on -> {
+            leftJoins.forEach(join -> wrapper.leftJoin(join.getJoinEntityClass(), join.getAlias(), on -> {
                 addJoinConditions(on, join.getCondFieldRelates());
                 return on;
             }));
         }
         List<DtoInfo.JoinInfo> rightJoins = dtoInfo.getRightJoinInfo();
         if (rightJoins != null && !rightJoins.isEmpty()) {
-            rightJoins.forEach(join -> wrapper.rightJoin(join.getJoinEntityClass(), on -> {
+            rightJoins.forEach(join -> wrapper.rightJoin(join.getJoinEntityClass(), join.getAlias(), on -> {
                 addJoinConditions(on, join.getCondFieldRelates());
                 return on;
             }));
@@ -182,6 +181,7 @@ public class JoinWrapperUtil {
         for (DtoInfo.OnCondition condFieldRelate : condFieldRelates) {
             Opt opt = condFieldRelate.getOpt();
             SFunction<?, ?> fieldGetter = condFieldRelate.getFieldGetter();
+            String alias = condFieldRelate.getAlias();
             if (condFieldRelate.isConst()
                     || opt == Opt.EMPTY
                     || opt == Opt.NULL
@@ -190,96 +190,97 @@ public class JoinWrapperUtil {
                 String constVal = condFieldRelate.getConstVal();
                 switch (opt) {
                     case EQ:
-                        on.eq(fieldGetter, constVal);
+                        on.eq(alias, fieldGetter, constVal);
                         break;
                     case NE:
-                        on.ne(fieldGetter, constVal);
+                        on.ne(alias, fieldGetter, constVal);
                         break;
                     case GT:
-                        on.gt(fieldGetter, constVal);
+                        on.gt(alias, fieldGetter, constVal);
                         break;
                     case GE:
-                        on.ge(fieldGetter, constVal);
+                        on.ge(alias, fieldGetter, constVal);
                         break;
                     case LT:
-                        on.lt(fieldGetter, constVal);
+                        on.lt(alias, fieldGetter, constVal);
                         break;
                     case LE:
-                        on.le(fieldGetter, constVal);
+                        on.le(alias, fieldGetter, constVal);
                         break;
                     case IN:
-                        on.in(fieldGetter, constVal);
+                        on.in(alias, fieldGetter, constVal);
                         break;
                     case NIN:
-                        on.notIn(fieldGetter, constVal);
+                        on.notIn(alias, fieldGetter, constVal);
                         break;
                     case LIKE:
-                        on.like(fieldGetter, constVal);
+                        on.like(alias, fieldGetter, constVal);
                         break;
                     case LLIKE:
-                        on.likeLeft(fieldGetter, constVal);
+                        on.likeLeft(alias, fieldGetter, constVal);
                         break;
                     case RLIKE:
-                        on.likeRight(fieldGetter, constVal);
+                        on.likeRight(alias, fieldGetter, constVal);
                         break;
                     case NLIKE:
-                        on.notLike(fieldGetter, constVal);
+                        on.notLike(alias, fieldGetter, constVal);
                         break;
                     case NULL:
-                        on.isNull(fieldGetter);
+                        on.isNull(alias, fieldGetter);
                         break;
                     case NNULL:
-                        on.isNotNull(fieldGetter);
+                        on.isNotNull(alias, fieldGetter);
                         break;
                     case EMPTY:
                         TableFieldInfoWrapper fieldInfo = EntityUtil.getTableFieldInfo(condFieldRelate.getClazz(), condFieldRelate.getField().getName());
                         Assert.notNull(fieldInfo, "请检查字段是否正确：" + condFieldRelate.getField().getName() + ", 并确保类(" + condFieldRelate.getClazz() + ")中含有此字段。");
-                        on.nested(q -> q.isNull(fieldGetter).or().eq(fieldInfo.isCharSequence(), fieldGetter, ""));
+                        on.nested(q -> q.isNull(alias, fieldGetter).or().eq(fieldInfo.isCharSequence(), alias, fieldGetter, ""));
                         break;
                     case NEMPTY:
                         TableFieldInfoWrapper fieldInfo1 = EntityUtil.getTableFieldInfo(condFieldRelate.getClazz(), condFieldRelate.getField().getName());
                         Assert.notNull(fieldInfo1, "请检查字段是否正确：" + condFieldRelate.getField().getName() + ", 并确保类(" + condFieldRelate.getClazz() + ")中含有此字段。");
-                        on.nested(q -> q.isNotNull(fieldGetter).ne(fieldInfo1.isCharSequence(), fieldGetter, ""));
+                        on.nested(q -> q.isNotNull(alias, fieldGetter).ne(fieldInfo1.isCharSequence(), alias, fieldGetter, ""));
                         break;
                 }
             } else {
                 SFunction<?, ?> targetFieldGetter = condFieldRelate.getTargetFieldGetter();
+                String targetAlias = condFieldRelate.getRightAlias();
                 switch (opt) {
                     case EQ:
-                        on.eq(fieldGetter, targetFieldGetter);
+                        on.eq(alias, fieldGetter, targetAlias, targetFieldGetter);
                         break;
                     case NE:
-                        on.ne(fieldGetter, targetFieldGetter);
+                        on.ne(alias, fieldGetter, targetAlias, targetFieldGetter);
                         break;
                     case GT:
-                        on.gt(fieldGetter, targetFieldGetter);
+                        on.gt(alias, fieldGetter, targetAlias, targetFieldGetter);
                         break;
                     case GE:
-                        on.ge(fieldGetter, targetFieldGetter);
+                        on.ge(alias, fieldGetter, targetAlias, targetFieldGetter);
                         break;
                     case LT:
-                        on.lt(fieldGetter, targetFieldGetter);
+                        on.lt(alias, fieldGetter, targetAlias, targetFieldGetter);
                         break;
                     case LE:
-                        on.le(fieldGetter, targetFieldGetter);
+                        on.le(alias, fieldGetter, targetAlias, targetFieldGetter);
                         break;
                     case IN:
-                        on.in(fieldGetter, targetFieldGetter);
+                        on.in(alias, fieldGetter, targetAlias, targetFieldGetter);
                         break;
                     case NIN:
-                        on.notIn(fieldGetter, targetFieldGetter);
+                        on.notIn(alias, fieldGetter, targetAlias, targetFieldGetter);
                         break;
                     case LIKE:
-                        on.like(fieldGetter, targetFieldGetter);
+                        on.like(alias, fieldGetter, targetFieldGetter);
                         break;
                     case LLIKE:
-                        on.likeLeft(fieldGetter, targetFieldGetter);
+                        on.likeLeft(alias, fieldGetter, targetFieldGetter);
                         break;
                     case RLIKE:
-                        on.likeRight(fieldGetter, targetFieldGetter);
+                        on.likeRight(alias, fieldGetter, targetFieldGetter);
                         break;
                     case NLIKE:
-                        on.notLike(fieldGetter, targetFieldGetter);
+                        on.notLike(alias, fieldGetter, targetFieldGetter);
                         break;
                 }
             }
@@ -318,12 +319,11 @@ public class JoinWrapperUtil {
 
     static <T> void addCondition(JoinAbstractWrapper<T, ?> wrapper, Cond cond, Rel rel, DtoInfo dtoInfo) {
         DtoInfo.DtoField dtoField = dtoInfo.getField(cond.getCol());
-        if (dtoField.isJoinIgnoreForQuery()) {
-            return;
-        }
-
         if (dtoField == null) {
             throw new IllegalArgumentException(cond.getCol() + "必须是dto的属性:" + dtoInfo.getDtoClazz());
+        }
+        if (dtoField.isJoinIgnoreForQuery()) {
+            return;
         }
         // 条件是否生效
         boolean effect = true;
@@ -334,118 +334,118 @@ public class JoinWrapperUtil {
         switch (cond.getOpt()) {
             case EQ:
                 if (rel == Rel.AND) {
-                    wrapper.eq(effect, targetFieldGetter, cond.getVal());
+                    wrapper.eq(effect, dtoField.alias, targetFieldGetter, cond.getVal());
                 } else {
-                    wrapper.or(effect, q -> q.eq(targetFieldGetter, cond.getVal()));
+                    wrapper.or(effect, q -> q.eq(dtoField.alias, targetFieldGetter, cond.getVal()));
                 }
                 break;
             case NE:
                 if (rel == Rel.AND) {
-                    wrapper.ne(effect, targetFieldGetter, cond.getVal());
+                    wrapper.ne(effect, dtoField.alias, targetFieldGetter, cond.getVal());
                 } else {
-                    wrapper.or(effect, q -> q.ne(targetFieldGetter, cond.getVal()));
+                    wrapper.or(effect, q -> q.ne(dtoField.alias, targetFieldGetter, cond.getVal()));
                 }
                 break;
             case GT:
                 if (rel == Rel.AND) {
-                    wrapper.gt(effect, targetFieldGetter, cond.getVal());
+                    wrapper.gt(effect, dtoField.alias, targetFieldGetter, cond.getVal());
                 } else {
-                    wrapper.or(effect, q -> q.gt(targetFieldGetter, cond.getVal()));
+                    wrapper.or(effect, q -> q.gt(dtoField.alias, targetFieldGetter, cond.getVal()));
                 }
                 break;
             case GE:
                 if (rel == Rel.AND) {
-                    wrapper.ge(effect, targetFieldGetter, cond.getVal());
+                    wrapper.ge(effect, dtoField.alias, targetFieldGetter, cond.getVal());
                 } else {
-                    wrapper.or(effect, q -> q.ge(targetFieldGetter, cond.getVal()));
+                    wrapper.or(effect, q -> q.ge(dtoField.alias, targetFieldGetter, cond.getVal()));
                 }
                 break;
             case LT:
                 if (rel == Rel.AND) {
-                    wrapper.lt(effect, targetFieldGetter, cond.getVal());
+                    wrapper.lt(effect, dtoField.alias, targetFieldGetter, cond.getVal());
                 } else {
-                    wrapper.or(effect, q -> q.lt(targetFieldGetter, cond.getVal()));
+                    wrapper.or(effect, q -> q.lt(dtoField.alias, targetFieldGetter, cond.getVal()));
                 }
                 break;
             case LE:
                 if (rel == Rel.AND) {
-                    wrapper.le(effect, targetFieldGetter, cond.getVal());
+                    wrapper.le(effect, dtoField.alias, targetFieldGetter, cond.getVal());
                 } else {
-                    wrapper.or(effect, q -> q.le(targetFieldGetter, cond.getVal()));
+                    wrapper.or(effect, q -> q.le(dtoField.alias, targetFieldGetter, cond.getVal()));
                 }
                 break;
             case IN:
                 if (rel == Rel.AND) {
-                    wrapper.in(effect, targetFieldGetter, (Collection) cond.getVal());
+                    wrapper.in(effect, dtoField.alias, targetFieldGetter, (Collection) cond.getVal());
                 } else {
-                    wrapper.or(effect, q -> q.in(targetFieldGetter, cond.getVal()));
+                    wrapper.or(effect, q -> q.in(dtoField.alias, targetFieldGetter, cond.getVal()));
                 }
                 break;
             case NIN:
                 if (rel == Rel.AND) {
-                    wrapper.notIn(effect, targetFieldGetter, (Collection) cond.getVal());
+                    wrapper.notIn(effect, dtoField.alias, targetFieldGetter, (Collection) cond.getVal());
                 } else {
-                    wrapper.or(effect, q -> q.notIn(targetFieldGetter, cond.getVal()));
+                    wrapper.or(effect, q -> q.notIn(dtoField.alias, targetFieldGetter, cond.getVal()));
                 }
                 break;
             case LIKE:
                 if (rel == Rel.AND) {
-                    wrapper.like(effect, targetFieldGetter, cond.getVal());
+                    wrapper.like(effect, dtoField.alias, targetFieldGetter, cond.getVal());
                 } else {
-                    wrapper.or(effect, q -> q.like(targetFieldGetter, cond.getVal()));
+                    wrapper.or(effect, q -> q.like(dtoField.alias, targetFieldGetter, cond.getVal()));
                 }
                 break;
             case LLIKE:
                 if (rel == Rel.AND) {
-                    wrapper.likeLeft(effect, targetFieldGetter, cond.getVal());
+                    wrapper.likeLeft(effect, dtoField.alias, targetFieldGetter, cond.getVal());
                 } else {
-                    wrapper.or(effect, q -> q.likeLeft(targetFieldGetter, cond.getVal()));
+                    wrapper.or(effect, q -> q.likeLeft(dtoField.alias, targetFieldGetter, cond.getVal()));
                 }
                 break;
             case RLIKE:
                 if (rel == Rel.AND) {
-                    wrapper.likeRight(effect, targetFieldGetter, cond.getVal());
+                    wrapper.likeRight(effect, dtoField.alias, targetFieldGetter, cond.getVal());
                 } else {
-                    wrapper.or(effect, q -> q.likeRight(targetFieldGetter, cond.getVal()));
+                    wrapper.or(effect, q -> q.likeRight(dtoField.alias, targetFieldGetter, cond.getVal()));
                 }
                 break;
             case NLIKE:
                 if (rel == Rel.AND) {
-                    wrapper.notLike(effect, targetFieldGetter, cond.getVal());
+                    wrapper.notLike(effect, dtoField.alias, targetFieldGetter, cond.getVal());
                 } else {
-                    wrapper.or(effect, q -> q.notLike(targetFieldGetter, cond.getVal()));
+                    wrapper.or(effect, q -> q.notLike(dtoField.alias, targetFieldGetter, cond.getVal()));
                 }
                 break;
             case NULL:
                 if (rel == Rel.AND) {
-                    wrapper.isNull(targetFieldGetter);
+                    wrapper.isNull(dtoField.alias, targetFieldGetter);
                 } else {
-                    wrapper.or(q -> q.isNull(targetFieldGetter));
+                    wrapper.or(q -> q.isNull(dtoField.alias, targetFieldGetter));
                 }
                 break;
             case NNULL:
                 if (rel == Rel.AND) {
-                    wrapper.isNotNull(targetFieldGetter);
+                    wrapper.isNotNull(dtoField.alias, targetFieldGetter);
                 } else {
-                    wrapper.or(q -> q.isNotNull(targetFieldGetter));
+                    wrapper.or(q -> q.isNotNull(dtoField.alias, targetFieldGetter));
                 }
                 break;
             case EMPTY:
                 TableFieldInfoWrapper fieldInfo = EntityUtil.getTableFieldInfo(dtoField.getTargetClazz(), dtoField.getTargetField().getName());
                 Assert.notNull(fieldInfo, "请检查字段是否正确：" + dtoField.getTargetField().getName() + ", 并确保类(" + dtoField.getTargetClazz() + ")中含有此字段。");
                 if (rel == Rel.AND) {
-                    wrapper.nested(q -> q.isNull(targetFieldGetter).or().eq(fieldInfo.isCharSequence(), targetFieldGetter, ""));
+                    wrapper.nested(q -> q.isNull(dtoField.alias, targetFieldGetter).or().eq(fieldInfo.isCharSequence(), dtoField.alias, targetFieldGetter, ""));
                 } else {
-                    wrapper.or(q -> q.nested(n -> n.isNull(targetFieldGetter).or().eq(fieldInfo.isCharSequence(), targetFieldGetter, "")));
+                    wrapper.or(q -> q.nested(n -> n.isNull(dtoField.alias, targetFieldGetter).or().eq(fieldInfo.isCharSequence(), dtoField.alias, targetFieldGetter, "")));
                 }
                 break;
             case NEMPTY:
                 TableFieldInfoWrapper fieldInfo1 = EntityUtil.getTableFieldInfo(dtoField.getTargetClazz(), dtoField.getTargetField().getName());
                 Assert.notNull(fieldInfo1, "请检查字段是否正确：" + dtoField.getTargetField().getName() + ", 并确保类(" + dtoField.getTargetClazz() + ")中含有此字段。");
                 if (rel == Rel.AND) {
-                    wrapper.nested(q -> q.isNotNull(targetFieldGetter).ne(fieldInfo1.isCharSequence(), targetFieldGetter, ""));
+                    wrapper.nested(q -> q.isNotNull(dtoField.alias, targetFieldGetter).ne(fieldInfo1.isCharSequence(), dtoField.alias, targetFieldGetter, ""));
                 } else {
-                    wrapper.or(q -> q.nested(n -> n.isNotNull(targetFieldGetter).ne(fieldInfo1.isCharSequence(), targetFieldGetter, "")));
+                    wrapper.or(q -> q.nested(n -> n.isNotNull(dtoField.alias, targetFieldGetter).ne(fieldInfo1.isCharSequence(), dtoField.alias, targetFieldGetter, "")));
                 }
                 break;
         }
@@ -457,17 +457,16 @@ public class JoinWrapperUtil {
         }
         for (Order order : orders) {
             DtoInfo.DtoField dtoField = dtoInfo.getField(order.getCol());
-            if (dtoField.isJoinIgnoreForQuery()) {
-                continue;
-            }
-
             if (dtoField == null) {
                 throw new IllegalArgumentException(order.getCol() + "必须是dto的属性:" + dtoInfo.getDtoClazz());
             }
+            if (dtoField.isJoinIgnoreForQuery()) {
+                continue;
+            }
             if (order.isAsc()) {
-                wrapper.orderByAsc(dtoField.getTargetFieldGetter());
+                wrapper.orderByAsc(dtoField.alias, dtoField.getTargetFieldGetter());
             } else {
-                wrapper.orderByDesc(dtoField.getTargetFieldGetter());
+                wrapper.orderByDesc(dtoField.alias, dtoField.getTargetFieldGetter());
             }
         }
     }
@@ -492,6 +491,7 @@ public class JoinWrapperUtil {
                 if (!EntityUtil.fieldNeedUpdate(targetField, fieldValue, updateNull)) {
                     continue;
                 }
+                // TODO 非常奇怪, UpdateJoinWrapper里没有支持alias的set重载方法
                 if (field.isDbField()) { // 无论是什么类型(简单类型、集合、对象类型),标记为数据库字段则直接set
                     String mapping = MapperResolver.getMapping(targetField);
                     if (StrUtil.isBlank(mapping)) {
@@ -529,6 +529,14 @@ public class JoinWrapperUtil {
             } catch (IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+    private static <T> void addSelectAs(MPJLambdaWrapper<T> wrapper, DtoInfo.DtoField field) {
+        if (StrUtil.isNotBlank(field.getAlias())) { // 别名支持
+            wrapper.selectAs(field.getAlias(), field.getTargetFieldGetter(), field.getFieldGetter());
+        } else {
+            wrapper.selectAs(field.getTargetFieldGetter(), field.getFieldGetter());
         }
     }
 }

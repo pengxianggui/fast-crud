@@ -60,7 +60,7 @@ public interface BaseService<T> extends IService<T> {
      *
      * @return
      */
-    boolean update(T entity);
+    boolean updateById(T entity);
 
     /**
      * 批量更新多条记录
@@ -68,7 +68,7 @@ public interface BaseService<T> extends IService<T> {
      * @param entities
      * @return
      */
-    boolean updateBatch(List<T> entities);
+    boolean updateBatchById(Collection<T> entities);
 
     /**
      * 判断指定条件是否存在数据
@@ -84,7 +84,7 @@ public interface BaseService<T> extends IService<T> {
      * @param id
      * @return
      */
-    boolean delete(Serializable id);
+    boolean deleteById(Serializable id);
 
     /**
      * 批量删除
@@ -92,7 +92,7 @@ public interface BaseService<T> extends IService<T> {
      * @param ids
      * @return
      */
-    boolean deleteBatch(Collection<? extends Serializable> ids);
+    boolean deleteBatchById(Collection<? extends Serializable> ids);
 
     /**
      * 自定义跨表列表查询
@@ -191,7 +191,9 @@ public interface BaseService<T> extends IService<T> {
      * @param mClazz 待删除对象的类型
      * @param <DTO>
      * @return
+     * @deprecated 由于会级联删除mClazz中@*Join声明关联的子表数据，删除范围不易感知，弃用
      */
+    @Deprecated
     <DTO> int removeById(Serializable id, Class<DTO> mClazz);
 
     /**
@@ -201,7 +203,9 @@ public interface BaseService<T> extends IService<T> {
      * @param mClazz 待删除对象的类型
      * @param <DTO>
      * @return
+     * @deprecated 由于会级联删除mClazz中@*Join声明关联的子表数据，删除范围不易感知，弃用
      */
+    @Deprecated
     <DTO> int removeByIds(Collection<? extends Serializable> ids, Class<DTO> mClazz);
 
     /**

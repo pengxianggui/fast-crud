@@ -18,6 +18,13 @@ public @interface RightJoin {
     Class<?> value();
 
     /**
+     * 目标类别名。当需要多次关联同一张表时，很可能会需要设置别名
+     *
+     * @return
+     */
+    String alias() default "";
+
+    /**
      * join后的on条件
      *
      * @return

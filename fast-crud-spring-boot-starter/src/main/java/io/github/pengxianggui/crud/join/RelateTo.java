@@ -23,6 +23,13 @@ public @interface RelateTo {
     Class<?> value();
 
     /**
+     * 别名。当需要多次关联同一张表时，很可能会需要设置别名
+     *
+     * @return
+     */
+    String alias() default "";
+
+    /**
      * 关联的entity类中的字段。存在三种情况:
      * <pre>
      * 1 当前注解修饰的字段类型是简单值类型时(详见{@link cn.hutool.core.util.ClassUtil#isSimpleValueType(Class)})，

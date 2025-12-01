@@ -28,11 +28,18 @@ import java.lang.annotation.Target;
 public @interface OnCond {
 
     /**
+     * 当前join类的别名。当需要多次关联同一张表时，很可能会需要设置别名
+     *
+     * @return
+     */
+    String alias() default "";
+
+    /**
      * 当前join的类中字段名称。
      *
      * @return
      */
-    String field() default "";
+    String field();
 
     /**
      * 操作符，默认为EQ(=)
@@ -49,6 +56,13 @@ public @interface OnCond {
     String constVal() default "";
 
     /**
+     * 目标类别名, 当需要多次关联同一张表时, 很可能会需要设置别名
+     *
+     * @return
+     */
+    String targetAlias() default "";
+
+    /**
      * 目标类, 如果不设置则默认为主表对应的entity类
      *
      * @return
@@ -56,7 +70,7 @@ public @interface OnCond {
     Class<?> targetClazz() default Void.class;
 
     /**
-     * 主类中的字段名称, 不配置则默认和{@link #field()} 一致
+     * 目标类中的字段名称, 不配置则默认和{@link #field()} 一致
      *
      * @return
      */

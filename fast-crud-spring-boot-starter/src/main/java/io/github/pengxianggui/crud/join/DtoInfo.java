@@ -72,11 +72,11 @@ class DtoInfo {
         this.dtoClazz = dtoClazz;
         this.mainEntityClazz = mainEntityClazz;
         this.innerJoinInfo = Arrays.stream(dtoClazz.getAnnotationsByType(InnerJoin.class))
-                .map(join -> new JoinInfo(join.value(), this, join.on())).collect(Collectors.toList());
+                .map(join -> new JoinInfo(join.value(), join.alias(), this, join.on())).collect(Collectors.toList());
         this.leftJoinInfo = Arrays.stream(dtoClazz.getAnnotationsByType(LeftJoin.class))
-                .map(join -> new JoinInfo(join.value(), this, join.on())).collect(Collectors.toList());
+                .map(join -> new JoinInfo(join.value(), join.alias(), this, join.on())).collect(Collectors.toList());
         this.rightJoinInfo = Arrays.stream(dtoClazz.getAnnotationsByType(RightJoin.class))
-                .map(join -> new JoinInfo(join.value(), this, join.on())).collect(Collectors.toList());
+                .map(join -> new JoinInfo(join.value(), join.alias(), this, join.on())).collect(Collectors.toList());
         this.fields = Arrays.stream(ReflectUtil.getFields(dtoClazz))
                 .filter(field -> !EntityUtil.isMarkAsNotDbField(field))
                 .map(field -> new DtoField(this.dtoClazz, field, this.mainEntityClazz)).collect(Collectors.toList());
@@ -95,18 +95,21 @@ class DtoInfo {
     @Getter
     static class JoinInfo {
         private Class<?> joinEntityClass;
+        private String alias;
         private Class<?> targetEntityClass;
         private OnCondition[] condFieldRelates;
 
         /**
          * @param joinEntityClass join的entity类
+         * @param alias           join的别名
          * @param dtoInfo         dtoInfo
          * @param onConds         on条件
          */
-        JoinInfo(Class<?> joinEntityClass, DtoInfo dtoInfo, OnCond[] onConds) {
+        JoinInfo(Class<?> joinEntityClass, String alias, DtoInfo dtoInfo, OnCond[] onConds) {
             Assert.isTrue(onConds.length > 0,
                     "There must be at least one OnCond in Class: {}", dtoInfo.dtoClazz.getName());
             this.joinEntityClass = joinEntityClass;
+            this.alias = StrUtil.blankToDefault(alias, null); // 空串时必须转为null, MPJ才会使用默认别名
             this.targetEntityClass = onConds[0].targetClazz() == Void.class ? dtoInfo.mainEntityClazz : onConds[0].targetClazz();
             this.condFieldRelates = new OnCondition[onConds.length];
             for (int i = 0; i < onConds.length; i++) {
@@ -130,6 +133,11 @@ class DtoInfo {
         @Getter
         protected Class<?> targetClazz;
         /**
+         * 关联实体类对应表的别名
+         */
+        @Getter
+        protected String alias;
+        /**
          * 关联的实体字段(可能为null)
          */
         @Getter
@@ -152,6 +160,7 @@ class DtoInfo {
             if (field.isAnnotationPresent(RelateTo.class)) {
                 RelateTo relateTo = field.getAnnotation(RelateTo.class);
                 this.targetClazz = relateTo.value();
+                this.alias = StrUtil.blankToDefault(relateTo.alias(), null);
                 this.isDbField = relateTo.dbField();
                 targetFieldName = StrUtil.blankToDefault(relateTo.field(), targetFieldName);
             } else {
@@ -280,12 +289,14 @@ class DtoInfo {
     @Getter
     static class OnCondition {
         private Class<?> clazz;
+        protected String alias;
         private Field field;
         private Opt opt;
         // 常量值
         private String constVal;
         // 关联目标字段
         protected Class<?> targetClazz;
+        protected String rightAlias;
         protected Field targetField;
 
         public OnCondition(JoinInfo joinInfo, OnCond onCond) {
@@ -297,6 +308,8 @@ class DtoInfo {
             } else {
                 this.targetClazz = joinInfo.getTargetEntityClass();
                 this.targetField = ReflectUtil.getField(this.targetClazz, StrUtil.blankToDefault(onCond.targetField(), onCond.field()));
+                this.alias = StrUtil.blankToDefault(onCond.alias(), null);
+                this.rightAlias = StrUtil.blankToDefault(onCond.targetAlias(), null);
             }
         }
 
