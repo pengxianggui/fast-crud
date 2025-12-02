@@ -1,6 +1,7 @@
 package io.github.pengxianggui.crud.join;
 
 import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
+import io.github.pengxianggui.crud.join.ClassJoinParseException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Field;

@@ -6,29 +6,32 @@ import com.google.common.collect.Sets;
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
-import javax.tools.FileObject;
+import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
-import javax.tools.StandardLocation;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * 方法引用自动扫描处理器
+ * APT: 根据@JoinMan注解生成方法引用注册的类文件(MethodReferenceLoader子类)。
+ * <p>
+ * 改动说明：
+ * 采用原子化生成策略。
+ * 1. 扫描阶段：收集所有 DTO、主 Entity、关联 Entity 的 TypeElement，并去重。
+ * 2. 生成阶段：遍历去重后的 TypeElement，为每一个类单独生成一个 Loader。
  *
  * @author pengxg
  * @date 2025/5/24 11:44
+ * @see MethodReferenceLoader
  */
 @AutoService(Processor.class)
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class MethodReferenceScanProcessor extends AbstractProcessor {
     private Filer filer;
-    private boolean generated = false;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -43,144 +46,153 @@ public class MethodReferenceScanProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        if (generated) { // 只处理一次
-            return false;
-        }
-        Map<String, String> registry = new HashMap<>();
         Set<? extends Element> elements = roundEnv.getElementsAnnotatedWith(JoinMain.class);
+
+        // 【核心改动 1】准备一个 Map 用于收集所有涉及的类 (Key=全限定名, Value=TypeElement)
+        // 作用：去重。无论多少个 DTO 引用了同一个 Entity，这里只保留一份。
+        Map<String, TypeElement> targetsToGenerate = new HashMap<>();
+
         for (Element element : elements) {
             if (!(element instanceof TypeElement)) {
                 continue;
             }
-
             TypeElement dtoType = (TypeElement) element;
-            final String dtoClassName = processingEnv.getElementUtils().getBinaryName(dtoType).toString();
 
-            // 加入dto本身的字段
-            collectFields(dtoType, dtoClassName, registry);
+            // 1. 收集 DTO 自己
+            addTypeToTargets(dtoType, targetsToGenerate);
 
-            // 加入主entity字段
+            // 2. 收集 @JoinMain 的主表 Entity
             for (AnnotationMirror am : dtoType.getAnnotationMirrors()) {
                 if (JoinMain.class.getName().equals(am.getAnnotationType().toString())) {
                     TypeMirror mainType = getClassValueFromAnnotation(am, "value");
-                    collectFields(mainType, registry);
+                    addTypeToTargets(mainType, targetsToGenerate);
                 }
             }
 
-            // 加入关联类字段
-            // 3. 处理 InnerJoin、LeftJoin、RightJoin
-            processRepeatableJoin(dtoType, InnerJoin.class.getName(), registry);
-            processRepeatableJoin(dtoType, LeftJoin.class.getName(), registry);
-            processRepeatableJoin(dtoType, RightJoin.class.getName(), registry);
+            // 3. 收集 @InnerJoin, @LeftJoin, @RightJoin 的关联 Entity
+            // 这里我们不再直接处理 registry，而是只提取 TypeElement
+            collectJoinTypes(dtoType, InnerJoin.class.getName(), targetsToGenerate);
+            collectJoinTypes(dtoType, LeftJoin.class.getName(), targetsToGenerate);
+            collectJoinTypes(dtoType, RightJoin.class.getName(), targetsToGenerate);
         }
 
-        try {
-            // 生成自动注册类
-            String autoConfigurationClassName = generateRegistryClass(registry);
-            // 将自动注册类注册到spring.factories
-            writeSpringFactories(autoConfigurationClassName);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        // 【核心改动 2】遍历去重后的类集合，生成 Loader
+        // 这里的 targetsToGenerate 包含了所有 DTO 和 Entity
+        for (TypeElement targetType : targetsToGenerate.values()) {
+            generateLoaderForClass(targetType);
         }
 
-        this.generated = true;
         return true;
     }
 
-    private String generateRegistryClass(Map<String, String> registry) throws IOException {
+    // 【新增辅助方法】安全添加 Type 到 Map
+    private void addTypeToTargets(TypeMirror typeMirror, Map<String, TypeElement> map) {
+        if (typeMirror == null) return;
+        Element element = processingEnv.getTypeUtils().asElement(typeMirror);
+        if (element instanceof TypeElement) {
+            addTypeToTargets((TypeElement) element, map);
+        }
+    }
+
+    private void addTypeToTargets(TypeElement typeElement, Map<String, TypeElement> map) {
+        if (typeElement == null) return;
+        String binaryName = processingEnv.getElementUtils().getBinaryName(typeElement).toString();
+        map.putIfAbsent(binaryName, typeElement);
+    }
+
+    // 【核心改动 3】重构生成逻辑：只为当前传入的 type 生成 Loader
+    private void generateLoaderForClass(TypeElement type) {
+        String originalBinaryName = processingEnv.getElementUtils().getBinaryName(type).toString();
+
+        // 这里的 className 已经是 全限定名转换过来的 (com_example_User)，不会冲突
+        String generatedClassName = originalBinaryName.replace(".", "_") + "_MethodReferenceLoader";
+
+        String currentPackage = this.getClass().getPackage().getName();
+        String generatePackageName = currentPackage + ".generate"; // 建议用 generated
+
         try {
-            String packagePath = this.getClass().getPackage().getName();
-            String autoConfigurationClassName = packagePath + ".MethodReferenceRegistrarAutoConfiguration";
-            JavaFileObject fileObject = filer.createSourceFile(autoConfigurationClassName);
+            // 尝试创建文件
+            JavaFileObject fileObject = filer.createSourceFile(generatePackageName + "." + generatedClassName, type);
+
             try (PrintWriter out = new PrintWriter(fileObject.openWriter())) {
-                out.println("package " + packagePath + ";");
-                out.println("import " + packagePath + ".MethodReferenceRegistry;");
-                out.println("import org.springframework.context.annotation.Configuration;");
-                out.println("import javax.annotation.PostConstruct;");
+                // 【延迟执行】只有确定要写文件了，才去扫描字段，节省性能
+                Map<String, String> registry = new HashMap<>();
+                collectFields(type, originalBinaryName, registry);
+
+                out.println("package " + generatePackageName + ";");
+                out.println("import com.google.auto.service.AutoService;");
                 out.println("import com.baomidou.mybatisplus.core.toolkit.support.SFunction;");
-                out.println("@Configuration");
-                out.println("public class MethodReferenceRegistrarAutoConfiguration {");
-                out.println("    @PostConstruct");
-                out.println("    public void init() {");
+                out.println("import " + currentPackage + ".MethodReferenceLoader;");
+                out.println("import " + currentPackage + ".MethodReferenceRegistry;");
+                out.println();
+                out.println("@AutoService(MethodReferenceLoader.class)");
+                out.println("public class " + generatedClassName + " implements MethodReferenceLoader {");
+                out.println("    @Override");
+                out.println("    public void load() {");
 
                 for (Map.Entry<String, String> entry : registry.entrySet()) {
-                    String className = entry.getKey().split("#")[0];
-                    out.printf("        MethodReferenceRegistry.register(\"%s\", (SFunction<%s, ?>) %s);\n", entry.getKey(), className, entry.getValue());
+                    // entry.getKey() = com.example.User#name
+                    // entry.getValue() = com.example.User::getName
+                    // 这里的 split("#")[0] 是为了获取 Class 类型
+                    out.printf("        MethodReferenceRegistry.register(\"%s\", (SFunction<%s, ?>) %s);\n",
+                            entry.getKey(), entry.getKey().split("#")[0], entry.getValue());
                 }
 
                 out.println("    }");
                 out.println("}");
             }
-            return autoConfigurationClassName;
+        } catch (FilerException e) {
+            // 【重要】文件已存在，说明别的 DTO 已经触发生成了这个类的 Loader
+            // 这是原子化生成的正常现象，直接忽略
         } catch (IOException e) {
-            throw e;
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
+                    "Unable to generate loader file for " + originalBinaryName + ": " + e.getMessage());
         }
     }
 
-    private void writeSpringFactories(String autoConfigurationClassName) throws IOException {
-        try {
-            Filer filer = processingEnv.getFiler();
-            FileObject resource = filer.createResource(
-                    StandardLocation.CLASS_OUTPUT,
-                    "",
-                    "META-INF/spring.factories"
-            );
-
-            try (Writer writer = new BufferedWriter(resource.openWriter())) {
-                writer.write("org.springframework.boot.autoconfigure.EnableAutoConfiguration=\\\n");
-                writer.write(autoConfigurationClassName + "\n");
-            }
-        } catch (IOException e) {
-            throw e;
-        }
-    }
-
-    private void processRepeatableJoin(TypeElement dtoType, String annotationClassName, Map<String, String> registry) {
+    // 【核心改动 4】重构提取逻辑：只提取 Type，不生成 Registry
+    private void collectJoinTypes(TypeElement dtoType, String annotationClassName, Map<String, TypeElement> targets) {
         for (AnnotationMirror mirror : dtoType.getAnnotationMirrors()) {
             String mirrorType = mirror.getAnnotationType().toString();
-            if (!annotationClassName.equals(mirrorType)) {
-                // 新增：同时支持容器注解（例如 InnerJoins 包含多个 InnerJoin）
-                // 如果 annotationClassName = InnerJoin.class.getName()，则容器类名是 InnerJoins
-                if (!mirrorType.equals(annotationClassName + "s")) {
-                    continue;
-                }
+
+            // 逻辑保持不变，支持单个和容器注解
+            if (!annotationClassName.equals(mirrorType) && !mirrorType.equals(annotationClassName + "s")) {
+                continue;
             }
 
-            // 如果是容器注解（InnerJoins），则取出其 value 数组中的每一个 InnerJoin
-            if (mirrorType.endsWith("s")) { // 例如 InnerJoins、LeftJoins、RightJoins
+            if (mirrorType.endsWith("s")) { // 容器注解
                 for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : mirror.getElementValues().entrySet()) {
                     if ("value".equals(entry.getKey().getSimpleName().toString())) {
                         Object value = entry.getValue().getValue();
                         if (value instanceof Iterable) {
                             for (Object o : (Iterable<?>) value) {
                                 if (o instanceof AnnotationMirror) {
-                                    processSingleJoinAnnotation((AnnotationMirror) o, registry);
+                                    extractTypeFromSingleAnnotation((AnnotationMirror) o, targets);
                                 }
                             }
                         }
                     }
                 }
-            } else {
-                // 单个 InnerJoin、LeftJoin、RightJoin
-                processSingleJoinAnnotation(mirror, registry);
+            } else { // 单个注解
+                extractTypeFromSingleAnnotation(mirror, targets);
             }
         }
     }
 
-    /**
-     * 处理单个 InnerJoin/LeftJoin/RightJoin 注解，提取其 value 属性
-     */
-    private void processSingleJoinAnnotation(AnnotationMirror mirror, Map<String, String> registry) {
+    // 从单个 Join 注解中提取 value 属性的 Type
+    private void extractTypeFromSingleAnnotation(AnnotationMirror mirror, Map<String, TypeElement> targets) {
         Map<? extends ExecutableElement, ? extends AnnotationValue> values = mirror.getElementValues();
         for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : values.entrySet()) {
             if ("value".equals(entry.getKey().getSimpleName().toString())) {
                 Object value = entry.getValue().getValue();
                 if (value instanceof TypeMirror) {
-                    collectFields((TypeMirror) value, registry);
+                    addTypeToTargets((TypeMirror) value, targets);
                 }
             }
         }
     }
+
+    // --- 下面的辅助方法基本保持不变，只是调用时机变了 ---
 
     private TypeMirror getClassValueFromAnnotation(AnnotationMirror annotationMirror, String attributeName) {
         for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : annotationMirror.getElementValues().entrySet()) {
@@ -194,38 +206,83 @@ public class MethodReferenceScanProcessor extends AbstractProcessor {
         return null;
     }
 
-    private void collectFields(TypeMirror mirror, Map<String, String> registry) {
-        if (mirror == null) return;
-        Element element = processingEnv.getTypeUtils().asElement(mirror);
-        if (!(element instanceof TypeElement)) return;
-        String fullName = processingEnv.getElementUtils().getBinaryName((TypeElement) element).toString();
-        collectFields((TypeElement) element, fullName, registry);
-    }
-
-    private void collectFields(TypeElement typeEle, String className, Map<String, String> registry) {
-        // 处理当前类字段
+    /**
+     * 收集字段映射
+     *
+     * @param typeEle       当前正在扫描的类（可能是子类，也可能是递归到的父类）
+     * @param leafClassName 最底层的子类全限定名（例如 Orders），用于生成 Key 和 Lambda。即使递归到父类，这个参数也不变。
+     * @param registry      注册表
+     */
+    private void collectFields(TypeElement typeEle, String leafClassName, Map<String, String> registry) {
+        // 1. 处理当前正在扫描的类（typeEle）的字段
         for (Element enclosed : typeEle.getEnclosedElements()) {
             if (enclosed.getKind() == ElementKind.FIELD
                     && !enclosed.getModifiers().contains(Modifier.STATIC)) { // 排除静态属性
+
                 String fieldName = enclosed.getSimpleName().toString();
                 String getter = getGetterMethodName(enclosed);
-                registry.put(MethodReferenceRegistry.getKey(className, fieldName), className + "::" + getter);
+
+                // 核心修正：
+                // 无论 typeEle 是 Orders 还是 BaseEntity，我们都使用传入的 leafClassName (即 Orders)
+                // 这样生成的代码就是: Orders::getCreateTime，而不是 BaseEntity::getCreateTime
+                // Java 语法允许 子类::父类方法
+                String key = MethodReferenceRegistry.getKey(leafClassName, fieldName);
+                String value = leafClassName + "::" + getter;
+
+                // 使用 putIfAbsent 还是 put？
+                // 通常建议使用 putIfAbsent。
+                // 因为递归是从子类 -> 父类。如果子类重写了父类字段/方法，应该保留子类的（也就是先访问到的）。
+                registry.putIfAbsent(key, value);
             }
         }
 
-        // 递归处理父类字段
+        // 2. 递归处理父类字段
         TypeMirror superMirror = typeEle.getSuperclass();
         if (superMirror != null && !superMirror.toString().equals("java.lang.Object")) {
             Element superElement = processingEnv.getTypeUtils().asElement(superMirror);
             if (superElement instanceof TypeElement) {
-                collectFields((TypeElement) superElement, className, registry);
+                // 核心修正：
+                // 递归调用时，第二个参数继续传 leafClassName，不要传 superElement 的名字！
+                collectFields((TypeElement) superElement, leafClassName, registry);
             }
         }
     }
 
+//    // 这里只保留了针对 TypeElement 的 collectFields，因为现在我们直接对 TypeElement 操作
+//    private void collectFields(TypeElement typeEle, String className, Map<String, String> registry) {
+//        // 处理当前类字段
+//        for (Element enclosed : typeEle.getEnclosedElements()) {
+//            if (enclosed.getKind() == ElementKind.FIELD
+//                    && !enclosed.getModifiers().contains(Modifier.STATIC)) { // 排除静态属性
+//                String fieldName = enclosed.getSimpleName().toString();
+//                String getter = getGetterMethodName(enclosed);
+//                registry.put(MethodReferenceRegistry.getKey(className, fieldName), className + "::" + getter);
+//            }
+//        }
+//
+//        // 递归处理父类字段
+//        TypeMirror superMirror = typeEle.getSuperclass();
+//        if (superMirror != null && !superMirror.toString().equals("java.lang.Object")) {
+//            Element superElement = processingEnv.getTypeUtils().asElement(superMirror);
+//            if (superElement instanceof TypeElement) {
+//                // 递归调用
+//                String superClassName = processingEnv.getElementUtils().getBinaryName((TypeElement) superElement).toString();
+//                collectFields((TypeElement) superElement, superClassName, registry);
+//            }
+//        }
+//    }
+
     private String getGetterMethodName(Element field) {
         String fieldName = field.getSimpleName().toString();
-        boolean isbool = field.asType().toString().equals("boolean"); // boolean 为is开头, 其它(包括Boolean)为get开头
-        return (isbool ? "is" : "get") + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
+        // 修复：Getter 生成逻辑保持你最新的修改
+        boolean isPrimitiveBoolean = field.asType().getKind() == TypeKind.BOOLEAN;
+
+        if (isPrimitiveBoolean) {
+            if (fieldName.startsWith("is") && fieldName.length() > 2 && Character.isUpperCase(fieldName.charAt(2))) {
+                return fieldName;
+            }
+            return "is" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
+        }
+        return "get" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
     }
 }
