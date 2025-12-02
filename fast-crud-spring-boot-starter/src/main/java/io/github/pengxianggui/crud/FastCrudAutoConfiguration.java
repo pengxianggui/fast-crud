@@ -5,6 +5,7 @@ import io.github.pengxianggui.crud.config.MybatisConfig;
 import io.github.pengxianggui.crud.config.RequestMappingAutoRemover;
 import io.github.pengxianggui.crud.download.FileResourceHttpRequestHandler;
 import io.github.pengxianggui.crud.file.FileConfig;
+import io.github.pengxianggui.crud.join.MethodReferenceLoaderConfig;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -21,7 +22,7 @@ import javax.sql.DataSource;
  * @author pengxg
  * @date 2024/11/30 14:27
  */
-@ImportAutoConfiguration({MybatisConfig.class, FileConfig.class, SwaggerConfig.class})
+@ImportAutoConfiguration({MybatisConfig.class, FileConfig.class, SwaggerConfig.class, MethodReferenceLoaderConfig.class})
 @EnableConfigurationProperties(FastCrudProperty.class)
 @Configuration
 public class FastCrudAutoConfiguration {

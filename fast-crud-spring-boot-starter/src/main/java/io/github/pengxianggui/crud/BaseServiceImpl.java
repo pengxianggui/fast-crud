@@ -16,6 +16,7 @@ import com.github.yulichang.wrapper.MPJLambdaWrapper;
 import com.github.yulichang.wrapper.UpdateJoinWrapper;
 import io.github.pengxianggui.crud.file.FileManager;
 import io.github.pengxianggui.crud.join.*;
+import io.github.pengxianggui.crud.join.MethodReferenceRegistry;
 import io.github.pengxianggui.crud.query.Cond;
 import io.github.pengxianggui.crud.query.PagerQuery;
 import io.github.pengxianggui.crud.query.Query;

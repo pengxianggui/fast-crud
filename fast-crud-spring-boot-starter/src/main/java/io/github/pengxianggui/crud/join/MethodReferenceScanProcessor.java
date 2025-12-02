@@ -6,29 +6,27 @@ import com.google.common.collect.Sets;
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
-import javax.tools.FileObject;
+import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
-import javax.tools.StandardLocation;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * 方法引用自动扫描处理器
+ * APT: 根据@JoinMan注解生成方法引用注册的类文件(MethodReferenceLoader子类)。
  *
  * @author pengxg
  * @date 2025/5/24 11:44
+ * @see MethodReferenceLoader
  */
 @AutoService(Processor.class)
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class MethodReferenceScanProcessor extends AbstractProcessor {
     private Filer filer;
-    private boolean generated = false;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -43,22 +41,18 @@ public class MethodReferenceScanProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        if (generated) { // 只处理一次
-            return false;
-        }
-        Map<String, String> registry = new HashMap<>();
         Set<? extends Element> elements = roundEnv.getElementsAnnotatedWith(JoinMain.class);
+
         for (Element element : elements) {
             if (!(element instanceof TypeElement)) {
                 continue;
             }
 
+            Map<String, String> registry = new HashMap<>();
             TypeElement dtoType = (TypeElement) element;
             final String dtoClassName = processingEnv.getElementUtils().getBinaryName(dtoType).toString();
-
             // 加入dto本身的字段
             collectFields(dtoType, dtoClassName, registry);
-
             // 加入主entity字段
             for (AnnotationMirror am : dtoType.getAnnotationMirrors()) {
                 if (JoinMain.class.getName().equals(am.getAnnotationType().toString())) {
@@ -72,66 +66,42 @@ public class MethodReferenceScanProcessor extends AbstractProcessor {
             processRepeatableJoin(dtoType, InnerJoin.class.getName(), registry);
             processRepeatableJoin(dtoType, LeftJoin.class.getName(), registry);
             processRepeatableJoin(dtoType, RightJoin.class.getName(), registry);
-        }
 
-        try {
-            // 生成自动注册类
-            String autoConfigurationClassName = generateRegistryClass(registry);
-            // 将自动注册类注册到spring.factories
-            writeSpringFactories(autoConfigurationClassName);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            generateRegistryClass(dtoType, registry);
         }
-
-        this.generated = true;
         return true;
     }
 
-    private String generateRegistryClass(Map<String, String> registry) throws IOException {
+    private void generateRegistryClass(TypeElement dtoType, Map<String, String> registry) {
+        String dtoName = processingEnv.getElementUtils().getBinaryName(dtoType).toString();
+        // 保证类名唯一
+        String className = dtoName.replace(".", "_") + "_MethodReferenceLoader";
+        String currentPackage = this.getClass().getPackage().getName();
+        String generateClassOfPackage = currentPackage + ".generate";
         try {
-            String packagePath = this.getClass().getPackage().getName();
-            String autoConfigurationClassName = packagePath + ".MethodReferenceRegistrarAutoConfiguration";
-            JavaFileObject fileObject = filer.createSourceFile(autoConfigurationClassName);
+            JavaFileObject fileObject = filer.createSourceFile(generateClassOfPackage + "." + className);
             try (PrintWriter out = new PrintWriter(fileObject.openWriter())) {
-                out.println("package " + packagePath + ";");
-                out.println("import " + packagePath + ".MethodReferenceRegistry;");
-                out.println("import org.springframework.context.annotation.Configuration;");
-                out.println("import javax.annotation.PostConstruct;");
+                out.println("package " + generateClassOfPackage + ";");
+                out.println("import com.google.auto.service.AutoService;");
                 out.println("import com.baomidou.mybatisplus.core.toolkit.support.SFunction;");
-                out.println("@Configuration");
-                out.println("public class MethodReferenceRegistrarAutoConfiguration {");
-                out.println("    @PostConstruct");
-                out.println("    public void init() {");
-
+                out.println("import " + currentPackage + ".MethodReferenceLoader;");
+                out.println("import " + currentPackage + ".MethodReferenceRegistry;");
+                out.println("@AutoService(MethodReferenceLoader.class)");
+                out.println("public class " + className + " implements MethodReferenceLoader {");
+                out.println("    @Override");
+                out.println("    public void load() {");
                 for (Map.Entry<String, String> entry : registry.entrySet()) {
-                    String className = entry.getKey().split("#")[0];
-                    out.printf("        MethodReferenceRegistry.register(\"%s\", (SFunction<%s, ?>) %s);\n", entry.getKey(), className, entry.getValue());
+                    out.printf("        MethodReferenceRegistry.register(\"%s\", (SFunction<%s, ?>) %s);\n",
+                            entry.getKey(), entry.getKey().split("#")[0], entry.getValue());
                 }
-
                 out.println("    }");
                 out.println("}");
             }
-            return autoConfigurationClassName;
+        } catch (FilerException e) {
+            // 文件已经生成, 忽略..
         } catch (IOException e) {
-            throw e;
-        }
-    }
-
-    private void writeSpringFactories(String autoConfigurationClassName) throws IOException {
-        try {
-            Filer filer = processingEnv.getFiler();
-            FileObject resource = filer.createResource(
-                    StandardLocation.CLASS_OUTPUT,
-                    "",
-                    "META-INF/spring.factories"
-            );
-
-            try (Writer writer = new BufferedWriter(resource.openWriter())) {
-                writer.write("org.springframework.boot.autoconfigure.EnableAutoConfiguration=\\\n");
-                writer.write(autoConfigurationClassName + "\n");
-            }
-        } catch (IOException e) {
-            throw e;
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
+                    "Unable to generate loader file for " + dtoName + ": " + e.getMessage());
         }
     }
 
@@ -224,8 +194,26 @@ public class MethodReferenceScanProcessor extends AbstractProcessor {
     }
 
     private String getGetterMethodName(Element field) {
+//        String fieldName = field.getSimpleName().toString();
+//        boolean isbool = field.asType().toString().equals("boolean"); // boolean 为is开头, 其它(包括Boolean)为get开头
+//        return (isbool ? "is" : "get") + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
+        
         String fieldName = field.getSimpleName().toString();
-        boolean isbool = field.asType().toString().equals("boolean"); // boolean 为is开头, 其它(包括Boolean)为get开头
-        return (isbool ? "is" : "get") + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
+        // 注意：这里要处理 TypeKind.BOOLEAN (基本类型 boolean)
+        // 包装类型 Boolean 依然遵循 getXxx 规范
+        boolean isPrimitiveBoolean = field.asType().getKind() == TypeKind.BOOLEAN;
+
+        if (isPrimitiveBoolean) {
+            // 如果已经是 is 开头，比如 isDeleted，并且第三个字符是大写（如果有），则直接返回原名
+            // 规范：boolean isSuccess -> isSuccess()
+            if (fieldName.startsWith("is") && fieldName.length() > 2 && Character.isUpperCase(fieldName.charAt(2))) {
+                return fieldName;
+            }
+            // 否则：boolean success -> isSuccess()
+            return "is" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
+        }
+
+        // 其他类型 (包括 Boolean)：name -> getName()
+        return "get" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
     }
 }
