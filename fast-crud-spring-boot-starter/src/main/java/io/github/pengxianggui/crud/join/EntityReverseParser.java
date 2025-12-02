@@ -15,11 +15,11 @@ import java.util.stream.Collectors;
  */
 public class EntityReverseParser {
 
-    public static <DTO> Object createMainInstance(DTO model) {
+    public static <DTO> Object createMainInstanceForInset(DTO model) {
         DtoInfo dtoInfo = JoinWrapperUtil.getDtoInfo(model.getClass());
         Class entityClass = dtoInfo.getMainEntityClazz();
         try {
-            Object entity = createEntityInstance(entityClass, model, dtoInfo);
+            Object entity = createEntityInstanceForInsert(entityClass, model, dtoInfo);
             Assert.notNull(entity, "无法构造主类实例!请检查DTO类:{}", model.getClass().getName());
             return entity;
         } catch (Exception e) {
@@ -27,20 +27,19 @@ public class EntityReverseParser {
         }
     }
 
-    public static <DTO> List<Object> createJoinInstance(DTO model, Object mainEntity) {
+    public static <DTO> List<Object> createJoinInstanceForInsert(DTO model, Object mainEntity) {
         DtoInfo dtoInfo = JoinWrapperUtil.getDtoInfo(model.getClass());
-        List<DtoInfo.JoinInfo> joinInfos = new ArrayList<>();
-        joinInfos.addAll(dtoInfo.getInnerJoinInfo());
-        joinInfos.addAll(dtoInfo.getLeftJoinInfo());
-        joinInfos.addAll(dtoInfo.getRightJoinInfo());
+        List<DtoInfo.JoinInfo> joinInfos = dtoInfo.getJoinInfos().stream().filter(j -> !j.isReadonly())
+                .collect(Collectors.toList());
         List<Object> entities = new ArrayList<>();
         try {
+            // FIXME 当存在别名时，即同一个表join了多次，会有问题
             for (DtoInfo.JoinInfo joinInfo : joinInfos) {
                 // 只支持构造和主类直接关联的实体, 否则过于复杂, 暂不支持
                 if (joinInfo.getTargetEntityClass() != mainEntity.getClass()) {
                     continue;
                 }
-                Object entity = createEntityInstance(joinInfo.getJoinEntityClass(), model, dtoInfo);
+                Object entity = createEntityInstanceForInsert(joinInfo.getJoinEntityClass(), model, dtoInfo);
                 if (entity == null) {
                     continue;
                 }
@@ -70,9 +69,9 @@ public class EntityReverseParser {
      * @throws InstantiationException
      * @throws IllegalAccessException
      */
-    private static <T> T createEntityInstance(Class<T> entityClass, Object model, DtoInfo dtoInfo) throws InstantiationException, IllegalAccessException {
+    private static <T> T createEntityInstanceForInsert(Class<T> entityClass, Object model, DtoInfo dtoInfo) throws InstantiationException, IllegalAccessException {
         List<DtoInfo.DtoField> fields = dtoInfo.getFields().stream()
-                .filter(f -> f.isDbField() && !f.targetFieldNotExist() && !f.isJoinIgnoreForInsert())
+                .filter(f -> f.isDbField() && !f.targetFieldNotExist() && !f.ignoreForInsert())
                 .filter(f -> Objects.equals(entityClass, f.getTargetClazz()))
                 .collect(Collectors.toList());
         if (fields.isEmpty()) {

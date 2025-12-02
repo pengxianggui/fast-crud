@@ -306,10 +306,10 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
         Assert.notNull(model, "model can not be null!");
         Assert.notNull(dtoClazz, "dtoClazz can not be null!");
         AtomicInteger count = new AtomicInteger();
-        T mainEntity = (T) EntityReverseParser.createMainInstance(model);
+        T mainEntity = (T) EntityReverseParser.createMainInstanceForInset(model);
         executeInTransaction(() -> {
             count.addAndGet(insert(mainEntity));
-            List<Object> joinEntities = EntityReverseParser.createJoinInstance(model, mainEntity);
+            List<Object> joinEntities = EntityReverseParser.createJoinInstanceForInsert(model, mainEntity);
             for (Object joinEntity : joinEntities) {
                 count.addAndGet(getCommonRepo().saveOrUpdate(joinEntity.getClass(), joinEntity));
             }

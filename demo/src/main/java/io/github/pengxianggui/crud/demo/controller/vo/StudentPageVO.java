@@ -23,7 +23,7 @@ import java.util.List;
  */
 @Data
 @JoinMain(Student.class)
-@LeftJoin(value = StudentSensitive.class, on = {@OnCond(field = "studentId", targetClazz = Student.class, targetField = "id")})
+@LeftJoin(value = StudentSensitive.class, readonly = false, on = {@OnCond(field = "studentId", targetClazz = Student.class, targetField = "id")})
 public class StudentPageVO {
 
     private Integer id;

@@ -4,16 +4,14 @@ import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
+import com.google.common.collect.ImmutableList;
 import io.github.pengxianggui.crud.query.Opt;
 import io.github.pengxianggui.crud.util.EntityUtil;
-import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -23,7 +21,7 @@ import java.util.stream.Collectors;
  * @date 2025/5/23 13:41
  */
 @NoArgsConstructor
-@Data
+@Getter
 class DtoInfo {
     /**
      * dto类
@@ -34,17 +32,9 @@ class DtoInfo {
      */
     private Class<?> mainEntityClazz;
     /**
-     * 内连信息
+     * join信息，包括三种join
      */
-    private List<JoinInfo> innerJoinInfo;
-    /**
-     * 左连信息
-     */
-    private List<JoinInfo> leftJoinInfo;
-    /**
-     * 右连信息
-     */
-    private List<JoinInfo> rightJoinInfo;
+    private List<JoinInfo> joinInfos;
     /**
      * dto类中的字段信息
      */
@@ -71,17 +61,31 @@ class DtoInfo {
         Assert.isTrue(mainEntityClazz != null, "mainEntityClazz不能为null");
         this.dtoClazz = dtoClazz;
         this.mainEntityClazz = mainEntityClazz;
-        this.innerJoinInfo = Arrays.stream(dtoClazz.getAnnotationsByType(InnerJoin.class))
-                .map(join -> new JoinInfo(join.value(), join.alias(), this, join.on())).collect(Collectors.toList());
-        this.leftJoinInfo = Arrays.stream(dtoClazz.getAnnotationsByType(LeftJoin.class))
-                .map(join -> new JoinInfo(join.value(), join.alias(), this, join.on())).collect(Collectors.toList());
-        this.rightJoinInfo = Arrays.stream(dtoClazz.getAnnotationsByType(RightJoin.class))
-                .map(join -> new JoinInfo(join.value(), join.alias(), this, join.on())).collect(Collectors.toList());
-        this.fields = Arrays.stream(ReflectUtil.getFields(dtoClazz))
-                .filter(field -> !EntityUtil.isMarkAsNotDbField(field))
-                .map(field -> new DtoField(this.dtoClazz, field, this.mainEntityClazz)).collect(Collectors.toList());
+        List<JoinInfo> joinInfos = new ArrayList<>();
+        List<JoinInfo> innerJoinInfo = Arrays.stream(dtoClazz.getAnnotationsByType(InnerJoin.class))
+                .map(join -> new JoinInfo(this, JoinType.INNER, join.value(), join.alias(), join.on(), join.readonly()))
+                .collect(Collectors.toList());
+        joinInfos.addAll(innerJoinInfo);
+        List<JoinInfo> leftJoinInfo = Arrays.stream(dtoClazz.getAnnotationsByType(LeftJoin.class))
+                .map(join -> new JoinInfo(this, JoinType.LEFT, join.value(), join.alias(), join.on(), join.readonly()))
+                .collect(Collectors.toList());
+        joinInfos.addAll(leftJoinInfo);
+        List<JoinInfo> rightJoinInfo = Arrays.stream(dtoClazz.getAnnotationsByType(RightJoin.class))
+                .map(join -> new JoinInfo(this, JoinType.RIGHT, join.value(), join.alias(), join.on(), join.readonly()))
+                .collect(Collectors.toList());
+        joinInfos.addAll(rightJoinInfo);
+        this.joinInfos = ImmutableList.copyOf(joinInfos);
+        List<DtoField> fields = Arrays.stream(ReflectUtil.getFields(dtoClazz)).filter(field -> !EntityUtil.isMarkAsNotDbField(field))
+                .map(field -> new DtoField(this, field)).collect(Collectors.toList());
+        this.fields = ImmutableList.copyOf(fields);
     }
 
+    /**
+     * 根据字段名获取dto字段信息
+     *
+     * @param col
+     * @return
+     */
     DtoField getField(String col) {
         for (DtoField dtoField : fields) {
             if (dtoField.getField().getName().equals(col)) {
@@ -91,25 +95,45 @@ class DtoInfo {
         return null;
     }
 
+    /**
+     * 根据dto字段获取其所属的join类。
+     *
+     * @param field
+     * @return 如果所属主类，则返回null
+     */
+    JoinInfo getJoinInfo(DtoField field) {
+        Optional<JoinInfo> joinInfo = this.joinInfos.stream()
+                .filter(j -> j.getJoinEntityClass().equals(field.getTargetClazz()) && Objects.equals(j.getAlias(), field.alias))
+                .findFirst();
+        return joinInfo.orElse(null);
+    }
+
     @NoArgsConstructor
     @Getter
     static class JoinInfo {
+        private DtoInfo dtoInfo;
+        private JoinType joinType;
         private Class<?> joinEntityClass;
         private String alias;
         private Class<?> targetEntityClass;
         private OnCondition[] condFieldRelates;
+        private boolean readonly;
 
         /**
+         * @param dtoInfo         dtoInfo
+         * @param joinType        join类型
          * @param joinEntityClass join的entity类
          * @param alias           join的别名
-         * @param dtoInfo         dtoInfo
          * @param onConds         on条件
          */
-        JoinInfo(Class<?> joinEntityClass, String alias, DtoInfo dtoInfo, OnCond[] onConds) {
+        JoinInfo(DtoInfo dtoInfo, JoinType joinType, Class<?> joinEntityClass, String alias, OnCond[] onConds, boolean readonly) {
             Assert.isTrue(onConds.length > 0,
-                    "There must be at least one OnCond in Class: {}", dtoInfo.dtoClazz.getName());
+                    "There must be at least one @OnCond in Class: {}", dtoInfo.dtoClazz.getName());
+            this.dtoInfo = dtoInfo;
+            this.joinType = joinType;
             this.joinEntityClass = joinEntityClass;
             this.alias = StrUtil.blankToDefault(alias, null); // 空串时必须转为null, MPJ才会使用默认别名
+            this.readonly = readonly;
             this.targetEntityClass = onConds[0].targetClazz() == Void.class ? dtoInfo.mainEntityClazz : onConds[0].targetClazz();
             this.condFieldRelates = new OnCondition[onConds.length];
             for (int i = 0; i < onConds.length; i++) {
@@ -121,6 +145,13 @@ class DtoInfo {
 
     @NoArgsConstructor
     static class DtoField {
+        /**
+         * 所属DtoInfo,持有上层引用
+         */
+        protected DtoInfo dtoInfo;
+        /**
+         * dto类
+         */
         protected Class<?> dtoClazz;
         /**
          * 属性
@@ -149,12 +180,11 @@ class DtoInfo {
         protected boolean isDbField;
 
         /**
-         * @param dtoClazz    dto类型
-         * @param field       dto字段
-         * @param entityClazz field关联的目标实体类型，field上@RelateTo指定的优先, 未指定则默认是此值
+         * @param field dto字段
          */
-        DtoField(Class<?> dtoClazz, Field field, Class<?> entityClazz) {
-            this.dtoClazz = dtoClazz;
+        DtoField(DtoInfo dtoInfo, Field field) {
+            this.dtoInfo = dtoInfo;
+            this.dtoClazz = dtoInfo.dtoClazz;
             this.field = field;
             String targetFieldName = field.getName();
             if (field.isAnnotationPresent(RelateTo.class)) {
@@ -164,12 +194,8 @@ class DtoInfo {
                 this.isDbField = relateTo.dbField();
                 targetFieldName = StrUtil.blankToDefault(relateTo.field(), targetFieldName);
             } else {
-                this.targetClazz = entityClazz;
-                if (EntityUtil.isMarkAsNotDbField(field)) {
-                    this.isDbField = false;
-                } else {
-                    this.isDbField = true;
-                }
+                this.targetClazz = dtoInfo.mainEntityClazz;
+                this.isDbField = !EntityUtil.isMarkAsNotDbField(field);
             }
             this.targetField = ReflectUtil.getField(this.targetClazz, targetFieldName);
         }
@@ -210,36 +236,46 @@ class DtoInfo {
         }
 
         /**
-         * 判断dto中此字段是否标注@JoinIgnore并且指定查询时忽略
+         * 判断dto中此字段是否查询时忽略
          *
          * @return
          */
-        public boolean isJoinIgnoreForQuery() {
+        public boolean ignoreForQuery() {
             return isJoinIgnore()
                     && Arrays.stream(this.field.getAnnotation(JoinIgnore.class).value())
                     .anyMatch(ignoreWhen -> ignoreWhen == IgnoreWhen.Query);
         }
 
         /**
-         * 判断dto中此字段是否标注@JoinIgnore并且指定更新时忽略
+         * 判断dto中此字段是否更新时忽略
          *
          * @return
          */
-        public boolean isJoinIgnoreForUpdate() {
-            return isJoinIgnore()
+        public boolean ignoreForUpdate() {
+            boolean ignore = isJoinIgnore()
                     && Arrays.stream(this.field.getAnnotation(JoinIgnore.class).value())
                     .anyMatch(ignoreWhen -> ignoreWhen == IgnoreWhen.Update);
+            if (ignore) {
+                return true;
+            }
+            JoinInfo joinInfo = this.dtoInfo.getJoinInfo(this);
+            return joinInfo != null && joinInfo.isReadonly();
         }
 
         /**
-         * 判断dto中此字段是否标注@JoinIgnore并且指定插入时忽略
+         * 判断dto中此字段是否插入时忽略
          *
          * @return
          */
-        public boolean isJoinIgnoreForInsert() {
-            return isJoinIgnore()
+        public boolean ignoreForInsert() {
+            boolean ignore = isJoinIgnore()
                     && Arrays.stream(this.field.getAnnotation(JoinIgnore.class).value())
                     .anyMatch(ignoreWhen -> ignoreWhen == IgnoreWhen.Insert);
+            if (ignore) {
+                return true;
+            }
+            JoinInfo joinInfo = this.dtoInfo.getJoinInfo(this);
+            return joinInfo != null && joinInfo.isReadonly();
         }
 
         /**
@@ -308,7 +344,7 @@ class DtoInfo {
             } else {
                 this.targetClazz = joinInfo.getTargetEntityClass();
                 this.targetField = ReflectUtil.getField(this.targetClazz, StrUtil.blankToDefault(onCond.targetField(), onCond.field()));
-                this.alias = StrUtil.blankToDefault(onCond.alias(), null);
+                this.alias = StrUtil.firstNonBlank(onCond.alias(), joinInfo.alias);
                 this.rightAlias = StrUtil.blankToDefault(onCond.targetAlias(), null);
             }
         }
@@ -329,6 +365,12 @@ class DtoInfo {
         public <T, R> SFunction<T, R> getTargetFieldGetter() {
             return MethodReferenceRegistry.getFunction(this.targetClazz, targetField);
         }
+    }
+
+    enum JoinType {
+        INNER,
+        LEFT,
+        RIGHT
     }
 
     /**

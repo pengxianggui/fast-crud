@@ -30,4 +30,11 @@ public @interface RightJoin {
      * @return
      */
     OnCond[] on();
+
+    /**
+     * 只读。表示join的类的字段只参与select查询，而不参与update、insert和delete(关联表的delete目前暂不支持内置实现，设计如此)。
+     *
+     * @return
+     */
+    boolean readonly() default true;
 }

@@ -77,7 +77,7 @@ public class JoinWrapperUtil {
         List<DtoInfo.DtoField> dtoFields = dtoInfo.getFields();
         dtoFields.stream().filter(field -> cols == null || cols.size() == 0 || cols.contains(field.getField().getName()))
                 .forEach(field -> {
-                    if (field.isJoinIgnoreForQuery()) {
+                    if (field.ignoreForQuery()) {
                         return;
                     }
 
@@ -101,7 +101,7 @@ public class JoinWrapperUtil {
                                     DtoInfo subDtoInfo = new DtoInfo(TypeUtil.getClass(type));
                                     // 这里面暂不考虑递归情况, 否则太复杂, 还要牵扯子查询, mybatis-plus-join怕无法支撑
                                     subDtoInfo.getFields().forEach(field1 -> {
-                                        if (field1.isJoinIgnoreForQuery() || field1.targetFieldNotExist()) {
+                                        if (field1.ignoreForQuery() || field1.targetFieldNotExist()) {
                                             return;
                                         }
                                         map.result(field1.getTargetFieldGetter(), field1.getFieldGetter());
@@ -122,7 +122,7 @@ public class JoinWrapperUtil {
                                 DtoInfo subDtoInfo = new DtoInfo(TypeUtil.getClass(type), field.getTargetClazz());
                                 // 这里面暂不考虑递归情况, 否则太复杂, 还要牵扯子查询, mybatis-plus-join怕无法支撑
                                 subDtoInfo.getFields().forEach(field1 -> {
-                                    if (field1.isJoinIgnoreForQuery()) {
+                                    if (field1.ignoreForQuery()) {
                                         return;
                                     }
                                     map.result(field1.getTargetFieldGetter(), field1.getFieldGetter());
@@ -141,27 +141,28 @@ public class JoinWrapperUtil {
                             DtoInfo dtoInfo) {
         Assert.equals(dtoInfo.getMainEntityClazz(), wrapper.getEntityClass(),
                 "Type inconsistency: The main type declared in the dto is inconsistent");
-        List<DtoInfo.JoinInfo> innerJoins = dtoInfo.getInnerJoinInfo();
-        if (innerJoins != null && !innerJoins.isEmpty()) {
-            innerJoins.forEach(join -> wrapper.innerJoin(join.getJoinEntityClass(), join.getAlias(), on -> {
-                addJoinConditions(on, join.getCondFieldRelates());
-                return on;
-            }));
-        }
-        List<DtoInfo.JoinInfo> leftJoins = dtoInfo.getLeftJoinInfo();
-        if (leftJoins != null && !leftJoins.isEmpty()) {
-            leftJoins.forEach(join -> wrapper.leftJoin(join.getJoinEntityClass(), join.getAlias(), on -> {
-                addJoinConditions(on, join.getCondFieldRelates());
-                return on;
-            }));
-        }
-        List<DtoInfo.JoinInfo> rightJoins = dtoInfo.getRightJoinInfo();
-        if (rightJoins != null && !rightJoins.isEmpty()) {
-            rightJoins.forEach(join -> wrapper.rightJoin(join.getJoinEntityClass(), join.getAlias(), on -> {
-                addJoinConditions(on, join.getCondFieldRelates());
-                return on;
-            }));
-        }
+        dtoInfo.getJoinInfos().forEach(join -> {
+            switch (join.getJoinType()) {
+                case INNER:
+                    wrapper.innerJoin(join.getJoinEntityClass(), join.getAlias(), on -> {
+                        addJoinConditions(on, join.getCondFieldRelates());
+                        return on;
+                    });
+                    break;
+                case LEFT:
+                    wrapper.leftJoin(join.getJoinEntityClass(), join.getAlias(), on -> {
+                        addJoinConditions(on, join.getCondFieldRelates());
+                        return on;
+                    });
+                    break;
+                case RIGHT:
+                    wrapper.rightJoin(join.getJoinEntityClass(), join.getAlias(), on -> {
+                        addJoinConditions(on, join.getCondFieldRelates());
+                        return on;
+                    });
+                    break;
+            }
+        });
     }
 
     /**
@@ -322,7 +323,7 @@ public class JoinWrapperUtil {
         if (dtoField == null) {
             throw new IllegalArgumentException(cond.getCol() + "必须是dto的属性:" + dtoInfo.getDtoClazz());
         }
-        if (dtoField.isJoinIgnoreForQuery()) {
+        if (dtoField.ignoreForQuery()) {
             return;
         }
         // 条件是否生效
@@ -460,7 +461,7 @@ public class JoinWrapperUtil {
             if (dtoField == null) {
                 throw new IllegalArgumentException(order.getCol() + "必须是dto的属性:" + dtoInfo.getDtoClazz());
             }
-            if (dtoField.isJoinIgnoreForQuery()) {
+            if (dtoField.ignoreForQuery()) {
                 continue;
             }
             if (order.isAsc()) {
@@ -479,7 +480,7 @@ public class JoinWrapperUtil {
     static <T> void addSet(UpdateJoinWrapper<T> wrapper, DtoInfo dtoInfo, Object dto, boolean updateNull) {
         List<DtoInfo.DtoField> dtoFields = dtoInfo.getFields();
         for (DtoInfo.DtoField field : dtoFields) {
-            if (field.isJoinIgnoreForUpdate() || field.targetFieldNotExist() || field.isPk()) {
+            if (field.ignoreForUpdate() || field.targetFieldNotExist() || field.isPk()) {
                 continue;
             }
 
@@ -491,7 +492,7 @@ public class JoinWrapperUtil {
                 if (!EntityUtil.fieldNeedUpdate(targetField, fieldValue, updateNull)) {
                     continue;
                 }
-                // TODO 非常奇怪, UpdateJoinWrapper里没有支持alias的set重载方法
+                // TODO 非常奇怪, UpdateJoinWrapper里没有支持alias的set重载方法，如果针对同一个表两次关联，分别set该如何？
                 if (field.isDbField()) { // 无论是什么类型(简单类型、集合、对象类型),标记为数据库字段则直接set
                     String mapping = MapperResolver.getMapping(targetField);
                     if (StrUtil.isBlank(mapping)) {
@@ -519,7 +520,7 @@ public class JoinWrapperUtil {
                         DtoInfo subDtoInfo = new DtoInfo(TypeUtil.getClass(type), field.getTargetClazz());
                         // 这里面暂不考虑递归情况, 否则太复杂, 还要牵扯子查询, mybatis-plus-join怕无法支撑
                         for (DtoInfo.DtoField subDtoInfoField : subDtoInfo.getFields()) {
-                            if (subDtoInfoField.isJoinIgnoreForUpdate() || subDtoInfoField.targetFieldNotExist()) {
+                            if (subDtoInfoField.ignoreForUpdate() || subDtoInfoField.targetFieldNotExist()) {
                                 continue;
                             }
                             wrapper.set(subDtoInfoField.getTargetFieldGetter(), subDtoInfoField.getField().get(fieldValue));

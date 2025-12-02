@@ -28,7 +28,9 @@ import java.lang.annotation.Target;
 public @interface OnCond {
 
     /**
-     * 当前join类的别名。当需要多次关联同一张表时，很可能会需要设置别名
+     * 当前join类的别名。当需要多次关联同一张表时，很可能会需要设置别名。
+     * <p>
+     * 若对应的*Join中设置了别名, 此字段可以省略。
      *
      * @return
      */
