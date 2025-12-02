@@ -338,6 +338,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
         String pkName = getPkName();
         Serializable pkValue = EntityUtil.getPkVal(model, clazz);
         Assert.isTrue(pkValue != null, "Primary key can't be null![{}={}]", pkName, pkValue);
+        // TODO 使用update..set.. 的方式会导致一些问题, 比如: update_time和update_by等审计字段不好兼容。尝试换成构造entity，使用update entity更新
         UpdateJoinWrapper<T> wrapper = new UpdateJoinWrapperBuilder<T, DTO>(dtoClazz)
                 .set(model)
                 .where(w -> w.eq(MethodReferenceRegistry.getFunction(clazz, pkName), pkValue))
