@@ -450,6 +450,7 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
             transactionManager.commit(status);
         } catch (Throwable e) {
             transactionManager.rollback(status);
+            throw e;
         }
     }
 
