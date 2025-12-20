@@ -57,6 +57,9 @@ public class StudentDetailVO {
     @ApiModelProperty("仰慕者姓名")
     private String loveName;
 
+    @ApiModelProperty("仇人id")
+    private Integer foeId;
+
     @ApiModelProperty("简介")
     private String info;
 
