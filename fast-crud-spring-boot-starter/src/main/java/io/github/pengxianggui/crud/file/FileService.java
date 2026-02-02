@@ -16,13 +16,22 @@ public interface FileService {
     String getMode();
 
     /**
-     * 上传文件。当使用DbMeta基于元数据生成的文件上传控件时会调用此方法进行文件保存
+     * 上传文件。当使用FastCrud内置的上传控件(FastTableColumnFile/FastTableColumnImg/FastUpload)上传时会调用此方法。
      *
      * @param file         文件
      * @param splitMarkers 分隔标记，分隔目录。你可以依据用于文件存放管理
      * @return 返回文件地址, 可以是文件路径，也可以是绝对路径(或者http://xxx)。
      */
     String upload(MultipartFile file, String... splitMarkers) throws IOException;
+
+    /**
+     * 上传文件。
+     *
+     * @param file         文件
+     * @param splitMarkers 分隔标记，分隔目录。你可以依据用于文件存放管理
+     * @return 返回文件地址, 可以是文件路径，也可以是绝对路径(或者http://xxx)。
+     */
+    String upload(File file, String... splitMarkers) throws IOException;
 
     /**
      * 文件名转换。提供上传的原始文件，返回存储的文件名，为了防止文件重复。采用添加后缀：yyyyMMdd_HH_mm_ss_SSS。如:
@@ -32,12 +41,12 @@ public interface FileService {
      * newname   abcd_yyyy-MM-dd_HH:mm:ssSSS.txt
      * </pre>
      *
-     * @param file 上传的原始文件
+     * @param fileName 上传的原始文件名
      * @return 带有时间格式后缀的文件名
      */
-    default String getFileNameWithAffix(MultipartFile file) {
-        return Files.getNameWithoutExtension(file.getOriginalFilename()) + "_" + new SimpleDateFormat("yyyyMMdd_HH_mm_ss_SSS").format(new Date()) + "."
-                + Files.getFileExtension(file.getOriginalFilename());
+    default String getFileNameWithAffix(String fileName) {
+        return Files.getNameWithoutExtension(fileName) + "_" + new SimpleDateFormat("yyyyMMdd_HH_mm_ss_SSS").format(new Date()) + "."
+                + Files.getFileExtension(fileName);
     }
 
     /**

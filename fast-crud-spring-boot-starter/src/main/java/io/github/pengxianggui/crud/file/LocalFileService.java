@@ -1,5 +1,6 @@
 package io.github.pengxianggui.crud.file;
 
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.lang.Assert;
 import com.google.common.base.Joiner;
 import io.github.pengxianggui.crud.FastCrudProperty;
@@ -38,22 +39,34 @@ public class LocalFileService implements FileService {
     }
 
     @Override
+    public String upload(File file, String... splitMarkers) throws IOException {
+        String destPath = Joiner.on(File.separator).skipNulls().join(splitMarkers);
+        String dirPath = local.getDir() + File.separator + destPath + File.separator;
+        File targetFile = createTargetFile(dirPath, getFileNameWithAffix(file.getName()));
+        FileUtil.copy(file, targetFile, true);
+        return targetFile.getAbsolutePath();
+    }
+
+    @Override
     public File getFile(String fileUrl) {
         String path = Paths.get(fileUrl).toString();
         return new File(path);
     }
 
-
-    private File toTargetFile(String dirPath, MultipartFile file) throws IOException {
+    private File createTargetFile(String dirPath, String fileName) {
         if (!dirPath.endsWith(File.separator)) {
             dirPath += File.separator;
         }
-        String fileName = getFileNameWithAffix(file);
         log.info("new file name :{}", fileName);
         File targetFile = new File(dirPath + fileName);
         if (!targetFile.getParentFile().exists()) {
             targetFile.getParentFile().mkdirs();
         }
+        return targetFile;
+    }
+
+    private File toTargetFile(String dirPath, MultipartFile file) throws IOException {
+        File targetFile = createTargetFile(dirPath, getFileNameWithAffix(file.getOriginalFilename()));
         file.transferTo(targetFile);
         log.debug("destFile.getPath : {}", targetFile.getPath());
         return targetFile;

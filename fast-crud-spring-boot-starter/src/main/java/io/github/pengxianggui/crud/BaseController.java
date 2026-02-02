@@ -30,7 +30,7 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Validator;
-import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.io.File;
 import java.io.IOException;
@@ -79,7 +79,7 @@ public class BaseController<M> {
 
     @ApiOperation("编辑")
     @PostMapping("update")
-    public int update(@Validated(CrudUpdate.class) @RequestBody UpdateModelWrapper<M> modelWrapper) throws BindException {
+    public int update(@RequestBody @Validated(CrudUpdate.class) UpdateModelWrapper<M> modelWrapper) throws BindException {
         return dtoClazz.equals(entityClazz)
                 ? baseService.updateById(modelWrapper.getModel()) ? 1 : 0
                 : baseService.update(modelWrapper.getModel(), dtoClazz, ObjectUtil.defaultIfNull(modelWrapper.get_updateNull(), true));
@@ -124,7 +124,7 @@ public class BaseController<M> {
 
     @ApiOperation("删除")
     @PostMapping("delete")
-    public int delete(@NotNull @RequestBody M model) {
+    public int delete(@RequestBody @Validated @NotNull M model) {
         Serializable id = EntityUtil.getPkVal(model, this.entityClazz);
         Assert.notNull(id, "无法获取主键值");
         return baseService.deleteById(id) ? 1 : 0;
@@ -132,7 +132,7 @@ public class BaseController<M> {
 
     @ApiOperation("批量删除")
     @PostMapping("delete/batch")
-    public int deleteBatch(@NotBlank @NotNull @RequestBody List<M> models) {
+    public int deleteBatch(@RequestBody @Validated @NotEmpty List<M> models) {
         Set<Serializable> ids = new HashSet<>(models.size());
         for (int i = 0; i < models.size(); i++) {
             M model = models.get(i);
@@ -145,7 +145,7 @@ public class BaseController<M> {
 
     @ApiOperation(value = "存在性查询", notes = "指定条件存在数据")
     @PostMapping("exists")
-    public Boolean exists(@RequestBody List<Cond> conditions) {
+    public Boolean exists(@RequestBody @Validated List<Cond> conditions) {
         return dtoClazz.equals(entityClazz)
                 ? baseService.exists(conditions)
                 : baseService.exists(conditions, dtoClazz);
@@ -191,7 +191,7 @@ public class BaseController<M> {
 
     @ApiOperation(value = "导出", notes = "数据导出")
     @PostMapping("export")
-    public void export(@Validated @RequestBody ExportParam exportParam, HttpServletResponse response) throws IOException {
+    public void export(@RequestBody @Validated ExportParam exportParam, HttpServletResponse response) throws IOException {
         List<M> data = exportParam.getAll() ? list(exportParam.getPageQuery()) : page(exportParam.getPageQuery()).getRecords();
         ExcelExportManager excelExportManager = new ExcelExportManager();
         try (ServletOutputStream out = response.getOutputStream()) {
