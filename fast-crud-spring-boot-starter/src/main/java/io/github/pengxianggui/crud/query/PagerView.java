@@ -1,5 +1,6 @@
 package io.github.pengxianggui.crud.query;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -24,6 +25,10 @@ public class PagerView<T> {
 
     @ApiModelProperty("记录")
     protected List<T> records = new ArrayList<>();
+
+    public static <T> PagerView<T> of(IPage<T> page) {
+        return new PagerView<>(page.getCurrent(), page.getSize(), page.getTotal(), page.getRecords());
+    }
 
     public PagerView(long current, long size, long total, List<T> records) {
         this.current = current;
