@@ -122,6 +122,9 @@ public class Query {
         if (value == null) {
             return defaultVal;
         }
+        if (defaultVal == null) {
+            return null;
+        }
         // 根据默认值的类型进行自动转换
         return (T) Convert.convert(defaultVal.getClass(), value);
     }
