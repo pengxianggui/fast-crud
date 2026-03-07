@@ -4,7 +4,7 @@
 
     <groupId>io.github.pengxianggui</groupId>
     <artifactId>fast-crud</artifactId>
-    <version>1.5.12</version>
+    <version>1.5.13</version>
     <packaging>pom</packaging>
 
     <name>fast-crud</name>
