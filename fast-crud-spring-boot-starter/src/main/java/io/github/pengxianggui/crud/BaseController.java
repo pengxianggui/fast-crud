@@ -6,6 +6,7 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.pengxianggui.crud.download.FileResourceHttpRequestHandler;
 import io.github.pengxianggui.crud.export.ExcelExportManager;
 import io.github.pengxianggui.crud.query.*;
@@ -17,6 +18,7 @@ import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.MediaTypeFactory;
 import org.springframework.validation.BindException;
@@ -48,8 +50,10 @@ public class BaseController<M> {
     private final BaseService baseService;
     private final Class<M> dtoClazz;
     private Class<?> entityClazz;
-    @Resource
+    @Autowired
     public Validator validator;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     public BaseController(BaseService baseService, Class<M> dtoClazz) {
         this.baseService = baseService;
@@ -193,10 +197,11 @@ public class BaseController<M> {
     @PostMapping("export")
     public void export(@RequestBody @Validated ExportParam exportParam, HttpServletResponse response) throws IOException {
         List<M> data = exportParam.getAll() ? list(exportParam.getPageQuery()) : page(exportParam.getPageQuery()).getRecords();
-        ExcelExportManager excelExportManager = new ExcelExportManager();
+        ExcelExportManager excelExportManager = new ExcelExportManager(objectMapper);
         try (ServletOutputStream out = response.getOutputStream()) {
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            response.setHeader("Content-Disposition", String.format("attachment; filename=export.xlsx"));
+            response.setHeader("Content-Disposition", StrUtil.format("attachment; filename={}.xlsx",
+                    StrUtil.blankToDefault(exportParam.getTitle(), "export")));
             excelExportManager.exportByConfig(data, exportParam.getColumns(), out);
             out.flush();
         } catch (IOException e) {

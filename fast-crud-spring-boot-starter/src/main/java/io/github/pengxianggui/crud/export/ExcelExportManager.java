@@ -1,6 +1,5 @@
 package io.github.pengxianggui.crud.export;
 
-import cn.hutool.core.util.ReflectUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.converters.localdate.LocalDateDateConverter;
@@ -8,6 +7,8 @@ import com.alibaba.excel.converters.localdatetime.LocalDateTimeDateConverter;
 import com.alibaba.excel.converters.localdatetime.LocalDateTimeStringConverter;
 import com.alibaba.excel.write.builder.ExcelWriterBuilder;
 import com.alibaba.excel.write.metadata.WriteSheet;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.ClassUtils;
 
@@ -21,6 +22,12 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public class ExcelExportManager {
+    // 使用jackson进行序列化，以便业务系统可以使用自定义的序列化逻辑干预excel导出
+    private final ObjectMapper objectMapper;
+
+    public ExcelExportManager(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
     /**
      * 按配置导出数据
@@ -48,9 +55,11 @@ public class ExcelExportManager {
         }
 
         List<List<Object>> dataList = data.stream().map(obj -> {
+            Map<String, Object> mappedObj = objectMapper.convertValue(obj, new TypeReference<Map<String, Object>>() {
+            });
             List<Object> rowData = new ArrayList<>();
             for (String col : cols) {
-                rowData.add(ReflectUtil.getFieldValue(obj, col));
+                rowData.add(mappedObj.get(col));
             }
             return rowData;
         }).collect(Collectors.toList());
