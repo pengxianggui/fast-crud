@@ -26,7 +26,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.Resource;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -130,7 +129,7 @@ public class BaseController<M> {
     @PostMapping("delete")
     public int delete(@RequestBody @Validated @NotNull M model) {
         Serializable id = EntityUtil.getPkVal(model, this.entityClazz);
-        Assert.notNull(id, "无法获取主键值");
+        Assert.notNull(id, "Can't get primary key value!");
         return baseService.deleteById(id) ? 1 : 0;
     }
 
@@ -141,7 +140,7 @@ public class BaseController<M> {
         for (int i = 0; i < models.size(); i++) {
             M model = models.get(i);
             Serializable id = EntityUtil.getPkVal(model, this.entityClazz);
-            Assert.notNull(id, "第%d条数据无法获取主键值", i + 1);
+            Assert.notNull(id, "Can't get primary key value at index {}", i);
             ids.add(id);
         }
         return baseService.deleteBatchById(ids) ? ids.size() : 0;

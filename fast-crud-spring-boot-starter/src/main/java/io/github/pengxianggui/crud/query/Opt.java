@@ -42,7 +42,7 @@ public enum Opt {
                 return opt;
             }
         }
-        throw new IllegalArgumentException("参数异常: opt值只支持"
+        throw new IllegalArgumentException("Opt only support:"
                 + String.join(",", Arrays.stream(Opt.values()).map(Opt::getValue).collect(Collectors.toList())));
     }
 

@@ -89,7 +89,7 @@ public class QueryWrapperUtil {
     private static <T> QueryWrapper addCondition(QueryWrapper<T> queryWrapper, Cond cond, Rel rel, Class<?> entityClazz) {
         String field = cond.getCol();
         TableFieldInfoWrapper fieldInfo = EntityUtil.getTableFieldInfo(entityClazz, field);
-        Assert.notNull(fieldInfo, "请检查字段是否正确：" + field + ", 并确保类(" + entityClazz.getName() + ")中含有此字段。");
+        Assert.notNull(fieldInfo, "Please check field:" + field + ", make sure the class(" + entityClazz.getName() + ") contain this field.");
         String dbField = ColumnUtil.wrapper(fieldInfo.getColumn());
         boolean effect = true; // 值是否有效
         if (cond.getVal() == null || (cond.getVal() instanceof CharSequence && StrUtil.isBlank((CharSequence) cond.getVal()))) {

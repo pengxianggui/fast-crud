@@ -50,7 +50,7 @@ public class SelectColumnHandler extends ColumnHandler {
             DataValidation validation = helper.createValidation(constraint, rangeList);
             // 禁止输入非下拉选项
             validation.setErrorStyle(DataValidation.ErrorStyle.STOP);
-            validation.createErrorBox("错误", "请选择下拉选项中的值");
+            validation.createErrorBox("ERROR", "Please choose value of options");
             sheet.addValidationData(validation);
         }
     }

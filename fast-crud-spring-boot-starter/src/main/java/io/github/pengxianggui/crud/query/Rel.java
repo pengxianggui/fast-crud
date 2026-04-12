@@ -27,7 +27,7 @@ public enum Rel {
                 return rel;
             }
         }
-        throw new IllegalArgumentException("参数异常: rel值只支持"
+        throw new IllegalArgumentException("Rel only support:"
                 + String.join(",", Arrays.stream(Rel.values()).map(Rel::getValue).collect(Collectors.toList())));
     }
 

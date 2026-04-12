@@ -1,6 +1,5 @@
 package io.github.pengxianggui.crud.export;
 
-
 import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.excel.converters.Converter;
 import com.alibaba.excel.enums.CellDataTypeEnum;
@@ -42,7 +41,7 @@ public class ArrayListConverter implements Converter<ArrayList> {
             return new WriteCellData<>(objectMapper.writeValueAsString(value));
         } catch (JsonProcessingException e) {
             log.error(e.getMessage(), e);
-            return new WriteCellData<>("[处理失败]");
+            return new WriteCellData<>("[ERROR]");
         }
     }
 }

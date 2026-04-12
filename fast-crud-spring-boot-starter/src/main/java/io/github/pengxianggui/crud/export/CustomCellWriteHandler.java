@@ -55,7 +55,7 @@ public class CustomCellWriteHandler implements CellWriteHandler {
                 }
             }
         } catch (Exception e) {
-            log.error("单元格值写入错误", e);
+            log.error("Cell value write error", e);
             context.getCell().setCellValue("[ERROR]");
         }
     }
