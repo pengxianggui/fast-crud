@@ -48,7 +48,7 @@ public class ExportParam {
      *         }
      * </pre>
      */
-    @NotEmpty(message = "无任何导出列")
+    @NotEmpty
     private List<Map<String, Object>> columns;
     /**
      * 限定数据过滤条件

@@ -14,7 +14,7 @@ import javax.validation.constraints.NotBlank;
 @Data
 public class Order {
     @ApiModelProperty("列名")
-    @NotBlank(message = "col字段值缺失, 请检查orders")
+    @NotBlank
     private String col;
 
     @ApiModelProperty("是否升序，默认：false")

@@ -17,7 +17,7 @@ public class Cond {
     /**
      * 字段名，当conds无内容时有效
      */
-    @NotBlank(message = "col字段值缺失, 请检查conds")
+    @NotBlank
     @ApiModelProperty(value = "条件字段，当conds为空时有效")
     private String col;
 
