@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = {QueryValidator.class})
 public @interface ValidQuery {
-    String message() default "orders中col字段必须在cols中";
+    String message() default "The col field in orders must be in cols";
 
     Class<?>[] groups() default {};
 

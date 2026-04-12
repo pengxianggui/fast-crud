@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = {CondValidator.class})
 public @interface ValidCond {
-    String message() default "条件字段和嵌套条件，不可同时为空";
+    String message() default "Condition field and nested condition cannot both be empty";
 
     Class<?>[] groups() default {};
 
