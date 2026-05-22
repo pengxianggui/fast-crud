@@ -4,11 +4,11 @@ import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import io.github.pengxianggui.crud.util.ColumnUtil;
+import io.github.pengxianggui.crud.util.DateConvertUtil;
 import io.github.pengxianggui.crud.util.EntityUtil;
 import io.github.pengxianggui.crud.util.TableFieldInfoWrapper;
 
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.function.Consumer;
 
 public class QueryWrapperUtil {
@@ -95,90 +95,91 @@ public class QueryWrapperUtil {
         if (cond.getVal() == null || (cond.getVal() instanceof CharSequence && StrUtil.isBlank((CharSequence) cond.getVal()))) {
             effect = false;
         }
+        Object condVal = DateConvertUtil.convertToDate(cond.getVal(), fieldInfo.getPropertyType());
         switch (cond.getOpt()) {
             case EQ:
                 if (rel == Rel.AND) {
-                    queryWrapper.eq(effect, dbField, cond.getVal());
+                    queryWrapper.eq(effect, dbField, condVal);
                 } else {
-                    queryWrapper.or(effect, q -> q.eq(dbField, cond.getVal()));
+                    queryWrapper.or(effect, q -> q.eq(dbField, condVal));
                 }
                 break;
             case NE:
                 if (rel == Rel.AND) {
-                    queryWrapper.ne(effect, dbField, cond.getVal());
+                    queryWrapper.ne(effect, dbField, condVal);
                 } else {
-                    queryWrapper.or(effect, q -> q.ne(dbField, cond.getVal()));
+                    queryWrapper.or(effect, q -> q.ne(dbField, condVal));
                 }
                 break;
             case GT:
                 if (rel == Rel.AND) {
-                    queryWrapper.gt(effect, dbField, cond.getVal());
+                    queryWrapper.gt(effect, dbField, condVal);
                 } else {
-                    queryWrapper.or(effect, q -> q.gt(dbField, cond.getVal()));
+                    queryWrapper.or(effect, q -> q.gt(dbField, condVal));
                 }
                 break;
             case GE:
                 if (rel == Rel.AND) {
-                    queryWrapper.ge(effect, dbField, cond.getVal());
+                    queryWrapper.ge(effect, dbField, condVal);
                 } else {
-                    queryWrapper.or(effect, q -> q.ge(dbField, cond.getVal()));
+                    queryWrapper.or(effect, q -> q.ge(dbField, condVal));
                 }
                 break;
             case LT:
                 if (rel == Rel.AND) {
-                    queryWrapper.lt(effect, dbField, cond.getVal());
+                    queryWrapper.lt(effect, dbField, condVal);
                 } else {
-                    queryWrapper.or(effect, q -> q.lt(dbField, cond.getVal()));
+                    queryWrapper.or(effect, q -> q.lt(dbField, condVal));
                 }
                 break;
             case LE:
                 if (rel == Rel.AND) {
-                    queryWrapper.le(effect, dbField, cond.getVal());
+                    queryWrapper.le(effect, dbField, condVal);
                 } else {
-                    queryWrapper.or(effect, q -> q.le(dbField, cond.getVal()));
+                    queryWrapper.or(effect, q -> q.le(dbField, condVal));
                 }
                 break;
             case IN:
                 if (rel == Rel.AND) {
-                    queryWrapper.in(effect, dbField, (Collection) cond.getVal());
+                    queryWrapper.in(effect, dbField, (Collection) condVal);
                 } else {
-                    queryWrapper.or(effect, q -> q.in(dbField, cond.getVal()));
+                    queryWrapper.or(effect, q -> q.in(dbField, condVal));
                 }
                 break;
             case NIN:
                 if (rel == Rel.AND) {
-                    queryWrapper.notIn(effect, dbField, (Collection) cond.getVal());
+                    queryWrapper.notIn(effect, dbField, (Collection) condVal);
                 } else {
-                    queryWrapper.or(effect, q -> q.notIn(dbField, cond.getVal()));
+                    queryWrapper.or(effect, q -> q.notIn(dbField, condVal));
                 }
                 break;
 
             case LIKE:
                 if (rel == Rel.AND) {
-                    queryWrapper.like(effect, dbField, cond.getVal());
+                    queryWrapper.like(effect, dbField, condVal);
                 } else {
-                    queryWrapper.or(effect, q -> q.like(dbField, cond.getVal()));
+                    queryWrapper.or(effect, q -> q.like(dbField, condVal));
                 }
                 break;
             case LLIKE:
                 if (rel == Rel.AND) {
-                    queryWrapper.likeLeft(effect, dbField, cond.getVal());
+                    queryWrapper.likeLeft(effect, dbField, condVal);
                 } else {
-                    queryWrapper.or(effect, q -> q.likeLeft(dbField, cond.getVal()));
+                    queryWrapper.or(effect, q -> q.likeLeft(dbField, condVal));
                 }
                 break;
             case RLIKE:
                 if (rel == Rel.AND) {
-                    queryWrapper.likeRight(effect, dbField, cond.getVal());
+                    queryWrapper.likeRight(effect, dbField, condVal);
                 } else {
-                    queryWrapper.or(effect, q -> q.likeRight(dbField, cond.getVal()));
+                    queryWrapper.or(effect, q -> q.likeRight(dbField, condVal));
                 }
                 break;
             case NLIKE:
                 if (rel == Rel.AND) {
-                    queryWrapper.notLike(effect, dbField, cond.getVal());
+                    queryWrapper.notLike(effect, dbField, condVal);
                 } else {
-                    queryWrapper.or(effect, q -> q.notLike(dbField, cond.getVal()));
+                    queryWrapper.or(effect, q -> q.notLike(dbField, condVal));
                 }
                 break;
             case NULL:

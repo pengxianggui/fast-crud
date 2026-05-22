@@ -14,12 +14,14 @@ public class TableFieldInfoWrapper {
     private boolean charSequence;
     @Getter
     private String column;
-
+    @Getter
+    private Class<?> propertyType;
 
     public static TableFieldInfoWrapper byPk(TableInfo tableInfo) {
         TableFieldInfoWrapper wrapper = new TableFieldInfoWrapper();
         wrapper.charSequence = (tableInfo.getKeyType()).isAssignableFrom(CharSequence.class);
         wrapper.column = tableInfo.getKeyColumn();
+        wrapper.propertyType = tableInfo.getKeyType();
         return wrapper;
     }
 
@@ -30,6 +32,7 @@ public class TableFieldInfoWrapper {
         TableFieldInfoWrapper wrapper = new TableFieldInfoWrapper();
         wrapper.charSequence = tableFieldInfo.isCharSequence();
         wrapper.column = tableFieldInfo.getColumn();
+        wrapper.propertyType = tableFieldInfo.getPropertyType();
         return wrapper;
     }
 }
