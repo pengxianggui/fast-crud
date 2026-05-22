@@ -11,6 +11,7 @@ import com.github.yulichang.wrapper.MPJLambdaWrapper;
 import com.github.yulichang.wrapper.UpdateJoinWrapper;
 import io.github.pengxianggui.crud.config.MapperResolver;
 import io.github.pengxianggui.crud.query.*;
+import io.github.pengxianggui.crud.util.DateConvertUtil;
 import io.github.pengxianggui.crud.util.EntityUtil;
 import io.github.pengxianggui.crud.util.TableFieldInfoWrapper;
 
@@ -331,90 +332,93 @@ public class JoinWrapperUtil {
         if (cond.getVal() == null || (cond.getVal() instanceof CharSequence && StrUtil.isBlank((CharSequence) cond.getVal()))) {
             effect = false;
         }
+
+        Object condVal = DateConvertUtil.convertToDate(cond.getVal(), dtoField.getField().getType());
         SFunction<T, ?> targetFieldGetter = dtoField.getTargetFieldGetter();
+
         switch (cond.getOpt()) {
             case EQ:
                 if (rel == Rel.AND) {
-                    wrapper.eq(effect, dtoField.alias, targetFieldGetter, cond.getVal());
+                    wrapper.eq(effect, dtoField.alias, targetFieldGetter, condVal);
                 } else {
-                    wrapper.or(effect, q -> q.eq(dtoField.alias, targetFieldGetter, cond.getVal()));
+                    wrapper.or(effect, q -> q.eq(dtoField.alias, targetFieldGetter, condVal));
                 }
                 break;
             case NE:
                 if (rel == Rel.AND) {
-                    wrapper.ne(effect, dtoField.alias, targetFieldGetter, cond.getVal());
+                    wrapper.ne(effect, dtoField.alias, targetFieldGetter, condVal);
                 } else {
-                    wrapper.or(effect, q -> q.ne(dtoField.alias, targetFieldGetter, cond.getVal()));
+                    wrapper.or(effect, q -> q.ne(dtoField.alias, targetFieldGetter, condVal));
                 }
                 break;
             case GT:
                 if (rel == Rel.AND) {
-                    wrapper.gt(effect, dtoField.alias, targetFieldGetter, cond.getVal());
+                    wrapper.gt(effect, dtoField.alias, targetFieldGetter, condVal);
                 } else {
-                    wrapper.or(effect, q -> q.gt(dtoField.alias, targetFieldGetter, cond.getVal()));
+                    wrapper.or(effect, q -> q.gt(dtoField.alias, targetFieldGetter, condVal));
                 }
                 break;
             case GE:
                 if (rel == Rel.AND) {
-                    wrapper.ge(effect, dtoField.alias, targetFieldGetter, cond.getVal());
+                    wrapper.ge(effect, dtoField.alias, targetFieldGetter, condVal);
                 } else {
-                    wrapper.or(effect, q -> q.ge(dtoField.alias, targetFieldGetter, cond.getVal()));
+                    wrapper.or(effect, q -> q.ge(dtoField.alias, targetFieldGetter, condVal));
                 }
                 break;
             case LT:
                 if (rel == Rel.AND) {
-                    wrapper.lt(effect, dtoField.alias, targetFieldGetter, cond.getVal());
+                    wrapper.lt(effect, dtoField.alias, targetFieldGetter, condVal);
                 } else {
-                    wrapper.or(effect, q -> q.lt(dtoField.alias, targetFieldGetter, cond.getVal()));
+                    wrapper.or(effect, q -> q.lt(dtoField.alias, targetFieldGetter, condVal));
                 }
                 break;
             case LE:
                 if (rel == Rel.AND) {
-                    wrapper.le(effect, dtoField.alias, targetFieldGetter, cond.getVal());
+                    wrapper.le(effect, dtoField.alias, targetFieldGetter, condVal);
                 } else {
-                    wrapper.or(effect, q -> q.le(dtoField.alias, targetFieldGetter, cond.getVal()));
+                    wrapper.or(effect, q -> q.le(dtoField.alias, targetFieldGetter, condVal));
                 }
                 break;
             case IN:
                 if (rel == Rel.AND) {
-                    wrapper.in(effect, dtoField.alias, targetFieldGetter, (Collection) cond.getVal());
+                    wrapper.in(effect, dtoField.alias, targetFieldGetter, (Collection) condVal);
                 } else {
-                    wrapper.or(effect, q -> q.in(dtoField.alias, targetFieldGetter, cond.getVal()));
+                    wrapper.or(effect, q -> q.in(dtoField.alias, targetFieldGetter, condVal));
                 }
                 break;
             case NIN:
                 if (rel == Rel.AND) {
-                    wrapper.notIn(effect, dtoField.alias, targetFieldGetter, (Collection) cond.getVal());
+                    wrapper.notIn(effect, dtoField.alias, targetFieldGetter, (Collection) condVal);
                 } else {
-                    wrapper.or(effect, q -> q.notIn(dtoField.alias, targetFieldGetter, cond.getVal()));
+                    wrapper.or(effect, q -> q.notIn(dtoField.alias, targetFieldGetter, condVal));
                 }
                 break;
             case LIKE:
                 if (rel == Rel.AND) {
-                    wrapper.like(effect, dtoField.alias, targetFieldGetter, cond.getVal());
+                    wrapper.like(effect, dtoField.alias, targetFieldGetter, condVal);
                 } else {
-                    wrapper.or(effect, q -> q.like(dtoField.alias, targetFieldGetter, cond.getVal()));
+                    wrapper.or(effect, q -> q.like(dtoField.alias, targetFieldGetter, condVal));
                 }
                 break;
             case LLIKE:
                 if (rel == Rel.AND) {
-                    wrapper.likeLeft(effect, dtoField.alias, targetFieldGetter, cond.getVal());
+                    wrapper.likeLeft(effect, dtoField.alias, targetFieldGetter, condVal);
                 } else {
-                    wrapper.or(effect, q -> q.likeLeft(dtoField.alias, targetFieldGetter, cond.getVal()));
+                    wrapper.or(effect, q -> q.likeLeft(dtoField.alias, targetFieldGetter, condVal));
                 }
                 break;
             case RLIKE:
                 if (rel == Rel.AND) {
-                    wrapper.likeRight(effect, dtoField.alias, targetFieldGetter, cond.getVal());
+                    wrapper.likeRight(effect, dtoField.alias, targetFieldGetter, condVal);
                 } else {
-                    wrapper.or(effect, q -> q.likeRight(dtoField.alias, targetFieldGetter, cond.getVal()));
+                    wrapper.or(effect, q -> q.likeRight(dtoField.alias, targetFieldGetter, condVal));
                 }
                 break;
             case NLIKE:
                 if (rel == Rel.AND) {
-                    wrapper.notLike(effect, dtoField.alias, targetFieldGetter, cond.getVal());
+                    wrapper.notLike(effect, dtoField.alias, targetFieldGetter, condVal);
                 } else {
-                    wrapper.or(effect, q -> q.notLike(dtoField.alias, targetFieldGetter, cond.getVal()));
+                    wrapper.or(effect, q -> q.notLike(dtoField.alias, targetFieldGetter, condVal));
                 }
                 break;
             case NULL:
