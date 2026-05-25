@@ -46,12 +46,15 @@ public class SelectColumnHandler extends ColumnHandler {
 
         if (!CollectionUtil.isEmpty(this.options)) {
             String[] labels = this.options.values().toArray(new String[this.options.size()]);
-            DataValidationConstraint constraint = helper.createExplicitListConstraint(labels);
-            DataValidation validation = helper.createValidation(constraint, rangeList);
-            // 禁止输入非下拉选项
-            validation.setErrorStyle(DataValidation.ErrorStyle.STOP);
-            validation.createErrorBox("ERROR", "Please choose value of options");
-            sheet.addValidationData(validation);
+            String joinedLabels = String.join(",", labels);
+            // 下拉列表逗号连接后的长度不能超过255个字符，否则会报错，如果超过则降级不做成下拉列表
+            if (joinedLabels.length() <= 255) {
+                DataValidationConstraint constraint = helper.createExplicitListConstraint(labels);
+                DataValidation validation = helper.createValidation(constraint, rangeList);
+                validation.setErrorStyle(DataValidation.ErrorStyle.STOP);
+                validation.createErrorBox("ERROR", "Please choose value of options");
+                sheet.addValidationData(validation);
+            }
         }
     }
 
