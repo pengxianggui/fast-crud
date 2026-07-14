@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * APT: 根据@JoinMan注解生成方法引用注册的类文件(MethodReferenceLoader子类)。
+ * APT: 根据@JoinMan/@ReferenceScan注解生成方法引用注册的类文件(MethodReferenceLoader子类)。
  * <p>
  * 改动说明：
  * 采用原子化生成策略。
@@ -43,7 +43,7 @@ public class MethodReferenceScanProcessor extends AbstractProcessor {
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
-        return Sets.newHashSet(JoinMain.class.getCanonicalName());
+        return Sets.newHashSet(JoinMain.class.getCanonicalName(), ReferenceScan.class.getCanonicalName());
     }
 
     @Override

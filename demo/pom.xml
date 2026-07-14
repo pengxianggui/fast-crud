@@ -15,7 +15,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <fast-crud.version>1.5.16</fast-crud.version>
+        <fast-crud.version>1.5.18</fast-crud.version>
     </properties>
 
     <dependencies>
@@ -36,7 +36,7 @@
         <dependency>
             <groupId>io.github.pengxianggui</groupId>
             <artifactId>fast-crud-auto-generator</artifactId>
-            <version>${fast-crud.version}</version>
+            <version>1.5.16</version>
         </dependency>
         <dependency>
             <groupId>com.github.xiaoymin</groupId>
