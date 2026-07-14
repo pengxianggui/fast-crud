@@ -15,6 +15,8 @@ import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * APT: 根据@JoinMan注解生成方法引用注册的类文件(MethodReferenceLoader子类)。
@@ -46,7 +48,10 @@ public class MethodReferenceScanProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        Set<? extends Element> elements = roundEnv.getElementsAnnotatedWith(JoinMain.class);
+        Set<Element> elements = Stream.concat(
+                roundEnv.getElementsAnnotatedWith(JoinMain.class).stream(),
+                roundEnv.getElementsAnnotatedWith(ReferenceScan.class).stream()
+        ).collect(Collectors.toSet());
 
         // 【核心改动 1】准备一个 Map 用于收集所有涉及的类 (Key=全限定名, Value=TypeElement)
         // 作用：去重。无论多少个 DTO 引用了同一个 Entity，这里只保留一份。
