@@ -44,6 +44,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * 继承此父类的 Controller 可直接获得 fast-table 所需的所有基本接口支持。
+ * <p>
+ * 注意: 继承此父类不是必须的，完全可以基于 service 自行提供 fast-table 所必须的接口。
+ *
+ * @param <M>
+ * @author pengxg
+ */
 @Slf4j
 public class BaseController<M> {
     private final BaseService baseService;
@@ -60,6 +68,12 @@ public class BaseController<M> {
         this.entityClazz = baseService.getEntityClass();
     }
 
+    /**
+     * [FC] 新增一条记录
+     *
+     * @param model
+     * @return 新增成功的条数
+     */
     @ApiOperation("插入")
     @PostMapping("insert")
     public int insert(@RequestBody @Validated(CrudInsert.class) M model) {
@@ -68,6 +82,13 @@ public class BaseController<M> {
                 : baseService.insert(model, dtoClazz);
     }
 
+    /**
+     * [FC] (批量)新增多条记录
+     *
+     * @param models
+     * @return 新增成功的条数
+     * @throws BindException
+     */
     @ApiOperation("批量插入")
     @PostMapping("insert/batch")
     public int insertBatch(@RequestBody List<M> models) throws BindException {
@@ -80,6 +101,13 @@ public class BaseController<M> {
                 : baseService.insertBatch(models, dtoClazz);
     }
 
+    /**
+     * [FC] 修改一条记录
+     *
+     * @param modelWrapper
+     * @return 修改成功的条数
+     * @throws BindException
+     */
     @ApiOperation("编辑")
     @PostMapping("update")
     public int update(@RequestBody @Validated(CrudUpdate.class) UpdateModelWrapper<M> modelWrapper) throws BindException {
@@ -88,6 +116,13 @@ public class BaseController<M> {
                 : baseService.update(modelWrapper.getModel(), dtoClazz, ObjectUtil.defaultIfNull(modelWrapper.get_updateNull(), true));
     }
 
+    /**
+     * [FC] (批量)修改多条记录
+     *
+     * @param models
+     * @return 修改成功的条数
+     * @throws BindException
+     */
     @ApiOperation(value = "批量编辑", notes = "不支持个性化选择_updateNull")
     @PostMapping("update/batch")
     public int updateBatch(@RequestBody List<M> models) throws BindException {
@@ -100,6 +135,12 @@ public class BaseController<M> {
                 : baseService.updateBatch(models, dtoClazz, true);
     }
 
+    /**
+     * [FC] 查询列表
+     *
+     * @param query 查询条件
+     * @return
+     */
     @ApiOperation("列表查询")
     @PostMapping("list")
     public List<M> list(@RequestBody @Validated Query query) {
@@ -108,6 +149,12 @@ public class BaseController<M> {
                 : baseService.queryList(query, dtoClazz);
     }
 
+    /**
+     * [FC] 分页查询
+     *
+     * @param query 查询条件
+     * @return
+     */
     @ApiOperation("分页查询")
     @PostMapping("page")
     public PagerView<M> page(@RequestBody @Validated PagerQuery query) {
@@ -117,6 +164,12 @@ public class BaseController<M> {
         return new PagerView<>(pager.getCurrent(), pager.getSize(), pager.getTotal(), pager.getRecords());
     }
 
+    /**
+     * [FC] 详情查询
+     *
+     * @param id 主键
+     * @return
+     */
     @ApiOperation("详情")
     @GetMapping("{id}/detail")
     public M detail(@PathVariable Serializable id) {
@@ -125,6 +178,12 @@ public class BaseController<M> {
                 : (M) baseService.getById(id, dtoClazz);
     }
 
+    /**
+     * [FC] 删除单条记录
+     *
+     * @param model
+     * @return 返回删除成功的条数
+     */
     @ApiOperation("删除")
     @PostMapping("delete")
     public int delete(@RequestBody @Validated @NotNull M model) {
@@ -133,6 +192,12 @@ public class BaseController<M> {
         return baseService.deleteById(id) ? 1 : 0;
     }
 
+    /**
+     * [FC] (批量)删除多条记录
+     *
+     * @param models
+     * @return 返回删除成功的条数
+     */
     @ApiOperation("批量删除")
     @PostMapping("delete/batch")
     public int deleteBatch(@RequestBody @Validated @NotEmpty List<M> models) {
@@ -146,6 +211,12 @@ public class BaseController<M> {
         return baseService.deleteBatchById(ids) ? ids.size() : 0;
     }
 
+    /**
+     * [FC] 存在性查询
+     *
+     * @param conditions 条件
+     * @return true-指定条件存在记录;false-指定条件不存在记录
+     */
     @ApiOperation(value = "存在性查询", notes = "指定条件存在数据")
     @PostMapping("exists")
     public Boolean exists(@RequestBody @Validated List<Cond> conditions) {
@@ -154,6 +225,15 @@ public class BaseController<M> {
                 : baseService.exists(conditions, dtoClazz);
     }
 
+    /**
+     * [FC] 上传
+     *
+     * @param row  上传字段所在行的记录(json字符串)
+     * @param col  上传字段名
+     * @param file 文件
+     * @return 返回文件的下载地址
+     * @throws IOException
+     */
     @ApiOperation(value = "上传", notes = "某个字段为图片/文件字段时需要使用上传接口")
     @PostMapping("upload")
     public String upload(@ApiParam("上传字段所在行的记录(json字符串)") @RequestParam(value = "row", required = false) String row,
@@ -168,6 +248,15 @@ public class BaseController<M> {
         return String.format("%s/download?path=%s", StrUtil.addPrefixIfNot(basePath, "/"), URLEncoder.encode(filePath));
     }
 
+    /**
+     * [FC] 下载/预览
+     *
+     * @param path     路径
+     * @param request
+     * @param response
+     * @throws ServletException
+     * @throws IOException
+     */
     @ApiOperation(value = "下载/预览", notes = "针对上传的文件进行下载, 若是图片进行预览")
     @GetMapping("download")
     public void download(@RequestParam("path") String path, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -192,6 +281,13 @@ public class BaseController<M> {
         }
     }
 
+    /**
+     * [FC] 表格数据导出
+     *
+     * @param exportParam 导出参数
+     * @param response
+     * @throws IOException
+     */
     @ApiOperation(value = "导出", notes = "数据导出")
     @PostMapping("export")
     public void export(@RequestBody @Validated ExportParam exportParam, HttpServletResponse response) throws IOException {
