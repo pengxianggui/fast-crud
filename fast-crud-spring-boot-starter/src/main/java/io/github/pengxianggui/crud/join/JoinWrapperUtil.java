@@ -99,7 +99,8 @@ public class JoinWrapperUtil {
                                 wrapper.selectCollection(field.getAlias(), field.getTargetClazz(), field.getFieldGetter());
                             } else {
                                 wrapper.selectCollection(field.getAlias(), field.getTargetClazz(), field.getFieldGetter(), map -> {
-                                    DtoInfo subDtoInfo = new DtoInfo(TypeUtil.getClass(type));
+                                    // 这里使用 field.getTargetClazz() 作为第2 个入参，这样级联的类中就不必强制使用 JoinMain 了
+                                    DtoInfo subDtoInfo = new DtoInfo(TypeUtil.getClass(type), field.getTargetClazz());
                                     // 这里面暂不考虑递归情况, 否则太复杂, 还要牵扯子查询, mybatis-plus-join怕无法支撑
                                     subDtoInfo.getFields().forEach(field1 -> {
                                         if (field1.ignoreForQuery() || field1.targetFieldNotExist()) {
