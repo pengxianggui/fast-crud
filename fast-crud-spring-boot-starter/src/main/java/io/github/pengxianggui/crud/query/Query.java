@@ -111,10 +111,10 @@ public class Query {
     }
 
     public <T> T getExtra(String fieldName, Class<T> clazz) {
-        return getExtra(fieldName, (T) null);
+        return getExtra(fieldName, clazz, null);
     }
 
-    public <T> T getExtra(String fieldName, T defaultVal) {
+    public <T> T getExtra(String fieldName, Class<T> clazz, T defaultVal) {
         if (this.extra == null || !this.extra.containsKey(fieldName)) {
             return defaultVal;
         }
@@ -122,10 +122,7 @@ public class Query {
         if (value == null) {
             return defaultVal;
         }
-        if (defaultVal == null) {
-            return null;
-        }
         // 根据默认值的类型进行自动转换
-        return (T) Convert.convert(defaultVal.getClass(), value);
+        return Convert.convert(clazz, value);
     }
 }
