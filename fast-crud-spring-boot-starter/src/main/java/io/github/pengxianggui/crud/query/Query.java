@@ -13,6 +13,7 @@ import javax.validation.Valid;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @NoArgsConstructor
 @Getter
@@ -108,6 +109,13 @@ public class Query {
         }
         return this.conds.stream().filter(cond -> col.equals(cond.getCol()) && opt.equals(cond.getOpt()))
                 .findFirst().orElse(null);
+    }
+
+    public Object getExtra(String fieldName) {
+        if (this.extra == null || !this.extra.containsKey(fieldName)) {
+            return null;
+        }
+        return this.extra.get(fieldName);
     }
 
     public <T> T getExtra(String fieldName, Class<T> clazz) {
