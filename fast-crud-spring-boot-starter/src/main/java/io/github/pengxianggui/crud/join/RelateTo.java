@@ -46,7 +46,7 @@ public @interface RelateTo {
      * private String address;
      *
      * // 2.1
-     * &#064;RelateTo(value = OrderItem.class, field = "id")
+     * &#064;RelateTo(value = OrderItem.class, field = "id", dbField = false)
      * private List&lt;Long> orderItemIds;
      *
      * // 2.2
