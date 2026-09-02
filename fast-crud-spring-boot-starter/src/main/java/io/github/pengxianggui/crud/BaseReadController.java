@@ -17,7 +17,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.MediaTypeFactory;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -29,7 +28,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.Validator;
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -88,20 +86,6 @@ public class BaseReadController<M> {
                 ? baseService.queryPage(query)
                 : baseService.queryPage(query, dtoClazz);
         return new PagerView<>(pager.getCurrent(), pager.getSize(), pager.getTotal(), pager.getRecords());
-    }
-
-    /**
-     * [FC] 详情查询
-     *
-     * @param id 主键
-     * @return
-     */
-    @ApiOperation("详情")
-    @GetMapping("{id}/detail")
-    public M detail(@PathVariable Serializable id) {
-        return dtoClazz.equals(entityClazz)
-                ? (M) baseService.getById(id)
-                : (M) baseService.getById(id, dtoClazz);
     }
 
     /**
