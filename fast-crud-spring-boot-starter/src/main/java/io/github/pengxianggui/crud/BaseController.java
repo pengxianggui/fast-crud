@@ -4,12 +4,6 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.extra.spring.SpringUtil;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.pengxianggui.crud.download.FileResourceHttpRequestHandler;
-import io.github.pengxianggui.crud.export.ExcelExportManager;
-import io.github.pengxianggui.crud.query.*;
 import io.github.pengxianggui.crud.util.EntityUtil;
 import io.github.pengxianggui.crud.util.ValidUtil;
 import io.github.pengxianggui.crud.valid.CrudInsert;
@@ -17,55 +11,41 @@ import io.github.pengxianggui.crud.valid.CrudUpdate;
 import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
-import org.springframework.http.MediaTypeFactory;
 import org.springframework.validation.BindException;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Validator;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URLEncoder;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 /**
- * 继承此父类的 Controller 可直接获得 fast-table 所需的所有基本接口支持。
+ * 全量 CRUD Controller 基类。继承此父类的 Controller 可直接获得 fast-table 所需的全部读写接口
  * <p>
- * 注意: 继承此父类不是必须的，完全可以基于 service 自行提供 fast-table 所必须的接口。
+ * 推荐用法：
+ * <ul>
+ *     <li>业务表只读：继承 {@link BaseReadController}；</li>
+ *     <li>业务表可写：继承本类；</li>
+ *     <li>需要排除个别接口：结合 {@link CrudExclude} 使用。</li>
+ * </ul>
+ * 注意: 继承父类不是必须的，完全可以基于 service 自行提供 fast-table 所必须的接口。
  *
  * @param <M>
  * @author pengxg
  */
-@Slf4j
-public class BaseController<M> {
-    private final BaseService baseService;
-    private final Class<M> dtoClazz;
-    private Class<?> entityClazz;
-    @Autowired
-    public Validator validator;
-    @Autowired
-    private ObjectMapper objectMapper;
+public class BaseController<M> extends BaseReadController<M> {
 
     public BaseController(BaseService baseService, Class<M> dtoClazz) {
-        this.baseService = baseService;
-        this.dtoClazz = dtoClazz;
-        this.entityClazz = baseService.getEntityClass();
+        super(baseService, dtoClazz);
     }
 
     /**
@@ -136,49 +116,6 @@ public class BaseController<M> {
     }
 
     /**
-     * [FC] 查询列表
-     *
-     * @param query 查询条件
-     * @return
-     */
-    @ApiOperation("列表查询")
-    @PostMapping("list")
-    public List<M> list(@RequestBody @Validated Query query) {
-        return dtoClazz.equals(entityClazz)
-                ? baseService.queryList(query)
-                : baseService.queryList(query, dtoClazz);
-    }
-
-    /**
-     * [FC] 分页查询
-     *
-     * @param query 查询条件
-     * @return
-     */
-    @ApiOperation("分页查询")
-    @PostMapping("page")
-    public PagerView<M> page(@RequestBody @Validated PagerQuery query) {
-        IPage<M> pager = dtoClazz.equals(entityClazz)
-                ? baseService.queryPage(query)
-                : baseService.queryPage(query, dtoClazz);
-        return new PagerView<>(pager.getCurrent(), pager.getSize(), pager.getTotal(), pager.getRecords());
-    }
-
-    /**
-     * [FC] 详情查询
-     *
-     * @param id 主键
-     * @return
-     */
-    @ApiOperation("详情")
-    @GetMapping("{id}/detail")
-    public M detail(@PathVariable Serializable id) {
-        return dtoClazz.equals(entityClazz)
-                ? (M) baseService.getById(id)
-                : (M) baseService.getById(id, dtoClazz);
-    }
-
-    /**
      * [FC] 删除单条记录
      *
      * @param model
@@ -212,20 +149,6 @@ public class BaseController<M> {
     }
 
     /**
-     * [FC] 存在性查询
-     *
-     * @param conditions 条件
-     * @return true-指定条件存在记录;false-指定条件不存在记录
-     */
-    @ApiOperation(value = "存在性查询", notes = "指定条件存在数据")
-    @PostMapping("exists")
-    public Boolean exists(@RequestBody @Validated List<Cond> conditions) {
-        return dtoClazz.equals(entityClazz)
-                ? baseService.exists(conditions)
-                : baseService.exists(conditions, dtoClazz);
-    }
-
-    /**
      * [FC] 上传
      *
      * @param row  上传字段所在行的记录(json字符串)
@@ -246,61 +169,5 @@ public class BaseController<M> {
         RequestMapping requestMapping = this.getClass().getAnnotation(RequestMapping.class);
         String basePath = (requestMapping != null ? requestMapping.value()[0] : "");
         return String.format("%s/download?path=%s", StrUtil.addPrefixIfNot(basePath, "/"), URLEncoder.encode(filePath));
-    }
-
-    /**
-     * [FC] 下载/预览
-     *
-     * @param path     路径
-     * @param request
-     * @param response
-     * @throws ServletException
-     * @throws IOException
-     */
-    @ApiOperation(value = "下载/预览", notes = "针对上传的文件进行下载, 若是图片进行预览")
-    @GetMapping("download")
-    public void download(@RequestParam("path") String path, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        File file = baseService.download(path);
-        if (!file.exists()) {
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            response.setCharacterEncoding(StandardCharsets.UTF_8.toString());
-            return;
-        }
-        try {
-            String fileName = URLEncoder.encode(file.getName(), Charset.defaultCharset().toString());
-            Optional<MediaType> optional = MediaTypeFactory.getMediaType(fileName);
-            response.setContentType(optional.orElse(MediaType.APPLICATION_OCTET_STREAM).getType());
-            response.setHeader("Connection", "close");
-            response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", fileName));
-
-            FileResourceHttpRequestHandler fileResourceHttpRequestHandler = SpringUtil.getBean(FileResourceHttpRequestHandler.class);
-            request.setAttribute(FileResourceHttpRequestHandler.FILE_PATH, file.getAbsolutePath());
-            fileResourceHttpRequestHandler.handleRequest(request, response);
-        } catch (IOException | ServletException e) {
-            throw e;
-        }
-    }
-
-    /**
-     * [FC] 表格数据导出
-     *
-     * @param exportParam 导出参数
-     * @param response
-     * @throws IOException
-     */
-    @ApiOperation(value = "导出", notes = "数据导出")
-    @PostMapping("export")
-    public void export(@RequestBody @Validated ExportParam exportParam, HttpServletResponse response) throws IOException {
-        List<M> data = exportParam.getAll() ? list(exportParam.getPageQuery()) : page(exportParam.getPageQuery()).getRecords();
-        ExcelExportManager excelExportManager = new ExcelExportManager(objectMapper);
-        try (ServletOutputStream out = response.getOutputStream()) {
-            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            response.setHeader("Content-Disposition", StrUtil.format("attachment; filename={}.xlsx",
-                    StrUtil.blankToDefault(exportParam.getTitle(), "export")));
-            excelExportManager.exportByConfig(data, exportParam.getColumns(), out);
-            out.flush();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 }
