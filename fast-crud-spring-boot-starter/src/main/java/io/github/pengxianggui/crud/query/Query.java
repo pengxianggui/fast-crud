@@ -13,7 +13,6 @@ import javax.validation.Valid;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 @NoArgsConstructor
 @Getter
@@ -67,6 +66,13 @@ public class Query {
     }
 
     public void addCond(String col, Opt opt, Object val) {
+        addCond(true, col, opt, val);
+    }
+
+    public void addCond(boolean condition, String col, Opt opt, Object val) {
+        if (!condition) {
+            return;
+        }
         if (this.conds == null) {
             this.conds = new java.util.ArrayList<>();
         }
@@ -107,8 +113,7 @@ public class Query {
         if (this.conds == null) {
             return null;
         }
-        return this.conds.stream().filter(cond -> col.equals(cond.getCol()) && opt.equals(cond.getOpt()))
-                .findFirst().orElse(null);
+        return this.conds.stream().filter(cond -> col.equals(cond.getCol()) && opt.equals(cond.getOpt())).findFirst().orElse(null);
     }
 
     public Object getExtra(String fieldName) {

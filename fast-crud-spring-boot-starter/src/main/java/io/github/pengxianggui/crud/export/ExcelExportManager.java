@@ -22,6 +22,10 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public class ExcelExportManager {
+    // Excel 单元格文本内容的最大字符数限制（来源于 OOXML 规范，POI 强制校验）
+    private static final int MAX_CELL_TEXT_LENGTH = 32767;
+    private static final String TRUNCATE_SUFFIX = "...";
+
     // 使用jackson进行序列化，以便业务系统可以使用自定义的序列化逻辑干预excel导出
     private final ObjectMapper objectMapper;
 
@@ -59,7 +63,7 @@ public class ExcelExportManager {
             });
             List<Object> rowData = new ArrayList<>();
             for (String col : cols) {
-                rowData.add(mappedObj.get(col));
+                rowData.add(truncateCellValue(mappedObj.get(col), col));
             }
             return rowData;
         }).collect(Collectors.toList());
@@ -126,5 +130,24 @@ public class ExcelExportManager {
             default:
                 return new TextColumnHandler(columnType, columnConfig);
         }
+    }
+
+    /**
+     * 对超出 Excel 单元格文本长度上限的值做截断处理，避免写文件时抛异常。
+     *
+     * @param value 单元格原始值
+     * @param col   当前列名（用于日志定位）
+     * @return 截断后的值，未超长时原样返回
+     */
+    private Object truncateCellValue(Object value, String col) {
+        if (value instanceof String) {
+            String text = (String) value;
+            if (text.length() > MAX_CELL_TEXT_LENGTH) {
+                String truncated = text.substring(0, MAX_CELL_TEXT_LENGTH - TRUNCATE_SUFFIX.length()) + TRUNCATE_SUFFIX;
+                log.warn("Cell content exceeds Excel limit and has been truncated, column: {}, original length: {}, max length: {}", col, text.length(), MAX_CELL_TEXT_LENGTH);
+                return truncated;
+            }
+        }
+        return value;
     }
 }
