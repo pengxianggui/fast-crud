@@ -5,6 +5,7 @@ public enum CrudMethod {
     INSERT_BATCH("insertBatch"),
     UPDATE("update"),
     UPDATE_BATCH("updateBatch"),
+    UPDATE_BATCH_FIELD("updateBatchField"),
     LIST("list"),
     PAGE("page"),
     DETAIL("detail"),

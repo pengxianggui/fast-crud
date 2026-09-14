@@ -2,8 +2,10 @@ package io.github.pengxianggui.crud;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.Assert;
+import cn.hutool.core.util.ReflectUtil;
 import com.alibaba.excel.util.DateUtils;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
@@ -36,9 +38,11 @@ import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -199,6 +203,29 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
         boolean flag = super.updateBatchById(updateEntities);
         updateEntities.forEach(this::afterUpdateById);
         return flag;
+    }
+
+    /**
+     * 批量修改指定字段(单表)
+     */
+    @Transactional(rollbackFor = Throwable.class)
+    @Override
+    public int updateBatchByFields(Collection<? extends Serializable> ids, Map<String, Object> fields) {
+        if (CollectionUtil.isEmpty(ids) || CollectionUtil.isEmpty(fields)) {
+            return 0;
+        }
+        Class<T> clazz = getEntityClass();
+        String dbPkName = getDbPkName();
+        UpdateWrapper<T> wrapper = new UpdateWrapper<>();
+        wrapper.in(dbPkName, ids);
+        for (Map.Entry<String, Object> entry : fields.entrySet()) {
+            String fieldName = entry.getKey();
+            String dbFieldName = EntityUtil.getDbFieldName(clazz, fieldName);
+            Assert.notNull(dbFieldName, "字段{}不存在于实体{}中", fieldName, clazz.getName());
+            wrapper.set(dbFieldName, entry.getValue());
+        }
+        int count = getBaseMapper().update(null, wrapper);
+        return count;
     }
 
     public boolean exists(List<Cond> conditions) {
@@ -366,6 +393,45 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
             }
         });
         return count.get();
+    }
+
+    /**
+     * 批量修改指定字段(支持跨表)
+     */
+    @Transactional(rollbackFor = Throwable.class)
+    @Override
+    public <DTO> int updateBatchByFields(Collection<? extends Serializable> ids, Map<String, Object> fields, Class<DTO> dtoClazz) {
+        if (CollectionUtil.isEmpty(ids) || CollectionUtil.isEmpty(fields)) {
+            return 0;
+        }
+        Assert.notNull(dtoClazz, "dtoClazz can not be null!");
+        // 构造DTO实例，仅设置指定字段，未指定字段保持null，配合updateNull=false只更新指定字段
+        DTO dto;
+        try {
+            dto = dtoClazz.getDeclaredConstructor().newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException("实例化DTO失败: " + dtoClazz.getName(), e);
+        }
+        for (Map.Entry<String, Object> entry : fields.entrySet()) {
+            String fieldName = entry.getKey();
+            Field field = ReflectUtil.getField(dtoClazz, fieldName);
+            Assert.notNull(field, "字段[{}]不存在于DTO[{}]中", fieldName, dtoClazz.getName());
+            ReflectUtil.setFieldValue(dto, fieldName, entry.getValue());
+        }
+        Class<T> clazz = getEntityClass();
+        String pkName = getPkName();
+        UpdateJoinWrapper<T> wrapper = new UpdateJoinWrapperBuilder<T, DTO>(dtoClazz)
+                .set(dto)
+                .where(w -> w.in(MethodReferenceRegistry.getFunction(clazz, pkName), ids))
+                .updateNull(false)
+                .build();
+
+        BaseMapper<T> baseMapper = getBaseMapper();
+        if (!(baseMapper instanceof MPJBaseMapper)) {
+            throw new ClassCastException("baseMapper is not MPJBaseMapper, please extends MPJBaseMapper");
+        }
+        int count = ((MPJBaseMapper<T>) baseMapper).updateJoin(null, wrapper);
+        return count;
     }
 
     @Deprecated

@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 public interface BaseService<T> extends IService<T> {
     /**
@@ -69,6 +70,15 @@ public interface BaseService<T> extends IService<T> {
      * @return
      */
     boolean updateBatchById(Collection<T> entities);
+
+    /**
+     * 批量修改指定字段(单表)。对 ids 对应的所有记录，将 fields 中指定的字段更新为对应的值。
+     *
+     * @param ids
+     * @param fields
+     * @return
+     */
+    int updateBatchByFields(Collection<? extends Serializable> ids, Map<String, Object> fields);
 
     /**
      * 判断指定条件是否存在数据
@@ -183,6 +193,18 @@ public interface BaseService<T> extends IService<T> {
      * @return
      */
     <DTO> int updateBatch(List<DTO> models, Class<DTO> mClazz, @Nullable boolean updateNull);
+
+    /**
+     * 批量修改指定字段(支持跨表)。对 ids 对应的所有记录，将 fields 中指定的字段更新为对应的值。
+     * <p>
+     *
+     *
+     * @param ids      主键集合
+     * @param fields   字段名
+     * @param dtoClazz DTO类型
+     * @return
+     */
+    <DTO> int updateBatchByFields(Collection<? extends Serializable> ids, Map<String, Object> fields, Class<DTO> dtoClazz);
 
     /**
      * 删除(支持跨表) 谨慎! 会级联删除mClazz中@*Join声明关联的子表数据
