@@ -8,6 +8,7 @@ import io.github.pengxianggui.crud.util.EntityUtil;
 import io.github.pengxianggui.crud.util.ValidUtil;
 import io.github.pengxianggui.crud.valid.CrudInsert;
 import io.github.pengxianggui.crud.valid.CrudUpdate;
+import io.github.pengxianggui.crud.wrapper.BatchUpdateFieldModel;
 import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -113,6 +114,22 @@ public class BaseController<M> extends BaseReadController<M> {
         return dtoClazz.equals(entityClazz)
                 ? baseService.updateBatchById(models) ? 1 : 0
                 : baseService.updateBatch(models, dtoClazz, true);
+    }
+
+    /**
+     * [FC] 批量修改指定字段
+     * <p>
+     * 针对勾选的多条记录，批量修改指定字段的值。所有选中行应用相同的字段值。
+     *
+     * @param model 批量修改参数
+     * @return 修改成功的条数
+     */
+    @ApiOperation(value = "批量修改(按字段)", notes = "针对勾选的多条记录，批量修改指定字段的值，所有选中行应用相同的字段值")
+    @PostMapping("update/batch-field")
+    public int updateBatchField(@RequestBody @Validated BatchUpdateFieldModel model) {
+        return dtoClazz.equals(entityClazz)
+                ? baseService.updateBatchByFields(model.getIds(), model.getFields())
+                : baseService.updateBatchByFields(model.getIds(), model.getFields(), dtoClazz);
     }
 
     /**
