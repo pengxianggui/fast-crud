@@ -50,11 +50,11 @@ public @interface RelateTo {
      * private List&lt;Long> orderItemIds;
      *
      * // 2.2
-     * &#064;RelateTo(OrderItem.class)
+     * &#064;RelateTo(value = OrderItem.class, dbField = false)
      * private List&lt;OrderItem> orderItems;
      *
      * // 3
-     * &#064;RelateTo(OrderAddress.class)
+     * &#064;RelateTo(value = OrderAddress.class, dbField = false)
      * private OrderAddress address;
      * </pre>
      *
