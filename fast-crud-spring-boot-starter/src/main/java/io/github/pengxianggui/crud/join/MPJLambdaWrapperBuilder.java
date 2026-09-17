@@ -36,6 +36,12 @@ public class MPJLambdaWrapperBuilder<T> {
         this.mainClazz = (Class<T>) dtoInfo.getMainEntityClazz();
         this.selectConsumer = w -> JoinWrapperUtil.addSelect(w, null, null, dtoInfo); // 默认查dto中所有(符合条件的)字段
         this.joinConsumer = w -> JoinWrapperUtil.addJoin(w, dtoInfo); // 默认从dto解析join信息
+        this.whereConsumer = w -> {
+        };
+        this.orderConsumer = w -> {
+        };
+        this.distinctConsumer = w -> {
+        };
     }
 
     /**
