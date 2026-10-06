@@ -3,11 +3,10 @@ package io.github.pengxianggui.crud.export;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.excel.write.handler.context.CellWriteHandlerContext;
-import com.alibaba.excel.write.metadata.holder.WriteSheetHolder;
 import io.github.pengxianggui.crud.importer.ImportCellParseException;
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.ss.util.CellRangeAddressList;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,24 +66,13 @@ public class SelectColumnHandler extends ColumnHandler {
         mapping.put(optionValue, optionLabel);
     }
 
+    /**
+     * 选项文案, 由{@link CustomSheetWriteHandler}统一生成下拉校验:
+     * 文案不含逗号且未超长时使用内联列表, 否则降级为引用隐藏sheet的区间校验
+     */
     @Override
-    public void handleHead(WriteSheetHolder writeSheetHolder, CellStyle cellStyle, int columnIndex) {
-        Sheet sheet = writeSheetHolder.getSheet();
-        DataValidationHelper helper = sheet.getDataValidationHelper();
-        CellRangeAddressList rangeList = new CellRangeAddressList(1, 65535, columnIndex, columnIndex);
-
-        if (!CollectionUtil.isEmpty(this.options)) {
-            String[] labels = this.options.values().toArray(new String[this.options.size()]);
-            String joinedLabels = String.join(",", labels);
-            // 下拉列表逗号连接后的长度不能超过255个字符，否则会报错，如果超过则降级不做成下拉列表
-            if (joinedLabels.length() <= 255) {
-                DataValidationConstraint constraint = helper.createExplicitListConstraint(labels);
-                DataValidation validation = helper.createValidation(constraint, rangeList);
-                validation.setErrorStyle(DataValidation.ErrorStyle.STOP);
-                validation.createErrorBox("ERROR", "Please choose value of options");
-                sheet.addValidationData(validation);
-            }
-        }
+    public List<String> getOptionLabels() {
+        return new ArrayList<>(this.options.values());
     }
 
     @Override

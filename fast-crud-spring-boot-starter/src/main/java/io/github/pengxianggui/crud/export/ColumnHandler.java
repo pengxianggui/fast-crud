@@ -8,7 +8,9 @@ import io.github.pengxianggui.crud.FastCrudProperty;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -70,6 +72,15 @@ public abstract class ColumnHandler {
      */
     public Object parseImportValue(String text, Class<?> fieldType) {
         return StrUtil.trimToNull(text);
+    }
+
+    /**
+     * 获取该列的可选项文案(用于导出时生成下拉校验)。默认无选项。
+     *
+     * @return 选项文案列表, 顺序即下拉展示顺序
+     */
+    public List<String> getOptionLabels() {
+        return Collections.emptyList();
     }
 
     /**
