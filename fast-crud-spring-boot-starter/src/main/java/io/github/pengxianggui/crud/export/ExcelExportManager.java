@@ -99,8 +99,11 @@ public class ExcelExportManager {
      * @param columnConfig
      * @return
      */
-    private ColumnHandler getColumnHandler(Map<String, Object> columnConfig) {
+    public static ColumnHandler getColumnHandler(Map<String, Object> columnConfig) {
         String columnType = (String) columnConfig.get("tableColumnComponentName");
+        if (columnType == null) {
+            return new TextColumnHandler("", columnConfig);
+        }
         switch (columnType) {
             case "FastTableColumnDatePicker":
             case "fast-table-column-date-picker":

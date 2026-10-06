@@ -2,6 +2,8 @@ package io.github.pengxianggui.crud;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
+import io.github.pengxianggui.crud.importer.ImportResult;
+import io.github.pengxianggui.crud.importer.ImportRow;
 import io.github.pengxianggui.crud.query.Cond;
 import io.github.pengxianggui.crud.query.PagerQuery;
 import io.github.pengxianggui.crud.query.Query;
@@ -13,6 +15,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 public interface BaseService<T> extends IService<T> {
     /**
@@ -183,6 +186,22 @@ public interface BaseService<T> extends IService<T> {
      * @return
      */
     <DTO> int updateBatch(List<DTO> models, Class<DTO> mClazz, @Nullable boolean updateNull);
+
+    /**
+     * 通用导入(支持批量新增/批量更新)。
+     * <p>
+     * 判定规则: 行内主键有值则更新; 无主键时, 使用列配置中importUnique=true的列组合匹配已有记录, 命中则更新,
+     * 未命中或未配置importUnique时一律新增。整个过程在同一个事务中执行, 任一行失败则整批回滚。
+     *
+     * @param rows     待导入的行(含excel行号)
+     * @param dtoClazz 待导入对象的类型
+     * @param columns  导入列配置(与导出列元数据同构)
+     * @param extra    前端额外传入的参数(如customerId), 业务可在beforeImport钩子中使用
+     * @param <DTO>    待导入对象的类型
+     * @return 导入结果
+     */
+    <DTO> ImportResult importData(List<ImportRow<DTO>> rows, Class<DTO> dtoClazz,
+                                  List<Map<String, Object>> columns, Map<String, Object> extra);
 
     /**
      * 删除(支持跨表) 谨慎! 会级联删除mClazz中@*Join声明关联的子表数据

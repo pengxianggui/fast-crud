@@ -8,6 +8,7 @@ import io.github.pengxianggui.crud.FastCrudProperty;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -29,7 +30,7 @@ public abstract class ColumnHandler {
         this.component = component;
         this.columnConfig = columnConfig;
         Map<String, Object> columnProps = (Map<String, Object>) columnConfig.get("props");
-        this.props = columnProps;
+        this.props = columnProps != null ? columnProps : new HashMap<>();
 
         FastCrudProperty property = SpringUtil.getBean(FastCrudProperty.class);
         this.host = property.getHost();
@@ -56,6 +57,20 @@ public abstract class ColumnHandler {
      * @param value   单元格数据值
      */
     public abstract void handleData(CellWriteHandlerContext context, Object value);
+
+    /**
+     * 导入时, 将excel单元格的文本值转换为业务字段值。
+     * <p>
+     * 默认实现: 去除首尾空白后原样返回字符串; 空白单元格返回null, 交由后续校验(@NotBlank等)处理。
+     * 子类可覆盖以实现类型转换(数字、日期、下拉选项等)
+     *
+     * @param text      单元格文本值(可能为null)
+     * @param fieldType 目标DTO中对应字段的java类型(可能为null)
+     * @return 转换后的字段值
+     */
+    public Object parseImportValue(String text, Class<?> fieldType) {
+        return StrUtil.trimToNull(text);
+    }
 
     /**
      * 获取列宽

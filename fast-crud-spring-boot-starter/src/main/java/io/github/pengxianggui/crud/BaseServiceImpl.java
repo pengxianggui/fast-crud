@@ -2,6 +2,8 @@ package io.github.pengxianggui.crud;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.Assert;
+import cn.hutool.core.util.ReflectUtil;
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.excel.util.DateUtils;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
@@ -15,6 +17,11 @@ import com.github.yulichang.wrapper.DeleteJoinWrapper;
 import com.github.yulichang.wrapper.MPJLambdaWrapper;
 import com.github.yulichang.wrapper.UpdateJoinWrapper;
 import io.github.pengxianggui.crud.file.FileManager;
+import io.github.pengxianggui.crud.importer.ImportContext;
+import io.github.pengxianggui.crud.importer.ImportError;
+import io.github.pengxianggui.crud.importer.ImportException;
+import io.github.pengxianggui.crud.importer.ImportResult;
+import io.github.pengxianggui.crud.importer.ImportRow;
 import io.github.pengxianggui.crud.join.*;
 import io.github.pengxianggui.crud.join.MethodReferenceRegistry;
 import io.github.pengxianggui.crud.query.Cond;
@@ -22,6 +29,9 @@ import io.github.pengxianggui.crud.query.PagerQuery;
 import io.github.pengxianggui.crud.query.Query;
 import io.github.pengxianggui.crud.query.QueryWrapperUtil;
 import io.github.pengxianggui.crud.util.EntityUtil;
+import io.github.pengxianggui.crud.util.ValidUtil;
+import io.github.pengxianggui.crud.valid.CrudInsert;
+import io.github.pengxianggui.crud.valid.CrudUpdate;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,15 +40,23 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.PostConstruct;
+import javax.validation.Validator;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -54,6 +72,11 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
     @Getter
     @Autowired(required = false)
     private PlatformTransactionManager transactionManager;
+    /**
+     * 用于导入时的数据校验(复用与insert/update相同的校验注解与分组)
+     */
+    @Autowired(required = false)
+    protected Validator validator;
 
     /**
      * 实体类中主键字段名
@@ -366,6 +389,263 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
             }
         });
         return count.get();
+    }
+
+    /**
+     * 导入前的钩子。可用于回填额外参数(如customerId)、补充默认值, 或做自定义业务校验。
+     * 抛出异常将终止导入并整批回滚。
+     *
+     * @param context 导入上下文, 其中rows可被直接修改
+     */
+    protected <DTO> void beforeImport(ImportContext<DTO> context) {
+    }
+
+    /**
+     * 导入时(走DTO更新路径)是否把DTO中的null字段也更新到数据库。
+     * <p>
+     * 默认false: 只更新excel中真正导入的列, 避免把未导入的列(如create_time等审计字段, 或importable=false的列)置空。
+     * 若业务确实希望通过导入把某些列清空, 可覆写本方法返回true(注意: 此时未导入的列都会被置空)
+     *
+     * @return true-null字段也更新; false-只更新非null字段
+     */
+    protected boolean importUpdateNull() {
+        return false;
+    }
+
+    @Transactional(rollbackFor = Throwable.class)
+    @Override
+    public <DTO> ImportResult importData(List<ImportRow<DTO>> rows,
+                                         Class<DTO> dtoClazz,
+                                         List<Map<String, Object>> columns,
+                                         Map<String, Object> extra) {
+        if (CollectionUtil.isEmpty(rows)) {
+            return ImportResult.success(0, 0, 0);
+        }
+        Assert.notNull(dtoClazz, "dtoClazz can not be null!");
+        ImportContext<DTO> context = new ImportContext<>(rows, dtoClazz, columns, extra);
+        // 1. 业务扩展钩子(回填额外参数、自定义校验等)
+        this.beforeImport(context);
+
+        List<ImportError> errors = new ArrayList<>();
+        // 2. 解析无主键行的匹配主键(基于importUnique列组合匹配)
+        Map<Integer, Serializable> matchedPkMapping = resolveImportMatchedPk(rows, context.getImportUniqueCols(), errors);
+        if (!errors.isEmpty()) {
+            throw new ImportException(errors);
+        }
+
+        // 3. 整批校验(复用insert/update相同的校验注解与分组), 校验不通过则不落库
+        Map<String, String> labelMapping = buildColLabelMapping(columns);
+        for (int i = 0; i < rows.size(); i++) {
+            ImportRow<DTO> row = rows.get(i);
+            boolean update = getDtoPkVal(row.getModel()) != null || matchedPkMapping.containsKey(i);
+            if (validator == null) {
+                continue;
+            }
+            try {
+                ValidUtil.valid(validator, row.getModel(), update ? CrudUpdate.class : CrudInsert.class);
+            } catch (BindException e) {
+                errors.add(new ImportError(row.getRow(), null, null, joinFieldErrors(e, labelMapping)));
+            } catch (Exception e) {
+                errors.add(new ImportError(row.getRow(), null, null, rootMessage(e)));
+            }
+        }
+        if (!errors.isEmpty()) {
+            throw new ImportException(errors);
+        }
+
+        // 4. 逐行写入, 复用insert/update及其钩子(insert: beforeInsert/afterInsert; update: beforeUpdateById/afterUpdateById)
+        int inserted = 0;
+        int updated = 0;
+        List<ImportError> writeErrors = new ArrayList<>();
+        for (int i = 0; i < rows.size(); i++) {
+            ImportRow<DTO> row = rows.get(i);
+            DTO model = row.getModel();
+            Serializable pk = getDtoPkVal(model);
+            if (pk == null && matchedPkMapping.containsKey(i)) {
+                pk = matchedPkMapping.get(i);
+                setDtoPkVal(model, pkName, pk);
+            }
+            try {
+                if (pk == null) {
+                    int count = dtoClazz.equals(getEntityClass()) ? this.insert((T) model) : this.insert(model, dtoClazz);
+                    if (count > 0) {
+                        inserted++;
+                    } else {
+                        writeErrors.add(new ImportError(row.getRow(), null, null,
+                                "Insert not applied (maybe blocked by the beforeInsert hook)"));
+                    }
+                } else {
+                    if (dtoClazz.equals(getEntityClass())) {
+                        if (this.updateById((T) model)) {
+                            updated++;
+                        } else {
+                            writeErrors.add(new ImportError(row.getRow(), null, null,
+                                    "Update not applied (maybe blocked by the beforeUpdateById hook)"));
+                        }
+                    } else {
+                        // 只更新excel中导入的列, 避免把未导入的列(如create_time等审计字段)置空
+                        this.update(model, dtoClazz, importUpdateNull());
+                        updated++;
+                    }
+                }
+            } catch (Exception e) {
+                writeErrors.add(new ImportError(row.getRow(), null, null, rootMessage(e)));
+            }
+        }
+        if (!writeErrors.isEmpty()) {
+            throw new ImportException(writeErrors);
+        }
+        return ImportResult.success(rows.size(), inserted, updated);
+    }
+
+    /**
+     * 基于importUnique列, 为无主键的导入行匹配已有记录的主键值。
+     *
+     * @return key为行下标(rows的index), value为匹配到的主键值
+     */
+    private <DTO> Map<Integer, Serializable> resolveImportMatchedPk(List<ImportRow<DTO>> rows,
+                                                                    List<String> uniqueCols, List<ImportError> errors) {
+        Map<Integer, Serializable> result = new HashMap<>();
+        if (CollectionUtil.isEmpty(uniqueCols)) {
+            return result;
+        }
+        Class<T> entityClazz = getEntityClass();
+        Map<String, String> dbColMapping = new LinkedHashMap<>();
+        for (String col : uniqueCols) {
+            String dbCol = EntityUtil.getDbFieldName(entityClazz, col);
+            if (StrUtil.isBlank(dbCol)) {
+                errors.add(ImportError.of(StrUtil.format(
+                        "Column [{}] is not a field of the main table, cannot be used as an importUnique match key", col)));
+            } else {
+                dbColMapping.put(col, dbCol);
+            }
+        }
+        if (!errors.isEmpty()) {
+            return result;
+        }
+
+        // 收集需要按唯一键匹配的行(仅无主键的行)
+        Map<String, List<Integer>> keyRowMapping = new LinkedHashMap<>();
+        for (int i = 0; i < rows.size(); i++) {
+            DTO model = rows.get(i).getModel();
+            if (getDtoPkVal(model) != null) {
+                continue;
+            }
+            List<Object> values = new ArrayList<>(uniqueCols.size());
+            boolean anyNull = false;
+            for (String col : uniqueCols) {
+                Object value = ReflectUtil.getFieldValue(model, col);
+                if (value == null) {
+                    anyNull = true;
+                    break;
+                }
+                values.add(value);
+            }
+            if (anyNull) { // 匹配键不完整, 视为新增
+                continue;
+            }
+            keyRowMapping.computeIfAbsent(buildMatchKey(values), k -> new ArrayList<>()).add(i);
+        }
+        if (keyRowMapping.isEmpty()) {
+            return result;
+        }
+
+        // 一次批量查询, 避免逐行查询
+        QueryWrapper<T> wrapper = new QueryWrapper<>();
+        for (String col : uniqueCols) {
+            Set<Object> values = rows.stream()
+                    .map(row -> ReflectUtil.getFieldValue(row.getModel(), col))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            if (CollectionUtil.isEmpty(values)) {
+                return result;
+            }
+            wrapper.in(dbColMapping.get(col), values);
+        }
+        List<T> exists = this.list(wrapper);
+
+        Map<String, List<Serializable>> existingMapping = new HashMap<>();
+        for (T entity : exists) {
+            List<Object> values = uniqueCols.stream()
+                    .map(col -> ReflectUtil.getFieldValue(entity, col))
+                    .collect(Collectors.toList());
+            if (values.stream().anyMatch(Objects::isNull)) {
+                continue;
+            }
+            existingMapping.computeIfAbsent(buildMatchKey(values), k -> new ArrayList<>())
+                    .add(EntityUtil.getPkVal(entity));
+        }
+
+        for (Map.Entry<String, List<Integer>> entry : keyRowMapping.entrySet()) {
+            List<Serializable> pks = existingMapping.get(entry.getKey());
+            if (CollectionUtil.isEmpty(pks)) { // 未命中, 视为新增
+                continue;
+            }
+            if (pks.size() > 1) {
+                for (Integer rowIndex : entry.getValue()) {
+                    errors.add(new ImportError(rows.get(rowIndex).getRow(), null, null,
+                            StrUtil.format("Multiple records matched by [{}], unable to determine the update target",
+                                    String.join(",", uniqueCols))));
+                }
+                continue;
+            }
+            for (Integer rowIndex : entry.getValue()) {
+                result.put(rowIndex, pks.get(0));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 获取导入行对象上的主键值(entity主键字段名在DTO中的同名字段)
+     */
+    private Serializable getDtoPkVal(Object model) {
+        if (model == null) {
+            return null;
+        }
+        return EntityUtil.getPkVal(model, getEntityClass());
+    }
+
+    private void setDtoPkVal(Object model, String pkName, Serializable pk) {
+        ReflectUtil.setFieldValue(model, pkName, pk);
+    }
+
+    private static String buildMatchKey(List<Object> values) {
+        return values.stream()
+                .map(value -> value == null ? "" : String.valueOf(value).trim())
+                .collect(Collectors.joining("\u0001"));
+    }
+
+    private static Map<String, String> buildColLabelMapping(List<Map<String, Object>> columns) {
+        Map<String, String> mapping = new HashMap<>();
+        if (CollectionUtil.isEmpty(columns)) {
+            return mapping;
+        }
+        for (Map<String, Object> column : columns) {
+            String col = (String) column.get("col");
+            String label = (String) column.get("label");
+            if (StrUtil.isNotBlank(col) && StrUtil.isNotBlank(label)) {
+                mapping.putIfAbsent(col, label);
+            }
+        }
+        return mapping;
+    }
+
+    private static String joinFieldErrors(BindException e, Map<String, String> labelMapping) {
+        return e.getFieldErrors().stream()
+                .map(fieldError -> {
+                    String label = labelMapping.getOrDefault(fieldError.getField(), fieldError.getField());
+                    return StrUtil.format("[{}]{}", label, fieldError.getDefaultMessage());
+                })
+                .collect(Collectors.joining("; "));
+    }
+
+    private static String rootMessage(Throwable e) {
+        Throwable root = e;
+        while (root.getCause() != null && root.getCause() != root) {
+            root = root.getCause();
+        }
+        return StrUtil.blankToDefault(root.getMessage(), root.getClass().getSimpleName());
     }
 
     @Deprecated

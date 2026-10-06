@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -51,7 +52,7 @@ public class BaseReadController<M> {
     @Autowired
     public Validator validator;
     @Autowired
-    private ObjectMapper objectMapper;
+    protected ObjectMapper objectMapper;
 
     public BaseReadController(BaseService baseService, Class<M> dtoClazz) {
         this.baseService = baseService;
@@ -145,12 +146,15 @@ public class BaseReadController<M> {
     @ApiOperation(value = "导出", notes = "数据导出")
     @PostMapping("export")
     public void export(@RequestBody @Validated ExportParam exportParam, HttpServletResponse response) throws IOException {
-        List<M> data = exportParam.getAll() ? list(exportParam.getPageQuery()) : page(exportParam.getPageQuery()).getRecords();
+        boolean template = Boolean.TRUE.equals(exportParam.getTemplate());
+        List<M> data = template
+                ? Collections.emptyList()
+                : (exportParam.getAll() ? list(exportParam.getPageQuery()) : page(exportParam.getPageQuery()).getRecords());
         ExcelExportManager excelExportManager = new ExcelExportManager(objectMapper);
         try (ServletOutputStream out = response.getOutputStream()) {
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setHeader("Content-Disposition", StrUtil.format("attachment; filename={}.xlsx",
-                    StrUtil.blankToDefault(exportParam.getTitle(), "export")));
+                    StrUtil.blankToDefault(exportParam.getTitle(), template ? "template" : "export")));
             excelExportManager.exportByConfig(data, exportParam.getColumns(), out);
             out.flush();
         } catch (IOException e) {

@@ -13,7 +13,8 @@ public enum CrudMethod {
     EXISTS("exists"),
     UPLOAD("upload"),
     DOWNLOAD("download"),
-    EXPORT("export");
+    EXPORT("export"),
+    IMPORT("importData");
 
     private String name;
 

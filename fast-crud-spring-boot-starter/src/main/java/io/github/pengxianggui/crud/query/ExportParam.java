@@ -59,5 +59,10 @@ public class ExportParam {
      */
     private Boolean all = true;
 
+    /**
+     * 是否为下载空模板。为true时仅输出表头(连同下拉校验等), 不输出任何数据行。用于导出导入模板
+     */
+    private Boolean template = false;
+
     private String title;
 }

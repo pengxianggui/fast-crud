@@ -4,6 +4,11 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import io.github.pengxianggui.crud.importer.ExcelImportManager;
+import io.github.pengxianggui.crud.importer.ImportException;
+import io.github.pengxianggui.crud.importer.ImportParseResult;
+import io.github.pengxianggui.crud.importer.ImportResult;
+import io.github.pengxianggui.crud.query.ImportParam;
 import io.github.pengxianggui.crud.util.EntityUtil;
 import io.github.pengxianggui.crud.util.ValidUtil;
 import io.github.pengxianggui.crud.valid.CrudInsert;
@@ -11,12 +16,14 @@ import io.github.pengxianggui.crud.valid.CrudUpdate;
 import io.github.pengxianggui.crud.wrapper.UpdateModelWrapper;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.BindException;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.NotEmpty;
@@ -24,8 +31,10 @@ import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URLEncoder;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -42,6 +51,7 @@ import java.util.Set;
  * @param <M>
  * @author pengxg
  */
+@Slf4j
 public class BaseController<M> extends BaseReadController<M> {
 
     public BaseController(BaseService baseService, Class<M> dtoClazz) {
@@ -169,5 +179,41 @@ public class BaseController<M> extends BaseReadController<M> {
         RequestMapping requestMapping = this.getClass().getAnnotation(RequestMapping.class);
         String basePath = (requestMapping != null ? requestMapping.value()[0] : "");
         return String.format("%s/download?path=%s", StrUtil.addPrefixIfNot(basePath, "/"), URLEncoder.encode(filePath));
+    }
+
+    /**
+     * [FC] (批量)导入
+     *
+     * @param param   导入参数(列配置、额外参数), 对标{@link io.github.pengxianggui.crud.query.ExportParam}
+     * @param file    excel文件(xlsx/xls)
+     * @return 导入结果
+     * @apiNote 请求为multipart/form-data: part[param]为json(见{@link ImportParam}), part[file]为excel文件。导入的excel模板通过导出接口下载(导出参数template = true)。导入时会自动区分新增与更新:行内主键有值则更新; 无主键时使用列配置中importUnique=true的列组合匹配已有记录, 命中则更新, 否则新增。整个过程在同一个事务中执行, 任一行校验/写入失败则整批回滚, 并以success=false返回行级错误明细。
+     */
+    @ApiOperation(value = "导入", notes = "导入excel数据, 自动区分新增/更新, 失败整批回滚")
+    @PostMapping("import")
+    public ImportResult importData(@ApiParam("导入参数(json)") @RequestPart("param") @Validated ImportParam param,
+                                   @ApiParam("excel文件(xlsx/xls)") @RequestPart("file") MultipartFile file) {
+        try {
+            if (file == null || file.isEmpty()) {
+                return ImportResult.fail("Choose file first please!");
+            }
+            List<Map<String, Object>> columnList = param.getColumns();
+            Map<String, Object> extraMap = param.getExtra() == null ? new HashMap<>() : param.getExtra();
+            ExcelImportManager excelImportManager = new ExcelImportManager(objectMapper);
+            ImportParseResult<M> parseResult = excelImportManager.parse(file.getInputStream(), columnList, dtoClazz);
+            if (CollectionUtil.isNotEmpty(parseResult.getErrors())) {
+                return ImportResult.fail(parseResult.getRows().size() + parseResult.getErrors().size(),
+                        parseResult.getErrors());
+            }
+            if (CollectionUtil.isEmpty(parseResult.getRows())) {
+                return ImportResult.fail("No importable data found in the excel (please make sure the header matches the template)");
+            }
+            return baseService.importData(parseResult.getRows(), dtoClazz, columnList, extraMap);
+        } catch (ImportException e) {
+            return ImportResult.fail(0, e.getErrors());
+        } catch (Exception e) {
+            log.error("Fast crud import error", e);
+            return ImportResult.fail(StrUtil.blankToDefault(e.getMessage(), "Import failed"));
+        }
     }
 }
