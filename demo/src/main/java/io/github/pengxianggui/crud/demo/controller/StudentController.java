@@ -5,6 +5,7 @@ import io.github.pengxianggui.crud.BaseController;
 import io.github.pengxianggui.crud.demo.controller.vo.StudentDetailVO;
 import io.github.pengxianggui.crud.demo.controller.vo.StudentPageVO;
 import io.github.pengxianggui.crud.demo.service.StudentService;
+import io.github.pengxianggui.crud.demo.service.impl.StudentServiceImpl;
 import io.github.pengxianggui.crud.query.PagerQuery;
 import io.github.pengxianggui.crud.query.PagerView;
 import io.github.pengxianggui.crud.valid.CrudInsert;
@@ -71,5 +72,17 @@ public class StudentController extends BaseController<StudentPageVO> {
     public PagerView<StudentPageVO> page(@Validated @RequestBody PagerQuery query) {
         IPage<StudentPageVO> page = studentService.pageVO(query);
         return new PagerView<>(page.getCurrent(), page.getSize(), page.getTotal(), page.getRecords());
+    }
+
+    /**
+     * 演示用：开关批量修改的数据权限校验。
+     * 开启后 {@code batchUpdateRowCondition} 会返回 id &lt;= 阈值的条件，可用同一页面
+     * 对比开关前后的影响行数；真实项目里这里应当是当前登录用户的部门/租户条件。
+     */
+    @ApiOperation(value = "演示-开关批量修改的数据权限", notes = "开启后仅 id<=2 的记录可被批量修改")
+    @PostMapping("demo/data-permission/{enabled}")
+    public boolean toggleDataPermission(@PathVariable boolean enabled) {
+        StudentServiceImpl.dataPermissionEnabled = enabled;
+        return StudentServiceImpl.dataPermissionEnabled;
     }
 }

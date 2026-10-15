@@ -3,6 +3,8 @@ package io.github.pengxianggui.crud.demo.domain;
 import com.baomidou.mybatisplus.annotation.FieldStrategy;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
+import io.github.pengxianggui.crud.batch.BatchUpdatable;
+import io.github.pengxianggui.crud.batch.IgnoreBatchUpdate;
 import io.github.pengxianggui.crud.dao.typehandler.FileItemTypeHandler;
 import io.github.pengxianggui.crud.file.FileItem;
 import io.swagger.annotations.ApiModel;
@@ -39,9 +41,11 @@ public class Student extends IdEntity {
     private LocalDate birthday;
 
     @ApiModelProperty("性别")
+    @BatchUpdatable("性别")
     private String sex;
 
     @ApiModelProperty("属国")
+    @BatchUpdatable("属国")
     private String state;
 
     @ApiModelProperty("仰慕者id")
@@ -67,8 +71,10 @@ public class Student extends IdEntity {
     private List<FileItem> resumeUrl;
 
     @ApiModelProperty("创建时间")
+    @IgnoreBatchUpdate("创建时间属于审计字段，批量修改会丢失数据来源")
     private LocalDateTime createTime;
 
     @ApiModelProperty("更新时间")
+    @IgnoreBatchUpdate("更新时间由服务端自动维护，不接受客户端指定")
     private LocalDateTime updateTime;
 }

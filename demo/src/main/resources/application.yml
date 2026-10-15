@@ -35,3 +35,8 @@ mybatis-plus:
 #    mode: local
 #    local:
 #      dir: ${user.dir}/upload
+
+fast-crud:
+  batch-update:
+    # 开启后批量修改的校验失败会返回可读的 HTTP 400（默认关闭，见 BatchUpdateExceptionHandler）
+    map-validation-error: true

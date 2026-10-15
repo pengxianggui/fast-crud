@@ -4,6 +4,8 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import io.github.pengxianggui.crud.batch.BatchUpdateDTO;
+import io.github.pengxianggui.crud.batch.BatchUpdateResult;
 import io.github.pengxianggui.crud.importer.ExcelImportManager;
 import io.github.pengxianggui.crud.importer.ImportException;
 import io.github.pengxianggui.crud.importer.ImportParseResult;
@@ -33,6 +35,7 @@ import java.io.Serializable;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -156,6 +159,35 @@ public class BaseController<M> extends BaseReadController<M> {
             ids.add(id);
         }
         return baseService.deleteBatchById(ids) ? ids.size() : 0;
+    }
+
+    /**
+     * [FC] 批量修改：把勾选的多行记录的指定字段统一改为指定值。
+     * 与 {@link #updateBatch(List)} 的区别：那个接口要求提交整行数据，本质是多行各自的编辑；
+     * 本接口只提交要改的字段，服务端用一条 {@code UPDATE ... SET a=?,b=? WHERE id IN (...)} 完成。
+     *
+     * @return 实际受影响行数与执行的 SQL 条数
+     */
+    @ApiOperation(value = "批量修改", notes = "对勾选的多行记录，把指定字段统一改为指定值；一次请求只产生一条 UPDATE")
+    @PostMapping("update/batch-modify")
+    public BatchUpdateResult batchModify(@RequestBody @Validated BatchUpdateDTO dto) {
+        return baseService.batchUpdateByIds(dto.getIds(), dto.getFields());
+    }
+
+    /**
+     * [FC] 查询当前实体的批量修改可用字段，供前端渲染字段下拉。
+     * 同时返回被禁用的字段及原因，便于交互层置灰提示，避免用户提交后才被拒绝。
+     *
+     * @return {fields: [...], deniedFields: {字段: 原因}, idField: 主键属性名}
+     */
+    @ApiOperation(value = "批量修改-可用字段", notes = "返回可批量修改的字段清单及被禁用的字段及原因")
+    @PostMapping("update/batch-modify/fields")
+    public Map<String, Object> batchModifyFields() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("fields", baseService.getBatchUpdatableFields());
+        result.put("deniedFields", baseService.getBatchUpdateDeniedFields());
+        result.put("idField", EntityUtil.getPkName(entityClazz));
+        return result;
     }
 
     /**
