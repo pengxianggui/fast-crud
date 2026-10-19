@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.pengxianggui.crud.download.FileResourceHttpRequestHandler;
 import io.github.pengxianggui.crud.export.ExcelExportManager;
+import io.github.pengxianggui.crud.export.ExcelValueConverter;
 import io.github.pengxianggui.crud.query.Cond;
 import io.github.pengxianggui.crud.query.ExportParam;
 import io.github.pengxianggui.crud.query.Opt;
@@ -54,6 +55,8 @@ public class BaseReadController<M> {
     public Validator validator;
     @Autowired
     protected ObjectMapper objectMapper;
+    @Autowired(required = false)
+    protected List<ExcelValueConverter<?>> excelValueConverters = Collections.emptyList();
 
     public BaseReadController(BaseService baseService, Class<M> dtoClazz) {
         this.baseService = baseService;
@@ -148,7 +151,7 @@ public class BaseReadController<M> {
     @PostMapping("export")
     public void export(@RequestBody @Validated ExportParam exportParam, HttpServletResponse response) throws IOException {
         List<M> data = resolveExportData(exportParam);
-        ExcelExportManager excelExportManager = new ExcelExportManager(objectMapper);
+        ExcelExportManager excelExportManager = new ExcelExportManager(objectMapper, excelValueConverters);
         try (ServletOutputStream out = response.getOutputStream()) {
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setHeader("Content-Disposition", StrUtil.format("attachment; filename={}.xlsx",
@@ -162,7 +165,7 @@ public class BaseReadController<M> {
     }
 
     /**
-     * 解析导出数据。优先级: 模板导出 > 勾选导出 > 全部/当前页导出。
+     * 解析导出数据。优先级: 模板导出 &gt; 勾选导出 &gt; 全部/当前页导出。
      * 勾选导出保留pageQuery原有条件，仅追加主键IN条件并使用不分页查询。
      *
      * @param exportParam 导出参数

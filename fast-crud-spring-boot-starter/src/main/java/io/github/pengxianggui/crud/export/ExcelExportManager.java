@@ -1,5 +1,6 @@
 package io.github.pengxianggui.crud.export;
 
+import cn.hutool.core.util.ReflectUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.converters.localdate.LocalDateDateConverter;
@@ -10,9 +11,12 @@ import com.alibaba.excel.write.metadata.WriteSheet;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.util.ClassUtils;
 
 import java.io.OutputStream;
+import java.lang.reflect.Field;
+import java.time.temporal.Temporal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -28,9 +32,20 @@ public class ExcelExportManager {
 
     // 使用jackson进行序列化，以便业务系统可以使用自定义的序列化逻辑干预excel导出
     private final ObjectMapper objectMapper;
+    private final List<ExcelValueConverter<?>> valueConverters;
 
     public ExcelExportManager(ObjectMapper objectMapper) {
+        this(objectMapper, Collections.emptyList());
+    }
+
+    public ExcelExportManager(ObjectMapper objectMapper, List<ExcelValueConverter<?>> valueConverters) {
         this.objectMapper = objectMapper;
+        List<ExcelValueConverter<?>> sortedConverters = new ArrayList<>();
+        if (valueConverters != null) {
+            sortedConverters.addAll(valueConverters);
+            AnnotationAwareOrderComparator.sort(sortedConverters);
+        }
+        this.valueConverters = sortedConverters;
     }
 
     /**
@@ -58,12 +73,14 @@ public class ExcelExportManager {
             handlerMapping.put(i, handler);
         }
 
+        Set<String> warnedFallbackColumns = new HashSet<>();
         List<List<Object>> dataList = data.stream().map(obj -> {
             Map<String, Object> mappedObj = objectMapper.convertValue(obj, new TypeReference<Map<String, Object>>() {
             });
             List<Object> rowData = new ArrayList<>();
             for (String col : cols) {
-                rowData.add(truncateCellValue(mappedObj.get(col), col));
+                Object value = convertValue(obj, mappedObj.get(col), col, warnedFallbackColumns);
+                rowData.add(truncateCellValue(value, col));
             }
             return rowData;
         }).collect(Collectors.toList());
@@ -133,6 +150,67 @@ public class ExcelExportManager {
             default:
                 return new TextColumnHandler(columnType, columnConfig);
         }
+    }
+
+    /**
+     * 优先使用按字段声明类型匹配的转换器, 无匹配时保留Jackson序列化结果。
+     */
+    private Object convertValue(Object source, Object serializedValue, String col, Set<String> warnedFallbackColumns) {
+        Field field = findField(source.getClass(), col);
+        if (field == null) {
+            return fallbackSerializedValue(source, serializedValue, col, null, warnedFallbackColumns);
+        }
+        ExcelValueConverter<?> converter = findConverter(field.getType());
+        if (converter == null) {
+            return fallbackSerializedValue(source, serializedValue, col, field.getType(), warnedFallbackColumns);
+        }
+        Object rawValue = ReflectUtil.getFieldValue(source, field);
+        return converter.convertValue(rawValue);
+    }
+
+    /**
+     * 无匹配转换器时保留EasyExcel可写的Jackson结果。
+     * 对于Map等无法直接写入的类型降级为空串, 避免单个字段导致整个导出失败。
+     */
+    private Object fallbackSerializedValue(Object source, Object value, String col, Class<?> fieldType,
+                                           Set<String> warnedFallbackColumns) {
+        if (value == null
+                || value instanceof CharSequence
+                || value instanceof Character
+                || value instanceof Number
+                || value instanceof Boolean
+                || value instanceof Date
+                || value instanceof Temporal
+                || value instanceof ArrayList) {
+            return value;
+        }
+        String warningKey = source.getClass().getName() + "#" + col;
+        if (warnedFallbackColumns.add(warningKey)) {
+            log.error("No matching ExcelValueConverter, export cell as blank. class: {}, field: {}, fieldType: {}, serializedType: {}",
+                    source.getClass().getName(), col, fieldType == null ? "unknown" : fieldType.getName(),
+                    value.getClass().getName());
+        }
+        return "";
+    }
+
+    private ExcelValueConverter<?> findConverter(Class<?> fieldType) {
+        for (ExcelValueConverter<?> converter : valueConverters) {
+            if (converter.supports(fieldType)) {
+                return converter;
+            }
+        }
+        return null;
+    }
+
+    private static Field findField(Class<?> clazz, String fieldName) {
+        for (Class<?> current = clazz; current != null && current != Object.class; current = current.getSuperclass()) {
+            try {
+                return current.getDeclaredField(fieldName);
+            } catch (NoSuchFieldException ignored) {
+                // 继续向父类查找
+            }
+        }
+        return null;
     }
 
     /**
