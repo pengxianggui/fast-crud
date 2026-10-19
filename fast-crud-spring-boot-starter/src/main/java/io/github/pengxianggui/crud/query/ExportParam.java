@@ -60,6 +60,17 @@ public class ExportParam {
     private Boolean all = true;
 
     /**
+     * 勾选导出的主键集合。非null时优先于all:
+     * 空集合导出0行; 非空集合在pageQuery原有条件下追加主键IN条件后导出
+     */
+    private List<Object> selectedIds;
+
+    /**
+     * 勾选导出使用的主键字段名，需与页面FastTableOption.idField一致
+     */
+    private String idField;
+
+    /**
      * 是否为下载空模板。为true时仅输出表头(连同下拉校验等), 不输出任何数据行。用于导出导入模板
      */
     private Boolean template = false;

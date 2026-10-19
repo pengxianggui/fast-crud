@@ -8,6 +8,7 @@ import io.github.pengxianggui.crud.download.FileResourceHttpRequestHandler;
 import io.github.pengxianggui.crud.export.ExcelExportManager;
 import io.github.pengxianggui.crud.query.Cond;
 import io.github.pengxianggui.crud.query.ExportParam;
+import io.github.pengxianggui.crud.query.Opt;
 import io.github.pengxianggui.crud.query.PagerQuery;
 import io.github.pengxianggui.crud.query.PagerView;
 import io.github.pengxianggui.crud.query.Query;
@@ -146,19 +147,49 @@ public class BaseReadController<M> {
     @ApiOperation(value = "导出", notes = "数据导出")
     @PostMapping("export")
     public void export(@RequestBody @Validated ExportParam exportParam, HttpServletResponse response) throws IOException {
-        boolean template = Boolean.TRUE.equals(exportParam.getTemplate());
-        List<M> data = template
-                ? Collections.emptyList()
-                : (exportParam.getAll() ? list(exportParam.getPageQuery()) : page(exportParam.getPageQuery()).getRecords());
+        List<M> data = resolveExportData(exportParam);
         ExcelExportManager excelExportManager = new ExcelExportManager(objectMapper);
         try (ServletOutputStream out = response.getOutputStream()) {
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setHeader("Content-Disposition", StrUtil.format("attachment; filename={}.xlsx",
-                    StrUtil.blankToDefault(exportParam.getTitle(), template ? "template" : "export")));
+                    StrUtil.blankToDefault(exportParam.getTitle(),
+                            Boolean.TRUE.equals(exportParam.getTemplate()) ? "template" : "export")));
             excelExportManager.exportByConfig(data, exportParam.getColumns(), out);
             out.flush();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * 解析导出数据。优先级: 模板导出 > 勾选导出 > 全部/当前页导出。
+     * 勾选导出保留pageQuery原有条件，仅追加主键IN条件并使用不分页查询。
+     *
+     * @param exportParam 导出参数
+     * @return 待导出的数据
+     */
+    protected List<M> resolveExportData(ExportParam exportParam) {
+        if (Boolean.TRUE.equals(exportParam.getTemplate())) {
+            return Collections.emptyList();
+        }
+        PagerQuery pageQuery = exportParam.getPageQuery();
+        if (pageQuery == null) {
+            pageQuery = new PagerQuery();
+            exportParam.setPageQuery(pageQuery);
+        }
+        List<Object> selectedIds = exportParam.getSelectedIds();
+        if (selectedIds != null) {
+            if (selectedIds.isEmpty()) {
+                return Collections.emptyList();
+            }
+            if (StrUtil.isBlank(exportParam.getIdField())) {
+                throw new IllegalArgumentException("idField can not be blank when selectedIds is not empty");
+            }
+            pageQuery.addCond(exportParam.getIdField(), Opt.IN, selectedIds);
+            return list(pageQuery);
+        }
+        return Boolean.TRUE.equals(exportParam.getAll())
+                ? list(pageQuery)
+                : page(pageQuery).getRecords();
     }
 }
