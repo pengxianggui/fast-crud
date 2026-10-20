@@ -2,6 +2,8 @@ package io.github.pengxianggui.crud;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
+import io.github.pengxianggui.crud.batch.BatchUpdateDTO;
+import io.github.pengxianggui.crud.batch.BatchUpdateResult;
 import io.github.pengxianggui.crud.importer.ImportResult;
 import io.github.pengxianggui.crud.importer.ImportRow;
 import io.github.pengxianggui.crud.query.Cond;
@@ -186,6 +188,40 @@ public interface BaseService<T> extends IService<T> {
      * @return
      */
     <DTO> int updateBatch(List<DTO> models, Class<DTO> mClazz, @Nullable boolean updateNull);
+
+    /**
+     * 【批量修改】把勾选的多行记录的指定字段统一改为指定值。
+     * 与 {@link #updateBatch(List, Class, boolean)} 的区别：入参是主键集合加字段值对，只提交要改的字段；
+     * 底层用一条 {@code UPDATE ... SET a=?,b=? WHERE id IN (...)} 完成，不按行循环；
+     * 字段名需通过 {@link io.github.pengxianggui.crud.batch.BatchUpdateFieldRegistry} 白名单校验；
+     * 整个过程在一个事务内，并输出审计记录。
+     * 子类可覆写 {@code batchUpdateRowCondition} 叠加数据权限，覆写 {@code batchUpdateFill} 注入审计列。
+     *
+     * @param ids    待修改记录的主键集合
+     * @param fields 要修改的字段及目标值（实体属性名 -> 值）
+     */
+    BatchUpdateResult batchUpdateByIds(List<Serializable> ids, List<BatchUpdateDTO.FieldValue> fields);
+
+    /**
+     * 判断实体上的某个属性是否允许批量修改。
+     *
+     * @param property 实体属性名（camelCase）
+     */
+    boolean isBatchUpdatable(String property);
+
+    /**
+     * 获取实体可批量修改的字段，供前端渲染字段下拉。
+     *
+     * @return 每项含 field/label/type
+     */
+    List<Map<String, Object>> getBatchUpdatableFields();
+
+    /**
+     * 获取实体中不允许批量修改的字段及原因，供前端置灰提示。
+     *
+     * @return 字段名 -> 拒绝原因
+     */
+    Map<String, String> getBatchUpdateDeniedFields();
 
     /**
      * 通用导入(支持批量新增/批量更新)。

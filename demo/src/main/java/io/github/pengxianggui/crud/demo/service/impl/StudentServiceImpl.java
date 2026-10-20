@@ -4,10 +4,12 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.excel.util.DateUtils;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.yulichang.wrapper.MPJLambdaWrapper;
 import io.github.pengxianggui.crud.BaseServiceImpl;
+import io.github.pengxianggui.crud.batch.AllowBatchUpdateField;
 import io.github.pengxianggui.crud.demo.controller.vo.StudentPageVO;
 import io.github.pengxianggui.crud.demo.domain.Student;
 import io.github.pengxianggui.crud.demo.domain.StudentSensitive;
@@ -16,16 +18,31 @@ import io.github.pengxianggui.crud.demo.mapper.StudentSensitiveMapper;
 import io.github.pengxianggui.crud.demo.service.StudentService;
 import io.github.pengxianggui.crud.join.MPJLambdaWrapperBuilder;
 import io.github.pengxianggui.crud.query.PagerQuery;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
+import java.util.function.Consumer;
 
+@Slf4j
 @Service
 public class StudentServiceImpl extends BaseServiceImpl<StudentMapper, Student> implements StudentService {
+
+    /** 演示用的数据权限开关，仅用于对比开关前后的结果 */
+    public static volatile boolean dataPermissionEnabled = false;
+
+    /**
+     * 数据权限阈值：只允许操作 id &lt;= 该值的数据。
+     * 取 2 是为了演示直观 —— 勾选大乔(1)、小乔(2)、曹操(3) 时，开启后只有前两条会被修改。
+     */
+    public static final long DATA_PERMISSION_MAX_ID = 2L;
+
     @Resource
     private StudentSensitiveMapper studentSensitiveMapper;
 
@@ -80,4 +97,30 @@ public class StudentServiceImpl extends BaseServiceImpl<StudentMapper, Student> 
     public String upload(String row, String col, MultipartFile file) throws IOException {
         return fileManager.getFileService().upload(file, DateUtils.format(new Date(), "yyyyMMdd"));
     }
+
+    // 批量修改的两个钩子：审计列填充 + 数据权限
+
+    /**
+     * 批量修改不走 updateById，MyBatis-Plus 的字段填充不生效，更新时间需在此注入。
+     * key 用数据库列名，需与 {@link AllowBatchUpdateField} 的声明一致。
+     */
+    @AllowBatchUpdateField("update_time")
+    @Override
+    protected Map<String, Object> batchUpdateFill() {
+        return Collections.singletonMap("update_time", LocalDateTime.now());
+    }
+
+    /**
+     * 演示数据权限：返回的条件会同时进入统计 SELECT 与执行 UPDATE 的 WHERE，
+     * 越权的主键不会被修改，也不计入 affectedRows。
+     */
+    @Override
+    protected Consumer<QueryWrapper<Student>> batchUpdateRowCondition() {
+        if (!dataPermissionEnabled) {
+            return null;
+        }
+        log.info("Batch update data permission is ON, only id <= {} can be modified.", DATA_PERMISSION_MAX_ID);
+        return w -> w.le("id", DATA_PERMISSION_MAX_ID);
+    }
 }
+

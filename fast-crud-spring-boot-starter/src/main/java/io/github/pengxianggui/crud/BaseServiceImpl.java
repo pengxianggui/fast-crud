@@ -6,6 +6,7 @@ import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.excel.util.DateUtils;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
@@ -16,6 +17,12 @@ import com.github.yulichang.toolkit.JoinWrappers;
 import com.github.yulichang.wrapper.DeleteJoinWrapper;
 import com.github.yulichang.wrapper.MPJLambdaWrapper;
 import com.github.yulichang.wrapper.UpdateJoinWrapper;
+import io.github.pengxianggui.crud.batch.BatchUpdateAudit;
+import io.github.pengxianggui.crud.batch.BatchUpdateAuditRecorder;
+import io.github.pengxianggui.crud.batch.BatchUpdateDTO;
+import io.github.pengxianggui.crud.batch.BatchUpdateFieldRegistry;
+import io.github.pengxianggui.crud.batch.BatchUpdateResult;
+import io.github.pengxianggui.crud.batch.BatchUpdateValueConverter;
 import io.github.pengxianggui.crud.file.FileManager;
 import io.github.pengxianggui.crud.importer.ImportContext;
 import io.github.pengxianggui.crud.importer.ImportError;
@@ -48,16 +55,24 @@ import javax.validation.Validator;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -77,6 +92,18 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
      */
     @Autowired(required = false)
     protected Validator validator;
+
+    /** 批量修改的审计输出。由自动配置注入，业务可声明自己的实现覆盖 */
+    @Autowired(required = false)
+    protected BatchUpdateAuditRecorder batchUpdateAuditRecorder;
+
+    /** 无 Spring 容器（如纯单测）时的兜底审计实现 */
+    private static final BatchUpdateAuditRecorder FALLBACK_AUDIT_RECORDER =
+            new io.github.pengxianggui.crud.batch.LoggingBatchUpdateAuditRecorder();
+
+    /** 匹配 #{ew.paramNameValuePairs.MPGENVAL1} 形式的命名占位符 */
+    private static final Pattern NAMED_PARAM_PLACEHOLDER =
+            Pattern.compile("#\\{ew\\.paramNameValuePairs\\.([A-Za-z0-9_]+)}");
 
     /**
      * 实体类中主键字段名
@@ -389,6 +416,318 @@ public abstract class BaseServiceImpl<M extends BaseMapper<T>, T> extends Servic
             }
         });
         return count.get();
+    }
+
+    /**
+     * 【批量修改】更新前钩子，用于业务校验。抛出异常即整批中止。
+     * 数据权限不要写在这里，改用 {@link #batchUpdateRowCondition()}；
+     * 审计列用 {@link #batchUpdateFill()} 注入。
+     */
+    protected void beforeBatchUpdate(BatchUpdateContext<T> context) {
+    }
+
+    /**
+     * 【批量修改】行级数据权限钩子，返回叠加到 WHERE 上的条件。
+     * 条件会同时应用到统计命中的 SELECT 和执行更新 UPDATE，越权行既不会被改也不计入 affectedRows。
+     * 列名用数据库列名。返回 null 表示不做限制。
+     * <pre>
+     * return w -&gt; w.eq("dept_id", currentUser().getDeptId());
+     * </pre>
+     */
+    protected Consumer<QueryWrapper<T>> batchUpdateRowCondition() {
+        return null;
+    }
+
+    /**
+     * 批量修改上下文，只读。
+     *
+     * @param <E> 实体类型
+     */
+    @Getter
+    public static class BatchUpdateContext<E> {
+
+        /** 实体类 */
+        private final Class<E> entityClazz;
+
+        /** 前端提交的主键，已去重 */
+        private final List<Serializable> ids;
+
+        /** 已通过白名单校验的字段名 */
+        private final Set<String> fields;
+
+        BatchUpdateContext(Class<E> entityClazz, List<Serializable> ids, Set<String> fields) {
+            this.entityClazz = entityClazz;
+            this.ids = Collections.unmodifiableList(ids);
+            this.fields = Collections.unmodifiableSet(fields);
+        }
+    }
+
+    /**
+     * 把按 QueryWrapper 声明的行级条件搬到 UpdateWrapper 的 WHERE 上。
+     * 这里有两个坑，改动前请先看懂：
+     * 1. QueryWrapper 与 UpdateWrapper 无继承关系，不能互相强转。若把 UpdateWrapper 冒充成
+     * QueryWrapper 执行条件 lambda，JAVA 会把表达式 lambda 的返回值按结果类型插一次隐式转换，
+     * 运行期抛 UpdateWrapper cannot be cast to QueryWrapper。所以先在临时 QueryWrapper 上求值。
+     * 2. getSqlSegment() 渲染出的是 #{ew.paramNameValuePairs.XXX} 这种命名占位符，
+     * 而 apply() 只认 {0} 这种序号占位符，直接传会抛「sql not contains: {0}」，
+     * 因此下面要把命名占位符改写成序号，并按出现顺序重排参数。
+     */
+    private void applyRowConditionToUpdate(Consumer<QueryWrapper<T>> condition, UpdateWrapper<T> wrapper) {
+        if (condition == null) {
+            return;
+        }
+        QueryWrapper<T> holder = new QueryWrapper<>();
+        condition.accept(holder);
+        String segment = holder.getSqlSegment();
+        if (segment == null || segment.trim().isEmpty()) {
+            return;
+        }
+        Map<String, Object> values = holder.getParamNameValuePairs();
+        List<Object> ordered = new ArrayList<>();
+        Map<String, Integer> indexOfName = new LinkedHashMap<>();
+        StringBuffer converted = new StringBuffer();
+        Matcher matcher = NAMED_PARAM_PLACEHOLDER.matcher(segment);
+        while (matcher.find()) {
+            String name = matcher.group(1);
+            Integer index = indexOfName.get(name);
+            if (index == null) {
+                index = ordered.size();
+                indexOfName.put(name, index);
+                ordered.add(values.get(name));
+            }
+            matcher.appendReplacement(converted, "{" + index + "}");
+        }
+        matcher.appendTail(converted);
+        wrapper.apply(converted.toString(), ordered.toArray());
+    }
+
+    /**
+     * 批量修改的字段填充钩子，返回服务端需要注入的「数据库列名 -> 值」。
+     * 注入的列必须用 {@link io.github.pengxianggui.crud.batch.AllowBatchUpdateField} 声明，
+     * 未声明的会被忽略。默认不注入任何列。
+     * <pre>
+     * &#64;AllowBatchUpdateField("update_time")
+     * protected Map&lt;String, Object&gt; batchUpdateFill() {
+     *     return Collections.singletonMap("update_time", LocalDateTime.now());
+     * }
+     * </pre>
+     */
+    protected Map<String, Object> batchUpdateFill() {
+        return Collections.emptyMap();
+    }
+
+    /**
+     * 【批量修改】after 钩子：更新成功后触发，用于级联操作或补充审计信息。
+     *
+     * @param affectedIds 实际被更新的主键集合
+     * @param newValues   字段名 -> 新的值
+     */
+    protected void afterBatchUpdate(Collection<Serializable> affectedIds, Map<String, Object> newValues) {
+    }
+
+    @Transactional(rollbackFor = Throwable.class)
+    @Override
+    public BatchUpdateResult batchUpdateByIds(List<Serializable> ids, List<BatchUpdateDTO.FieldValue> fields) {
+        Class<T> entityClazz = getEntityClass();
+        List<Serializable> distinctIds = normalizeIds(ids);
+        Assert.notEmpty(distinctIds, "请至少选择一条待修改的记录");
+        Assert.notEmpty(fields, "请至少添加一个待修改的字段");
+
+        // 1. 白名单校验 + 值类型转换，任一处不合法则整批拒绝
+        Map<String, BatchUpdateFieldRegistry.AllowedField> whitelist = BatchUpdateFieldRegistry.allowedFields(entityClazz);
+        Set<String> submittedFields = new LinkedHashSet<>();
+        Set<String> occupiedColumns = new HashSet<>();
+        // 属性名 -> 值，供审计使用
+        Map<String, Object> auditValues = new LinkedHashMap<>();
+        // 数据库列名 -> 值，进入 UPDATE ... SET
+        Map<String, Object> setColumns = new LinkedHashMap<>();
+        for (BatchUpdateDTO.FieldValue fieldValue : fields) {
+            String property = fieldValue.getField();
+            BatchUpdateFieldRegistry.AllowedField allowed = whitelist.get(property);
+            if (allowed == null) {
+                throw new IllegalArgumentException(describeRejectedField(entityClazz, property));
+            }
+            if (!submittedFields.add(property)) {
+                throw new IllegalArgumentException("字段[" + property + "]重复提交，请合并为一条");
+            }
+            Object value = fieldValue.getValue();
+            if (value == null && !fieldValue.isAllowNull()) {
+                throw new IllegalArgumentException("字段[" + property + "]的值为空；如确需置空请显式设置 allowNull=true");
+            }
+            Object converted = BatchUpdateValueConverter.convert(value, allowed.getPropertyType(), property);
+            auditValues.put(property, converted);
+            setColumns.put(allowed.getColumn(), converted);
+            occupiedColumns.add(allowed.getColumn());
+        }
+
+        // 行级条件，稍后分别应用到 SELECT 与 UPDATE，保证两边条件一致
+        Consumer<QueryWrapper<T>> rowCondition = batchUpdateRowCondition();
+        BatchUpdateContext<T> context = new BatchUpdateContext<>(entityClazz, distinctIds, submittedFields);
+
+        // 2. 业务钩子与审计列注入；服务端填充不覆盖请求已指定的列
+        beforeBatchUpdate(context);
+        Map<String, Object> fillColumns = resolveBatchUpdateFill(occupiedColumns);
+        setColumns.putAll(fillColumns);
+        for (Map.Entry<String, Object> entry : fillColumns.entrySet()) {
+            auditValues.putIfAbsent(entry.getKey(), entry.getValue());
+        }
+
+        // 3. 取实际命中的主键，条件与下面的 UPDATE 保持一致
+        QueryWrapper<T> selectWrapper = new QueryWrapper<>();
+        selectWrapper.select(getDbPkName());
+        selectWrapper.in(getDbPkName(), distinctIds);
+        if (rowCondition != null) {
+            rowCondition.accept(selectWrapper);
+        }
+        List<T> matchedRows = this.list(selectWrapper);
+        List<Serializable> matchedIds = new ArrayList<>(matchedRows.size());
+        for (T row : matchedRows) {
+            Serializable pk = EntityUtil.getPkVal(row, entityClazz);
+            if (pk != null) {
+                matchedIds.add(pk);
+            }
+        }
+
+        // 4. 一条 UPDATE 完成所有行的所有字段修改
+        UpdateWrapper<T> updateWrapper = new UpdateWrapper<>();
+        for (Map.Entry<String, Object> entry : setColumns.entrySet()) {
+            updateWrapper.set(entry.getKey(), entry.getValue());
+        }
+        updateWrapper.in(getDbPkName(), distinctIds);
+        applyRowConditionToUpdate(rowCondition, updateWrapper);
+        int affected = getBaseMapper().update(null, updateWrapper);
+
+        // 5. 审计与 after 钩子
+        recordBatchUpdateAudit(entityClazz, distinctIds, setColumns, auditValues, matchedIds, affected, 1);
+        afterBatchUpdate(matchedIds, Collections.unmodifiableMap(auditValues));
+
+        log.info("Batch update done on {}: submittedIds={}, matchedIds={}, setColumns={}, affectedRows={}, statements=1",
+                entityClazz.getSimpleName(), distinctIds.size(), matchedIds.size(), setColumns.keySet(), affected);
+        return BatchUpdateResult.of(affected, distinctIds.size(),
+                new ArrayList<>(submittedFields), 1);
+    }
+
+    @Override
+    public boolean isBatchUpdatable(String property) {
+        return BatchUpdateFieldRegistry.find(getEntityClass(), property) != null;
+    }
+
+    @Override
+    public List<Map<String, Object>> getBatchUpdatableFields() {
+        return BatchUpdateFieldRegistry.describe(getEntityClass());
+    }
+
+    @Override
+    public Map<String, String> getBatchUpdateDeniedFields() {
+        return BatchUpdateFieldRegistry.deniedFields(getEntityClass());
+    }
+
+    /**
+     * 主键集合去重、剔除 null，并保持前端传入的顺序。
+     */
+    private List<Serializable> normalizeIds(Collection<? extends Serializable> ids) {
+        if (CollectionUtil.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
+        Set<String> seen = new HashSet<>(ids.size());
+        List<Serializable> result = new ArrayList<>(ids.size());
+        for (Serializable id : ids) {
+            if (id == null) {
+                continue;
+            }
+            if (seen.add(String.valueOf(id))) {
+                result.add(id);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 过滤 {@link #batchUpdateFill()} 的返回值：只保留 {@code @AllowBatchUpdateField} 声明过的列，
+     * 且不覆盖请求里已指定的列。
+     */
+    private Map<String, Object> resolveBatchUpdateFill(Set<String> occupiedColumns) {
+        Map<String, Object> fill = batchUpdateFill();
+        if (CollectionUtil.isEmpty(fill)) {
+            return Collections.emptyMap();
+        }
+        Set<String> declared = declaredBatchUpdateFillColumns();
+        if (declared.isEmpty()) {
+            log.warn("{}#batchUpdateFill 返回了 {} 个列，但没有找到 @AllowBatchUpdateField 声明，已忽略",
+                    getClass().getSimpleName(), fill.size());
+            return Collections.emptyMap();
+        }
+        Map<String, Object> accepted = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : fill.entrySet()) {
+            String column = entry.getKey();
+            if (!declared.contains(column)) {
+                log.warn("{}#batchUpdateFill 返回的列 {} 未经 @AllowBatchUpdateField 声明，已忽略",
+                        getClass().getSimpleName(), column);
+                continue;
+            }
+            if (occupiedColumns.contains(column)) {
+                log.debug("列 {} 已由请求指定，跳过服务端填充", column);
+                continue;
+            }
+            accepted.put(column, entry.getValue());
+        }
+        return accepted;
+    }
+
+    /**
+     * 收集当前 Service 及其父类中由 {@code @AllowBatchUpdateField} 声明的列名。
+     */
+    private Set<String> declaredBatchUpdateFillColumns() {
+        Set<String> columns = new HashSet<>();
+        Class<?> current = getClass();
+        while (current != null && current != Object.class) {
+            for (Method method : current.getDeclaredMethods()) {
+                io.github.pengxianggui.crud.batch.AllowBatchUpdateField annotation =
+                        method.getAnnotation(io.github.pengxianggui.crud.batch.AllowBatchUpdateField.class);
+                if (annotation != null) {
+                    columns.addAll(Arrays.asList(annotation.value()));
+                }
+            }
+            current = current.getSuperclass();
+        }
+        return columns;
+    }
+
+    private void recordBatchUpdateAudit(Class<T> entityClazz, List<Serializable> submittedIds,
+                                        Map<String, Object> setColumns, Map<String, Object> auditValues,
+                                        List<Serializable> matchedIds,
+                                        int affected, int executedStatements) {
+        try {
+            BatchUpdateAudit audit = new BatchUpdateAudit()
+                    .setEntityName(entityClazz.getName())
+                    .setIds(matchedIds)
+                    .setRequestedRows(submittedIds.size())
+                    .setNewValues(new LinkedHashMap<>(auditValues))
+                    .setFields(new ArrayList<>(auditValues.keySet()))
+                    .setAffectedRows(affected)
+                    .setExecutedStatements(executedStatements)
+                    .setExtra(Collections.singletonMap("setColumns", new LinkedHashMap<>(setColumns)));
+            auditRecorder().record(audit);
+        } catch (Exception e) {
+            // 审计失败不应影响已成功的业务更新
+            log.error("Failed to record batch update audit on {}", entityClazz.getName(), e);
+        }
+    }
+
+    private BatchUpdateAuditRecorder auditRecorder() {
+        return batchUpdateAuditRecorder != null ? batchUpdateAuditRecorder : FALLBACK_AUDIT_RECORDER;
+    }
+
+    /**
+     * 生成字段被拒绝的报错信息，区分「字段不存在」与「被注解禁用」。
+     */
+    private String describeRejectedField(Class<T> entityClazz, String property) {
+        String reason = BatchUpdateFieldRegistry.deniedFields(entityClazz).get(property);
+        if (reason != null) {
+            return "字段[" + property + "]不允许批量修改：" + reason;
+        }
+        return "字段[" + property + "]不存在于 " + entityClazz.getSimpleName()
+                + "，可批量修改的字段为: " + BatchUpdateFieldRegistry.allowedFields(entityClazz).keySet();
     }
 
     /**
